@@ -444,7 +444,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `docs: add Chinese API design document`
   - Files: `docs/api.md`
 
-- [ ] 4. 核心类型定义 card-core/src/types/
+- [x] 4. 核心类型定义 card-core/src/types/
 
   **What to do**:
   - 创建 `crates/card-core/src/types/mod.rs` 及子模块
@@ -507,7 +507,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): define core domain types with serde support`
   - Files: `crates/card-core/src/types/*.rs`
 
-- [ ] 5. 效果 AST 类型定义 card-core/src/effect/
+- [x] 5. 效果 AST 类型定义 card-core/src/effect/
 
   **What to do**:
   - 创建 `crates/card-core/src/effect/mod.rs` 及子模块
@@ -618,7 +618,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(protocol): define command, event, and network message types`
   - Files: `crates/card-protocol/src/message.rs`, `crates/card-protocol/src/types.rs`
 
-- [ ] 7. 游戏规则配置 card-core/src/rules/
+- [x] 7. 游戏规则配置 card-core/src/rules/
 
   **What to do**:
   - 实现 `GameRules` 结构体（derive Serialize, Deserialize, Clone, Debug, PartialEq）:
