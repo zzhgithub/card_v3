@@ -1,5 +1,6 @@
 // card-core: game engine core
 
+pub mod effect;
 pub mod rules;
 pub mod types;
 
