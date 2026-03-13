@@ -1,0 +1,12 @@
+[package]
+name = "card-client"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+card-core = { path = "../card-core" }
+card-protocol = { path = "../card-protocol" }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+async-trait = { workspace = true }

@@ -1,0 +1,32 @@
+[workspace]
+members = [
+    "crates/card-core",
+    "crates/card-script",
+    "crates/card-protocol",
+    "crates/card-server",
+    "crates/card-client",
+    "crates/card-tui",
+    "crates/card-matchmaker",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.26"
+mlua = { version = "0.10", features = ["lua54", "serialize", "vendored"] }
+ratatui = "0.29"
+crossterm = "0.28"
+rand = "0.9"
+rand_chacha = "0.3"
+chrono = { version = "0.4", features = ["serde"] }
+async-trait = "0.1"

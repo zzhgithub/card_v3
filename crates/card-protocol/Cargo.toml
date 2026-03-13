@@ -1,0 +1,12 @@
+[package]
+name = "card-protocol"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+card-core = { path = "../card-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+bincode = "1"
+thiserror = { workspace = true }
+tokio = { workspace = true }

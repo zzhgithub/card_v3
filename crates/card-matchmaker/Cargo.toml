@@ -1,0 +1,18 @@
+[package]
+name = "card-matchmaker"
+edition.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "card-matchmaker"
+path = "src/main.rs"
+
+[dependencies]
+card-protocol = { path = "../card-protocol" }
+tokio = { workspace = true }
+tokio-tungstenite = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

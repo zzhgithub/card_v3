@@ -1,0 +1,11 @@
+[package]
+name = "card-script"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+card-core = { path = "../card-core" }
+mlua = { workspace = true }
+serde = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

@@ -1,0 +1,28 @@
+[package]
+name = "card-server"
+edition.workspace = true
+version.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "card-server"
+path = "src/main.rs"
+
+[dependencies]
+card-core = { path = "../card-core" }
+card-protocol = { path = "../card-protocol" }
+card-script = { path = "../card-script" }
+card-client = { path = "../card-client" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+chrono = { workspace = true }
+rand_chacha = { workspace = true }
+rand = { workspace = true }
+async-trait = { workspace = true }
