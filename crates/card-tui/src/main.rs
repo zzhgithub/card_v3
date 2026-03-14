@@ -1,3 +1,6 @@
-fn main() {
-    println!("card-tui v{}", env!("CARGO_PKG_VERSION"));
+use anyhow::Result;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    Ok(())
 }
