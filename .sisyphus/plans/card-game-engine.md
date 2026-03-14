@@ -327,7 +327,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat: scaffold workspace with 7 crates`
   - Files: `Cargo.toml`, `crates/*/Cargo.toml`, `crates/*/src/*`
 
-- [ ] 2. 中文架构设计文档
+- [x] 2. 中文架构设计文档
 
   **What to do**:
   - 创建 `docs/architecture.md`，中文撰写
@@ -386,7 +386,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `docs: add Chinese architecture design document`
   - Files: `docs/architecture.md`
 
-- [ ] 3. 中文 API 设计文档
+- [x] 3. 中文 API 设计文档
 
   **What to do**:
   - 创建 `docs/api.md`，中文撰写
@@ -567,7 +567,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): define effect system AST types`
   - Files: `crates/card-core/src/effect/*.rs`
 
-- [ ] 6. 协议消息类型 card-protocol/src/message.rs
+- [x] 6. 协议消息类型 card-protocol/src/message.rs
 
   **What to do**:
   - 实现 `Command` 枚举 — 所有玩家操作（PlayCard, ActivateEffect, DeclareAttack, DirectAttackRealPoint, ChainActivate, ChainPass, SelectRecoveryCards, SelectTargets, SelectCards, Surrender）
@@ -681,7 +681,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): add configurable game rules and deck validation`
   - Files: `crates/card-core/src/rules/*.rs`
 
-- [ ] 8. 各 crate 错误类型定义
+- [x] 8. 各 crate 错误类型定义
 
   **What to do**:
   - `card-core`: 定义 `CoreError` (thiserror)
