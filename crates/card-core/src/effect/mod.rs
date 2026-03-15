@@ -13,6 +13,9 @@ use crate::types::{
 #[cfg(test)]
 mod tests;
 
+pub mod evaluator;
+pub use evaluator::{evaluate_condition, resolve_value};
+
 // ─── Core Effect Structure ───────────────────────────────────────────────────
 
 /// A complete effect definition on a card.
