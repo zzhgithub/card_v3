@@ -3,13 +3,16 @@
 //! Pure data structures representing the complete state of a game in progress.
 //! No game logic — only storage, querying, and serialization.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
 use crate::effect::AppliedModifier;
 use crate::rules::{CardRegistry, GameRules};
 use crate::types::{CardDefinition, CardId, CardType, EffectKey, InstanceId, PlayerId, Zone};
+
+pub mod events;
+pub use events::CoreGameEvent;
 
 // ─── Phase ───────────────────────────────────────────────────────────────────
 
@@ -359,6 +362,9 @@ pub struct GameState {
     pub rng_seed: u64,
     /// Auto-incrementing counter for generating unique [`InstanceId`]s.
     pub instance_counter: u32,
+    /// 本回合已激活过的效果（用于 OncePerTurn 限制）
+    /// Key: (实例ID, 效果键名)
+    pub activated_this_turn: HashSet<(InstanceId, EffectKey)>,
 }
 
 impl GameState {
@@ -378,6 +384,7 @@ impl GameState {
             rules,
             rng_seed,
             instance_counter: 0,
+            activated_this_turn: HashSet::new(),
         }
     }
 

@@ -222,3 +222,55 @@ Modifier, AppliedModifier, ModifierDuration
 - `cargo build -p card-core`: passed
 - `cargo test -p card-core`: passed (63/63)
 - LSP diagnostics on changed files: clean
+
+## [2026-03-15] Lua Table Parser for card-script
+
+### Task: Implement `crates/card-script/src/parser.rs` and wire real parsing in loader
+
+**Outcome**: ✅ SUCCESS
+
+### Key Observations
+1. Actual `CardDefinition` shape is `cost: u32`, `attack: Option<u32>`, `effects: HashMap<EffectKey, serde_json::Value>`; parser must target JSON effects, not `Effect` AST directly.
+2. `ScriptLoader::load_for_game` tests using `-- comment` Lua files broke once real parsing was enabled; fixtures must return full Lua tables.
+3. `extract_referenced_cards` can reliably scan `effects[*].actions` JSON for `type = "SummonFromZone"` + `card_id` and dedupe by ID.
+4. `mlua::Value` to JSON conversion needs strict handling for unsupported runtime values (function/thread/userdata) to keep script errors explicit.
+
+### Verification
+- `cargo build -p card-script`: passed
+- `cargo test -p card-script`: passed (13/13)
+- LSP diagnostics on changed Rust files: clean
+
+## [2026-03-15] Lua Sandbox (card-script)
+
+### Task: Implement sandboxed Lua VM in `crates/card-script/src/sandbox.rs`
+
+**Outcome**: ✅ SUCCESS — commit `15d4204`
+
+### Key Observations
+1. mlua 0.10 `set_memory_limit` returns `Result<usize, Error>` (not bare `usize`); must handle with `?` or `map_err`
+2. `Lua::new_with(libs, LuaOptions::default())` returns `Result<Lua, Error>` — proper error handling needed
+3. StdLib whitelist: `TABLE | STRING | MATH` — io/os/debug/package/coroutine all excluded
+4. Even with StdLib restriction, some globals like `loadfile`/`dofile`/`require`/`load`/`collectgarbage` may leak; explicit nil-out via `globals.raw_set` needed
+5. loader.rs `load_script` replaced `mlua::Lua::new()` → `crate::sandbox::create_sandboxed_lua()?`; all existing loader tests still pass with sandbox
+
+### Verification
+- `cargo build -p card-script`: ✅ zero errors, zero warnings
+- `cargo test -p card-script`: ✅ 20/20 passed (7 sandbox + 8 loader + 5 parser)
+- LSP diagnostics: ✅ clean on all 3 changed files
+
+## [2026-03-16] Trigger Checker 扫描系统（card-core）
+
+### Task: 实现 `engine/trigger.rs` + `GameState` 激活限制状态字段
+
+**Outcome**: ✅ SUCCESS
+
+### Key Observations
+1. `card-core` 不能依赖 `card-protocol`（已存在单向依赖 `card-protocol -> card-core`），因此在 `card-core::state::events` 新增 `CoreGameEvent` 作为核心事件模型。
+2. `GameState` 新增 `activated_this_turn: HashSet<(InstanceId, EffectKey)>` 后，`Serialize/Deserialize + PartialEq` 回归测试保持通过。
+3. 目前 `GameState` 不持有可直接读取效果 AST 的卡牌定义注册表（`CardDefinition.effects` 是 JSON），因此 `check_triggers` 的扫描骨架已就位，实例效果解析留待后续引擎整合阶段接入。
+4. `TriggerChecker::is_activation_allowed` 已完整覆盖 `OncePerTurn` 与 `OncePerTurnSameName` 限制逻辑。
+
+### Verification
+- `cargo build -p card-core`: passed
+- `cargo test -p card-core`: passed (68/68)
+- LSP diagnostics on changed files: clean
