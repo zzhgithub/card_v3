@@ -118,7 +118,7 @@ impl ScriptLoader {
 
     fn load_script(&self, card_id: &CardId, path: &Path) -> Result<CardDefinition, ScriptError> {
         let _ = card_id;
-        let lua = mlua::Lua::new();
+        let lua = crate::sandbox::create_sandboxed_lua()?;
         let content = std::fs::read_to_string(path).map_err(|e| ScriptError::ParseError {
             reason: format!("cannot read {:?}: {}", path, e),
         })?;
