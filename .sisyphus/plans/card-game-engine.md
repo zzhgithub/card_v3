@@ -733,7 +733,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat: define error types for all crates with proper layering`
   - Files: `crates/*/src/error.rs`
 
-- [ ] 9. GameState + PlayerZones + PlayerState
+- [x] 9. GameState + PlayerZones + PlayerState
 
   **What to do**:
   - 创建 `crates/card-core/src/state/mod.rs` 及子模块
@@ -784,7 +784,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): implement game state, player zones, and card instances`
   - Files: `crates/card-core/src/state/*.rs`
 
-- [ ] 10. Condition AST 求值器
+- [x] 10. Condition AST 求值器
 
   **What to do**:
   - 创建 `crates/card-core/src/effect/evaluator.rs`
@@ -843,7 +843,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): implement condition AST evaluator`
   - Files: `crates/card-core/src/effect/evaluator.rs`
 
-- [ ] 11. ScriptIndex + CardRegistry
+- [x] 11. ScriptIndex + CardRegistry
 
   **What to do**:
   - 创建 `crates/card-script/src/loader.rs`
@@ -1009,7 +1009,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(script): implement Lua sandbox with StdLib whitelist and resource limits`
   - Files: `crates/card-script/src/sandbox.rs`
 
-- [ ] 14. TCP 编解码 TcpConnection
+- [x] 14. TCP 编解码 TcpConnection
 
   **What to do**:
   - 创建 `crates/card-protocol/src/codec.rs`

@@ -153,6 +153,7 @@ dependencies = [
  "card-core",
  "mlua",
  "serde",
+ "serde_json",
  "thiserror",
  "tracing",
 ]

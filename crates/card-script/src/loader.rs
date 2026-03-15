@@ -6,6 +6,7 @@ use card_core::types::{CardDefinition, CardId};
 use tracing::{debug, warn};
 
 use crate::error::ScriptError;
+use crate::parser::parse_card_definition;
 
 // ─── ScriptIndex ─────────────────────────────────────────────────────────────
 
@@ -116,20 +117,13 @@ impl ScriptLoader {
     }
 
     fn load_script(&self, card_id: &CardId, path: &Path) -> Result<CardDefinition, ScriptError> {
-        use card_core::types::{CardType, Category, Property};
-
-        let _ = std::fs::read(path).map_err(|e| ScriptError::ParseError {
+        let _ = card_id;
+        let lua = mlua::Lua::new();
+        let content = std::fs::read_to_string(path).map_err(|e| ScriptError::ParseError {
             reason: format!("cannot read {:?}: {}", path, e),
         })?;
-
-        Ok(CardDefinition::new(
-            card_id.clone(),
-            card_id.to_string(),
-            CardType::Character,
-            Property::Rational,
-            Category::Math,
-            0,
-        ))
+        let table: mlua::Table = lua.load(&content).eval().map_err(ScriptError::LuaError)?;
+        parse_card_definition(&lua, table)
     }
 }
 
@@ -225,9 +219,53 @@ mod tests {
     #[test]
     fn test_loader_load_for_game() {
         let dir = make_test_dir("load_game");
-        fs::write(dir.join("S001-C-001.lua"), b"-- card 1").unwrap();
-        fs::write(dir.join("S001-C-002.lua"), b"-- card 2").unwrap();
-        fs::write(dir.join("S001-S-001.lua"), b"-- card 3").unwrap();
+        fs::write(
+            dir.join("S001-C-001.lua"),
+            r#"return {
+    id = "S001-C-001",
+    name = "Card 1",
+    card_type = "Character",
+    property = "Rational",
+    category = "Math",
+    cost = 1,
+    attack = 100,
+    effects = {}
+}"#,
+        )
+        .unwrap();
+        fs::write(
+            dir.join("S001-C-002.lua"),
+            r#"return {
+    id = "S001-C-002",
+    name = "Card 2",
+    card_type = "Character",
+    property = "Divine",
+    category = "Science",
+    cost = 2,
+    attack = 200,
+    effects = {}
+}"#,
+        )
+        .unwrap();
+        fs::write(
+            dir.join("S001-S-001.lua"),
+            r#"return {
+    id = "S001-S-001",
+    name = "Card 3",
+    card_type = "Strategy",
+    strategy_kind = "Normal",
+    property = "Spiritual",
+    category = "Literature",
+    cost = 1,
+    effects = {
+        e1 = {
+            trigger = "OwnMainPhase",
+            actions = { { type = "Draw", player = "Self_", count = 1 } }
+        }
+    }
+}"#,
+        )
+        .unwrap();
 
         let index = ScriptIndex::scan(&dir).unwrap();
         let loader = ScriptLoader::new(index);
@@ -247,7 +285,20 @@ mod tests {
     #[test]
     fn test_loader_missing_card_error() {
         let dir = make_test_dir("missing_card");
-        fs::write(dir.join("S001-C-001.lua"), b"-- only one card").unwrap();
+        fs::write(
+            dir.join("S001-C-001.lua"),
+            r#"return {
+    id = "S001-C-001",
+    name = "Card 1",
+    card_type = "Character",
+    property = "Rational",
+    category = "Math",
+    cost = 1,
+    attack = 100,
+    effects = {}
+}"#,
+        )
+        .unwrap();
 
         let index = ScriptIndex::scan(&dir).unwrap();
         let loader = ScriptLoader::new(index);
