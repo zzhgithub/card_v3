@@ -897,7 +897,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(script): implement script index scanning and loader framework`
   - Files: `crates/card-script/src/loader.rs`
 
-- [ ] 12. Lua parser: table → CardDefinition
+- [x] 12. Lua parser: table → CardDefinition
 
   **What to do**:
   - 创建 `crates/card-script/src/parser.rs`
@@ -959,7 +959,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(script): implement Lua table to CardDefinition parser`
   - Files: `crates/card-script/src/parser.rs`
 
-- [ ] 13. Lua 沙盒配置
+- [x] 13. Lua 沙盒配置
 
   **What to do**:
   - 创建 `crates/card-script/src/sandbox.rs`
@@ -1057,7 +1057,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(protocol): implement length-prefixed TCP codec with bincode`
   - Files: `crates/card-protocol/src/codec.rs`
 
-- [ ] 15. ClientApi trait + VisibleGameState
+- [x] 15. ClientApi trait + VisibleGameState
 
   **What to do**:
   - 创建 `crates/card-client/src/api.rs`
@@ -1204,7 +1204,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): implement turn phase runner with 7-phase state machine`
   - Files: `crates/card-core/src/engine/phase.rs`
 
-- [ ] 17. TriggerChecker 效果触发扫描
+- [x] 17. TriggerChecker 效果触发扫描
 
   **What to do**:
   - 创建 `crates/card-core/src/engine/trigger.rs`
