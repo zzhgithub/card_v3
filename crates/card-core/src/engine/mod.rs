@@ -5,8 +5,10 @@
 
 pub mod action;
 pub mod modifier;
+pub mod phase;
 pub mod trigger;
 
 pub use action::ActionExecutor;
 pub use modifier::{ImmunityCheck, ModifierManager};
+pub use phase::PhaseRunner;
 pub use trigger::{TriggerChecker, TriggeredEffect};
