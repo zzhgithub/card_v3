@@ -47,6 +47,11 @@ pub enum CoreGameEvent {
     AttackDeclared {
         attacker: InstanceId,
     },
+    AttackModified {
+        instance_id: InstanceId,
+        old_attack: i32,
+        new_attack: i32,
+    },
     EffectActivated {
         instance_id: InstanceId,
         effect_key: EffectKey,
