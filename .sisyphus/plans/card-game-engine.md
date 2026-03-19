@@ -1362,7 +1362,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): implement FILO chain resolution with passive trigger insertion`
   - Files: `crates/card-core/src/engine/chain.rs`
 
-- [ ] 19. ActionExecutor 动作执行 + 免疫检查
+- [x] 19. ActionExecutor 动作执行 + 免疫检查
 
   **What to do**:
   - 创建 `crates/card-core/src/engine/action.rs`
@@ -1450,7 +1450,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): implement action executor with immunity checks`
   - Files: `crates/card-core/src/engine/action.rs`
 
-- [ ] 20. Modifier 系统（应用/移除/持续时间管理）
+- [x] 20. Modifier 系统（应用/移除/持续时间管理）
 
   **What to do**:
   - 创建 `crates/card-core/src/engine/modifier.rs`
