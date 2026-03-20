@@ -81,6 +81,25 @@ impl TriggerChecker {
         results
     }
 
+    /// Check for passive triggers that should be inserted into the chain stack.
+    /// Called after each chain link resolves.
+    pub fn check_triggers_for_chain(
+        state: &GameState,
+        recent_events: &[CoreGameEvent],
+        perspective: PlayerId,
+    ) -> Vec<TriggeredEffect> {
+        let mut results = Vec::new();
+        for event in recent_events.iter().rev().take(5) {
+            let triggered = Self::check_triggers(state, event, perspective);
+            for t in triggered {
+                if !t.optional {
+                    results.push(t);
+                }
+            }
+        }
+        results
+    }
+
     /// Check if a specific effect's trigger matches the given event.
     pub fn trigger_matches(trigger: &Trigger, event: &CoreGameEvent, source: InstanceId) -> bool {
         match trigger {

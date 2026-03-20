@@ -56,6 +56,15 @@ pub enum CoreGameEvent {
         instance_id: InstanceId,
         effect_key: EffectKey,
     },
+    ChainStarted,
+    ChainLink {
+        instance_id: InstanceId,
+        effect_key: EffectKey,
+    },
+    ChainResolving {
+        link_index: usize,
+    },
+    ChainComplete,
     GameOver {
         winner: Option<PlayerId>,
         reason: GameOverReason,
