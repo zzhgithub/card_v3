@@ -5,12 +5,14 @@
 
 pub mod action;
 pub mod chain;
+pub mod game_engine;
 pub mod modifier;
 pub mod phase;
 pub mod trigger;
 
 pub use action::ActionExecutor;
 pub use chain::{ChainEntry, ChainManager};
+pub use game_engine::{GameEngine, GameResult};
 pub use modifier::{ImmunityCheck, ModifierManager};
 pub use phase::PhaseRunner;
 pub use trigger::{TriggerChecker, TriggeredEffect};

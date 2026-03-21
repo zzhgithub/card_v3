@@ -1116,7 +1116,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(client): define ClientApi trait, VisibleGameState, and TestClient`
   - Files: `crates/card-client/src/api.rs`
 
-- [ ] 16. 回合状态机 Phase Runner
+- [x] 16. 回合状态机 Phase Runner
 
   **What to do**:
   - 创建 `crates/card-core/src/engine/phase.rs`
@@ -1279,7 +1279,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): implement trigger checker for effect activation scanning`
   - Files: `crates/card-core/src/engine/trigger.rs`
 
-- [ ] 18. ChainManager FILO 连锁解算
+- [x] 18. ChainManager FILO 连锁解算
 
   **What to do**:
   - 创建 `crates/card-core/src/engine/chain.rs`
