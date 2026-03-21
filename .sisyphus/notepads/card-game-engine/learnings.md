@@ -274,3 +274,61 @@ Modifier, AppliedModifier, ModifierDuration
 - `cargo build -p card-core`: passed
 - `cargo test -p card-core`: passed (68/68)
 - LSP diagnostics on changed files: clean
+
+## Task: Modifier System (modifier.rs)
+**Date:** 2026-03-16
+**Commit:** `feat(core): implement modifier system with duration management`
+
+### Key Implementation Details
+1. `ModifierManager` is stateless — all methods take `&mut CardInstance` or `&mut GameState`.
+2. `apply_modifier` immediately adjusts `current_attack` for `AttackBoost` modifiers (clamped ≥0).
+3. `remove_modifier` reverts `AttackBoost` effects on removal (also clamped ≥0).
+4. `cleanup_expired` handles all 4 duration types: `Permanent` (never), `UntilEndOfTurn` (always), `TurnCount(0)` (expired), `WhileSourceOnField` (checks `is_on_field`).
+5. Borrow checker pattern: `cleanup_expired` uses `is_none() + continue` then separate immutable/mutable borrows to avoid NLL conflicts when reading card for expired indices then mutating to remove.
+6. `ImmunityCheck` enum covers 4 immunity types: `ByCardType`, `ByProperty`, `Destruction`, `Targeting`.
+
+### Verification
+- `cargo build -p card-core`: zero warnings, zero errors
+- `cargo test -p card-core`: 79/79 passed (11 new modifier tests)
+- LSP diagnostics on changed files: clean
+
+## [2026-03-21] GameEngine 主循环整合（card-core）
+
+### Task: 实现 `crates/card-core/src/engine/game_engine.rs`
+
+### Key Observations
+1. `GameEngine` 直接依赖 `PhaseClient` trait，而不是 `card-client` 的 API，避免 `card-core` 产生循环依赖。
+2. `PhaseRunner` 负责基础回合推进；`GameEngine` 额外串起 `ModifierManager::decrement_turn_counts`、触发器扫描与链结算，形成完整主循环外壳。
+3. 当前卡牌效果仍以 `CardDefinition.effects: HashMap<EffectKey, serde_json::Value>` 存储，因此链条入口需要在运行时按需反序列化为 `effect::Effect`。
+4. `TriggerChecker::check_triggers` 目前内部已扫描双方场上卡，因此在 `GameEngine` 中只用当前回合玩家视角调用一次，避免重复触发。
+5. 波次 3 组件已经有接线位，但由于 `TriggerChecker::effects_for_instance` 仍返回空，实际自动触发/连锁效果会在后续任务补全数据来源后生效。
+
+## [2026-03-21] S000 测试卡包（9 张 Lua 脚本）
+
+### Task: 创建 `scripts/S000/` 目录并编写 9 张测试卡 Lua 脚本
+
+**Outcome**: ✅ SUCCESS
+
+### 卡片清单
+| 文件 | 类型 | 名称 | 效果 |
+|------|------|------|------|
+| S000-C-001 | Character | 理性学者 | 无（基础人物卡） |
+| S000-C-002 | Character | 知识探索者 | OnSummon → Draw 1 |
+| S000-C-003 | Character | 守护者 | OnSummon → HealHp 1 |
+| S000-S-001 | Strategy/Normal | 逻辑打击 | OwnMainPhase → Damage 1 (Opponent) |
+| S000-S-002 | Strategy/Trick | 思维混乱 | OwnMainPhase → Discard 1 (Opponent) |
+| S000-S-003 | Strategy/Instant | 灵光一现 | BothMainPhase → Draw 2 |
+| S000-I-001 | Item/Normal | 能量水晶 | OwnMainPhase → GainRealPoint 1 |
+| S000-I-002 | Item/Persistent | 生命之泉 | TurnStart → HealHp 1 |
+| S000-L-001 | Legendary | 传奇智者 | OnSummon → Damage 2 (Opponent) |
+
+### Key Observations
+1. Strategy 卡 **必须** 定义 `strategy_kind`，否则 `validate_type_specific_fields` 报错
+2. Item 卡 **必须** 定义 `item_kind`，同上
+3. Strategy/Item 卡 **不能** 定义 `attack`，否则 parser 拒绝
+4. `tags` 字段可以是空表 `{}`，也可以是字符串数组如 `{"传奇"}`
+5. effects 中 action 的数值键名取决于类型：Draw/Discard 用 `count`，其他用 `amount`
+
+### Verification
+- `ls scripts/S000/`: 9 个 .lua 文件
+- `cargo test -p card-script`: 20/20 passed

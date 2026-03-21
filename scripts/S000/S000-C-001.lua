@@ -1,0 +1,11 @@
+return {
+    id = "S000-C-001",
+    name = "理性学者",
+    card_type = "Character",
+    property = "Rational",
+    category = "Math",
+    cost = 3,
+    attack = 1500,
+    tags = {},
+    effects = {}
+}
