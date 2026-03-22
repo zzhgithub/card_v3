@@ -41,6 +41,33 @@ impl GameEngine {
         let mut event_log = Vec::new();
         let started_at = Instant::now();
 
+        let initial_hand_size = self.state.rules.initial_hand_size;
+        for player_idx in 0..2 {
+            let player_id = if player_idx == 0 {
+                PlayerId::Player1
+            } else {
+                PlayerId::Player2
+            };
+            for _ in 0..initial_hand_size {
+                if self.state.players[player_idx].zones.deck.is_empty() {
+                    let winner = Some(player_id.opponent());
+                    return GameResult {
+                        winner,
+                        reason: GameOverReason::DeckOut,
+                        final_state: self.state,
+                        event_log,
+                    };
+                }
+                let card = self.state.players[player_idx].zones.deck.remove(0);
+                let iid = card.instance_id;
+                self.state.players[player_idx].zones.hand.push(card);
+                event_log.push(CoreGameEvent::DrawCard {
+                    player: player_id,
+                    instance_id: iid,
+                });
+            }
+        }
+
         loop {
             ModifierManager::decrement_turn_counts(&mut self.state);
 
@@ -333,5 +360,134 @@ mod tests {
         let result = engine.run();
 
         assert!(result.final_state.turn_number >= 1);
+    }
+
+    #[test]
+    fn test_initial_hand_drawn_before_first_turn() {
+        let rules = GameRules::default();
+        let hand_size = rules.initial_hand_size;
+        assert!(hand_size > 0, "initial_hand_size must be > 0 for this test");
+
+        let mut state = GameState::new(rules, 42);
+        let mut registry = CardRegistryImpl::new();
+        registry.insert(CardDefinition::new(
+            CardId::new("S000-C-001"),
+            "Test".to_string(),
+            CardType::Character,
+            Property::Rational,
+            Category::Math,
+            1,
+        ));
+        for i in 0..(hand_size + 5) {
+            state.players[0].zones.deck.push(CardInstance::new(
+                InstanceId(i as u32 + 1),
+                CardId::new("S000-C-001"),
+                Some(100),
+            ));
+            state.players[1].zones.deck.push(CardInstance::new(
+                InstanceId(i as u32 + 100),
+                CardId::new("S000-C-001"),
+                Some(100),
+            ));
+        }
+
+        let engine = GameEngine::new(
+            state,
+            registry,
+            Box::new(AutoSurrenderClient),
+            Box::new(AutoSurrenderClient),
+        );
+
+        let result = engine.run();
+        assert!(
+            result
+                .event_log
+                .iter()
+                .filter(|e| matches!(e, CoreGameEvent::DrawCard { .. }))
+                .count()
+                >= hand_size * 2
+        );
+    }
+
+    #[test]
+    fn test_initial_hand_zero_draws_nothing() {
+        let mut rules = GameRules::default();
+        rules.initial_hand_size = 0;
+        let mut state = GameState::new(rules, 42);
+        let mut registry = CardRegistryImpl::new();
+        registry.insert(CardDefinition::new(
+            CardId::new("S000-C-001"),
+            "Test".to_string(),
+            CardType::Character,
+            Property::Rational,
+            Category::Math,
+            1,
+        ));
+        for i in 0..5 {
+            state.players[0].zones.deck.push(CardInstance::new(
+                InstanceId(i + 1),
+                CardId::new("S000-C-001"),
+                Some(100),
+            ));
+            state.players[1].zones.deck.push(CardInstance::new(
+                InstanceId(i + 100),
+                CardId::new("S000-C-001"),
+                Some(100),
+            ));
+        }
+
+        let engine = GameEngine::new(
+            state,
+            registry,
+            Box::new(AutoSurrenderClient),
+            Box::new(AutoSurrenderClient),
+        );
+
+        let result = engine.run();
+        let draw_events_before_first_phase: Vec<_> = result
+            .event_log
+            .iter()
+            .take_while(|e| !matches!(e, CoreGameEvent::PhaseChanged { .. }))
+            .filter(|e| matches!(e, CoreGameEvent::DrawCard { .. }))
+            .collect();
+        assert_eq!(draw_events_before_first_phase.len(), 0);
+    }
+
+    #[test]
+    fn test_initial_hand_deck_out_returns_deckout() {
+        let mut rules = GameRules::default();
+        rules.initial_hand_size = 10;
+        let mut state = GameState::new(rules, 42);
+        let mut registry = CardRegistryImpl::new();
+        registry.insert(CardDefinition::new(
+            CardId::new("S000-C-001"),
+            "Test".to_string(),
+            CardType::Character,
+            Property::Rational,
+            Category::Math,
+            1,
+        ));
+        for i in 0..3 {
+            state.players[0].zones.deck.push(CardInstance::new(
+                InstanceId(i + 1),
+                CardId::new("S000-C-001"),
+                Some(100),
+            ));
+            state.players[1].zones.deck.push(CardInstance::new(
+                InstanceId(i + 100),
+                CardId::new("S000-C-001"),
+                Some(100),
+            ));
+        }
+
+        let engine = GameEngine::new(
+            state,
+            registry,
+            Box::new(PassAllClient::new()),
+            Box::new(PassAllClient::new()),
+        );
+
+        let result = engine.run();
+        assert!(matches!(result.reason, GameOverReason::DeckOut));
     }
 }

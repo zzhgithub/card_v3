@@ -116,6 +116,23 @@ impl ScriptLoader {
         Ok(registry)
     }
 
+    pub fn load_all(&self) -> Result<CardRegistryImpl, ScriptError> {
+        let mut registry = CardRegistryImpl::new();
+        for (card_id, path) in self.index.iter() {
+            let definition = self.load_script(card_id, path)?;
+            registry.insert(definition);
+        }
+        Ok(registry)
+    }
+
+    pub fn load_card(&self, card_id: &CardId) -> Result<CardDefinition, ScriptError> {
+        let path = self
+            .index
+            .get_path(card_id)
+            .ok_or_else(|| ScriptError::CardNotFound(card_id.clone()))?;
+        self.load_script(card_id, path)
+    }
+
     fn load_script(&self, card_id: &CardId, path: &Path) -> Result<CardDefinition, ScriptError> {
         let _ = card_id;
         let lua = crate::sandbox::create_sandboxed_lua()?;
@@ -323,5 +340,52 @@ mod tests {
         assert_eq!(pairs.len(), 2);
 
         cleanup_test_dir(&dir);
+    }
+
+    fn s000_scripts_root() -> std::path::PathBuf {
+        let candidates = [
+            std::path::PathBuf::from("scripts"),
+            std::path::PathBuf::from("../../scripts"),
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../scripts"),
+        ];
+        candidates
+            .iter()
+            .find(|p| p.join("S000").exists())
+            .cloned()
+            .unwrap_or(candidates[0].clone())
+    }
+
+    #[test]
+    fn test_load_all_returns_all_s000_cards() {
+        let root = s000_scripts_root();
+        if !root.exists() {
+            return;
+        }
+        let index = ScriptIndex::scan(&root).unwrap();
+        let loader = ScriptLoader::new(index);
+        let registry = loader.load_all().unwrap();
+        assert!(registry.len() >= 9);
+    }
+
+    #[test]
+    fn test_load_card_returns_definition() {
+        let root = s000_scripts_root();
+        if !root.exists() {
+            return;
+        }
+        let index = ScriptIndex::scan(&root).unwrap();
+        let loader = ScriptLoader::new(index);
+        let card_id = CardId::new("S000-C-001");
+        let def = loader.load_card(&card_id).unwrap();
+        assert_eq!(def.id, card_id);
+    }
+
+    #[test]
+    fn test_load_card_not_found_returns_error() {
+        let dir = std::path::Path::new("/tmp/nonexistent_scripts_xyz_abc");
+        let index = ScriptIndex::scan(dir).unwrap();
+        let loader = ScriptLoader::new(index);
+        let card_id = CardId::new("S000-C-999");
+        assert!(loader.load_card(&card_id).is_err());
     }
 }

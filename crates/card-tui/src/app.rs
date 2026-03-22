@@ -271,8 +271,13 @@ impl App {
             ui::render_waiting_screen(frame, chunks[1]);
         }
 
+        let hint = if matches!(self.mode, AppMode::GameOver(_)) {
+            "按 Enter / Esc / q 返回主菜单"
+        } else {
+            "按 q 退出"
+        };
         frame.render_widget(
-            Paragraph::new("按 q 退出")
+            Paragraph::new(hint)
                 .alignment(Alignment::Center)
                 .style(Style::default().fg(Color::DarkGray)),
             chunks[2],
@@ -347,8 +352,20 @@ impl App {
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Result<()> {
+        if let AppMode::GameOver(_) = self.mode {
+            match key.code {
+                KeyCode::Enter | KeyCode::Esc | KeyCode::Char('q') => {
+                    self.reset_to_main_menu();
+                }
+                _ => {}
+            }
+            return Ok(());
+        }
+
         if matches!(key.code, KeyCode::Char('q')) {
-            self.should_quit = true;
+            if let AppMode::MainMenu = self.mode {
+                self.should_quit = true;
+            }
             return Ok(());
         }
 
@@ -384,6 +401,19 @@ impl App {
         }
 
         Ok(())
+    }
+
+    fn reset_to_main_menu(&mut self) {
+        self.mode = AppMode::MainMenu;
+        self.selected_index = 0;
+        self.game_events.clear();
+        self.visible_state = None;
+        self.pending_actions = None;
+        self.pending_recovery = None;
+        self.ui_event_rx = None;
+        self.action_tx = None;
+        self.recovery_tx = None;
+        self.game_result_rx = None;
     }
 
     fn handle_action_key(&mut self, key: KeyEvent) {
