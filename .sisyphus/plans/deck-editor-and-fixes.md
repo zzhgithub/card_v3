@@ -210,7 +210,7 @@ Max Concurrent: 4 (Wave 1)
   - Files: `crates/card-script/src/loader.rs`
   - Pre-commit: `cargo test -p card-script`
 
-- [ ] 2. Deck 数据模型 + DeckManager + 示例卡组
+- [x] 2. Deck 数据模型 + DeckManager + 示例卡组
 
   **What to do**:
   - 创建 `crates/card-core/src/deck.rs`：
