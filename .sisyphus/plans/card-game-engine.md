@@ -1524,7 +1524,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): implement modifier system with duration management`
   - Files: `crates/card-core/src/engine/modifier.rs`
 
-- [ ] 21. GameEngine 主循环集成
+- [x] 21. GameEngine 主循环集成
 
   **What to do**:
   - 创建 `crates/card-core/src/engine/mod.rs` 和 `crates/card-core/src/engine/game_engine.rs`
@@ -1609,7 +1609,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(core): integrate game engine main loop with all subsystems`
   - Files: `crates/card-core/src/engine/mod.rs`, `crates/card-core/src/engine/game_engine.rs`
 
-- [ ] 22. GameSession 会话管理
+- [x] 22. GameSession 会话管理
 
   **What to do**:
   - 创建 `crates/card-server/src/session.rs`
@@ -1684,7 +1684,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(server): implement game session lifecycle management`
   - Files: `crates/card-server/src/session.rs`
 
-- [ ] 23. RemoteClient TCP 代理
+- [x] 23. RemoteClient TCP 代理
 
   **What to do**:
   - 创建 `crates/card-server/src/remote_client.rs`
@@ -1750,7 +1750,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(server): implement RemoteClient TCP proxy for ClientApi`
   - Files: `crates/card-server/src/remote_client.rs`
 
-- [ ] 24. TCP 服务端 listen + accept
+- [x] 24. TCP 服务端 listen + accept
 
   **What to do**:
   - 创建 `crates/card-server/src/network.rs`
@@ -1827,7 +1827,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(server): implement TCP game server with handshake protocol`
   - Files: `crates/card-server/src/network.rs`
 
-- [ ] 25. 回放系统 ReplayData + ReplayClient
+- [x] 25. 回放系统 ReplayData + ReplayClient
 
   **What to do**:
   - 创建 `crates/card-server/src/replay.rs`
@@ -1906,7 +1906,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(server): implement replay recording, saving, and playback`
   - Files: `crates/card-server/src/replay.rs`
 
-- [ ] 26. 快照存档/恢复
+- [x] 26. 快照存档/恢复
 
   **What to do**:
   - 创建 `crates/card-server/src/snapshot.rs`
@@ -1968,7 +1968,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(server): implement snapshot save/restore for game persistence`
   - Files: `crates/card-server/src/snapshot.rs`
 
-- [ ] 27. AiClient 随机合法动作
+- [x] 27. AiClient 随机合法动作
 
   **What to do**:
   - 创建 `crates/card-server/src/ai_client.rs`
@@ -2022,7 +2022,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(server): implement AI client with random legal moves`
   - Files: `crates/card-server/src/ai_client.rs`
 
-- [ ] 28. S000 测试卡包 Lua 脚本
+- [x] 28. S000 测试卡包 Lua 脚本
 
   **What to do**:
   - 创建 `scripts/S000/` 目录
@@ -2095,7 +2095,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(scripts): add S000 test card pack with 8+ cards covering all types`
   - Files: `scripts/S000/*.lua`
 
-- [ ] 29. TUI 应用骨架 + 主循环
+- [x] 29. TUI 应用骨架 + 主循环
 
   **What to do**:
   - 创建 `crates/card-tui/src/main.rs` + `crates/card-tui/src/app.rs`
@@ -2172,7 +2172,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(tui): implement TUI application skeleton with TuiClient`
   - Files: `crates/card-tui/src/main.rs`, `crates/card-tui/src/app.rs`
 
-- [ ] 30. TUI 游戏板面渲染
+- [x] 30. TUI 游戏板面渲染
 
   **What to do**:
   - 创建 `crates/card-tui/src/ui/mod.rs` + 子模块
@@ -2242,7 +2242,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(tui): implement game board rendering with card display`
   - Files: `crates/card-tui/src/ui/*.rs`
 
-- [ ] 31. TUI 输入处理 + 操作选择
+- [x] 31. TUI 输入处理 + 操作选择
 
   **What to do**:
   - 创建 `crates/card-tui/src/input.rs`
@@ -2326,7 +2326,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(tui): implement keyboard input handling and action selection UI`
   - Files: `crates/card-tui/src/input.rs`
 
-- [ ] 32. 匹配服务器
+- [x] 32. 匹配服务器
 
   **What to do**:
   - 创建 `crates/card-matchmaker/src/main.rs` + `crates/card-matchmaker/src/server.rs`
@@ -2405,7 +2405,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(matchmaker): implement WebSocket matchmaking server`
   - Files: `crates/card-matchmaker/src/main.rs`, `crates/card-matchmaker/src/server.rs`
 
-- [ ] 33. TUI 匹配客户端集成
+- [x] 33. TUI 匹配客户端集成
 
   **What to do**:
   - 创建 `crates/card-tui/src/matchmaker_client.rs`
@@ -2479,7 +2479,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `feat(tui): integrate matchmaker client for online play`
   - Files: `crates/card-tui/src/matchmaker_client.rs`
 
-- [ ] 34. 核心引擎单元测试
+- [x] 34. 核心引擎单元测试
 
   **What to do**:
   - 创建 `crates/card-core/tests/` 目录下的集成测试文件
@@ -2555,7 +2555,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `test(core): add comprehensive unit tests for engine subsystems`
   - Files: `crates/card-core/tests/*.rs`
 
-- [ ] 35. Lua 加载单元测试
+- [x] 35. Lua 加载单元测试
 
   **What to do**:
   - 创建 `crates/card-script/tests/` 目录
@@ -2624,7 +2624,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `test(script): add Lua loader, parser, and sandbox tests`
   - Files: `crates/card-script/tests/*.rs`
 
-- [ ] 36. 集成测试：本地对弈（2个 TestClient/AiClient）
+- [x] 36. 集成测试：本地对弈（2个 TestClient/AiClient）
 
   **What to do**:
   - 创建 `crates/card-server/tests/local_game_test.rs`
@@ -2689,7 +2689,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `test(server): add local game integration tests with AI and TestClient`
   - Files: `crates/card-server/tests/local_game_test.rs`
 
-- [ ] 37. 集成测试：联网对战（2进程 TCP）
+- [x] 37. 集成测试：联网对战（2进程 TCP）
 
   **What to do**:
   - 创建 `crates/card-server/tests/network_game_test.rs`
@@ -2746,7 +2746,7 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
   - Message: `test(server): add networked game integration tests over TCP`
   - Files: `crates/card-server/tests/network_game_test.rs`
 
-- [ ] 38. 回放正确性测试
+- [x] 38. 回放正确性测试
 
   **What to do**:
   - 创建 `crates/card-server/tests/replay_test.rs`
@@ -2810,19 +2810,19 @@ Wave FINAL (所有任务后 — 独立审查, 4个并行):
 
 ## Final Verification Wave
 
-- [ ] F1. **计划合规审计** — `oracle`
+- [x] F1. **计划合规审计** — `oracle`
   读取完整计划。对每个"Must Have"验证实现是否存在（读文件、curl端点、运行命令）。对每个"Must NOT Have"搜索代码库中是否出现禁止模式——发现则拒绝并报告 file:line。检查 .sisyphus/evidence/ 中证据文件是否存在。对比交付物与计划。
   输出: `Must Have [N/N] | Must NOT Have [N/N] | Tasks [N/N] | VERDICT: APPROVE/REJECT`
 
-- [ ] F2. **代码质量审查** — `unspecified-high`
+- [x] F2. **代码质量审查** — `unspecified-high`
   运行 `cargo build --workspace` + `cargo clippy --workspace` + `cargo test --workspace`。审查所有变更文件：`as any`/unsafe（card-script外）/空catch/println!在生产代码/注释掉的代码/未使用import。检查AI痕迹：过度注释、过度抽象、泛型命名。
   输出: `Build [PASS/FAIL] | Clippy [PASS/FAIL] | Tests [N pass/N fail] | Files [N clean/N issues] | VERDICT`
 
-- [ ] F3. **完整 QA** — `unspecified-high`
+- [x] F3. **完整 QA** — `unspecified-high`
   从干净状态开始。执行每个任务的QA场景——按精确步骤操作、捕获证据。测试跨任务集成（功能协同工作）。测试边缘情况：空状态、非法输入、快速操作。保存到 `.sisyphus/evidence/final-qa/`。
   输出: `Scenarios [N/N pass] | Integration [N/N] | Edge Cases [N tested] | VERDICT`
 
-- [ ] F4. **范围忠实度检查** — `deep`
+- [x] F4. **范围忠实度检查** — `deep`
   对每个任务：读取"What to do"，读取实际 diff。验证 1:1——spec 中的所有内容都已构建（无遗漏），spec 之外的内容未构建（无蔓延）。检查"Must NOT do"合规。检测跨任务污染：Task N 修改了 Task M 的文件。标记未计入的变更。
   输出: `Tasks [N/N compliant] | Contamination [CLEAN/N issues] | Unaccounted [CLEAN/N files] | VERDICT`
 

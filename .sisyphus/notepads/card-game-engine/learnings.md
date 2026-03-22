@@ -332,3 +332,32 @@ Modifier, AppliedModifier, ModifierDuration
 ### Verification
 - `ls scripts/S000/`: 9 个 .lua 文件
 - `cargo test -p card-script`: 20/20 passed
+
+## [2026-03-22] GameSession 生命周期管理（card-server）
+
+### Task: 创建 `crates/card-server/src/session.rs`
+
+**Outcome**: ✅ SUCCESS
+
+### Key Observations
+1. `ScriptError` 不满足 `Send + Sync`（因为内含 `mlua::Error` 持有 `Arc<dyn StdError>`），不能直接用 `?` 转换为 `anyhow::Error`，需要 `.map_err(|e| anyhow::anyhow!("...: {}", e))` 手动转换。
+2. `validate_deck` 返回 `Result<(), String>`（不是 `CoreError`），也需要 `.map_err` 包装为 `anyhow`。
+3. `ScriptLoader::load_for_game` 对空卡组安全：`to_load` HashSet 为空时不迭代，直接返回空 `CardRegistryImpl`。
+4. `ScriptIndex::scan` 对不存在的目录安全：直接返回空 index。
+5. `SessionPhase` 状态机：WaitingForPlayers → DeckSubmission → LoadingScripts → Playing → Finished。验证在 LoadingScripts 阶段完成（需要先加载注册表才能验证卡组）。
+6. `GameSession::start` 消费 self，因为 `Box<dyn PhaseClient>` 需要移动到 `GameEngine`。
+
+### Verification
+- `cargo build -p card-server`: zero errors
+- `cargo test -p card-server`: 17/17 passed (6 new session tests)
+- LSP diagnostics: clean
+
+## [2026-03-22] TUI 骨架主循环（card-tui）
+
+### Task: 实现 main.rs + app.rs 的 TUI 主循环与 PhaseClient 桥接
+
+### Key Observations
+1. `ratatui::init()` / `ratatui::restore()` 组合在 0.29 可直接用，配合 panic hook 可保证崩溃后终端状态恢复。
+2. `PhaseClient` 是同步 trait；TUI 线程与引擎线程之间用 `std::sync::mpsc` + `recv_timeout` 可以实现“可阻塞、可超时”的桥接。
+3. 在尚未实现 in-game 输入（Task 31）阶段，`choose_action` 自动回退 `Pass` 能保证本地演示流程可持续推进。
+4. TUI 应用层日志建议写入文件（`logs/card-tui.log`），避免污染交互终端。
