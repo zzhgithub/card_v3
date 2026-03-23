@@ -1,4 +1,5 @@
 mod app;
+mod deck_ui;
 mod input;
 mod matchmaker_client;
 mod ui;

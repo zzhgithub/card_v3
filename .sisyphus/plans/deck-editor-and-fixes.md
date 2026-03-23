@@ -408,7 +408,7 @@ Max Concurrent: 4 (Wave 1)
   - Files: `crates/card-tui/src/app.rs`
   - Pre-commit: `cargo build -p card-tui`
 
-- [ ] 5. 主菜单更新 + TUI 卡组浏览器
+- [x] 5. 主菜单更新 + TUI 卡组浏览器
 
   **What to do**:
   - 在 `AppMode` 枚举中新增 `DeckBrowser`
@@ -532,7 +532,7 @@ Max Concurrent: 4 (Wave 1)
   - Files: `crates/card-tui/src/app.rs`, `crates/card-tui/src/deck_ui.rs`
   - Pre-commit: `cargo build -p card-tui`
 
-- [ ] 7. TUI 对战前卡组选择 + 替换 build_demo_state
+- [x] 7. TUI 对战前卡组选择 + 替换 build_demo_state
 
   **What to do**:
   - 在 `AppMode` 枚举中新增 `DeckSelection`

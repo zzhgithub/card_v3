@@ -7,8 +7,11 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
+use std::path::PathBuf;
+
 use anyhow::Result;
 use card_client::api::{game_state_to_visible, VisibleGameState};
+use card_core::deck::{Deck, DeckManager, DeckSummary};
 use card_core::engine::phase::{PhaseAction, PhaseClient, RecoveryCardOption};
 use card_core::engine::{GameEngine, GameResult};
 use card_core::rules::GameRules;
@@ -20,7 +23,7 @@ use card_protocol::codec::TcpConnection;
 use card_protocol::message::{
     AttackTarget, AvailableAction, Command, CostPayment, GameEvent, NetworkMessage,
 };
-use card_script::loader::ScriptIndex;
+use card_script::loader::{ScriptIndex, ScriptLoader};
 use card_server::AiClient;
 use card_server::GameServer;
 use crossterm::event::{self, Event, KeyCode, KeyEvent};
@@ -53,10 +56,19 @@ pub enum UiEvent {
 #[derive(Debug, Clone)]
 pub enum AppMode {
     MainMenu,
+    DeckBrowser,
+    DeckSelection,
+    DeckEditor,
     LocalGame,
     OnlineGame,
     InGame,
     GameOver(Option<PlayerId>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum SelectionPhase {
+    PickPlayerDeck,
+    PickAiDeck,
 }
 
 pub struct TuiClient {
@@ -122,6 +134,11 @@ pub struct App {
     selected_recovery_index: usize,
     selected_recovery_cards: HashSet<InstanceId>,
     game_title: String,
+    deck_list: Vec<DeckSummary>,
+    deck_selected: usize,
+    selection_phase: SelectionPhase,
+    player_deck_path: Option<PathBuf>,
+    ai_deck_path: Option<PathBuf>,
 }
 
 impl App {
@@ -142,6 +159,11 @@ impl App {
             selected_recovery_index: 0,
             selected_recovery_cards: HashSet::new(),
             game_title: String::new(),
+            deck_list: Vec::new(),
+            deck_selected: 0,
+            selection_phase: SelectionPhase::PickPlayerDeck,
+            player_deck_path: None,
+            ai_deck_path: None,
         }
     }
 
@@ -168,6 +190,9 @@ impl App {
     fn render(&self, frame: &mut Frame<'_>) {
         match self.mode {
             AppMode::MainMenu => self.render_main_menu(frame),
+            AppMode::DeckBrowser => self.render_deck_browser(frame),
+            AppMode::DeckSelection => self.render_deck_selection(frame),
+            AppMode::DeckEditor => self.render_deck_browser(frame),
             AppMode::LocalGame | AppMode::OnlineGame | AppMode::InGame | AppMode::GameOver(_) => {
                 self.render_game_screen(frame)
             }
@@ -179,8 +204,8 @@ impl App {
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Percentage(30),
-                Constraint::Length(7),
-                Constraint::Percentage(63),
+                Constraint::Length(8),
+                Constraint::Percentage(62),
             ])
             .split(frame.area());
 
@@ -190,6 +215,7 @@ impl App {
         let inner = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
+                Constraint::Length(1),
                 Constraint::Length(1),
                 Constraint::Length(1),
                 Constraint::Length(1),
@@ -207,7 +233,7 @@ impl App {
             );
         frame.render_widget(title, inner[0]);
 
-        let menu = ["本地对战 (vs AI)", "联网对战", "退出"];
+        let menu = ["本地对战 (vs AI)", "联网对战", "卡组管理", "退出"];
 
         for (idx, item) in menu.iter().enumerate() {
             let prefix = if idx == self.selected_index {
@@ -253,7 +279,7 @@ impl App {
                 }
             }
             AppMode::GameOver(None) => "对局结束：平局",
-            AppMode::MainMenu => "",
+            _ => "",
         };
 
         frame.render_widget(
@@ -379,25 +405,60 @@ impl App {
             return Ok(());
         }
 
-        if let AppMode::MainMenu = self.mode {
-            match key.code {
-                KeyCode::Up => {
-                    self.selected_index = self.selected_index.saturating_sub(1);
-                }
-                KeyCode::Down => {
-                    self.selected_index = (self.selected_index + 1).min(2);
-                }
-                KeyCode::Enter => {
-                    if self.selected_index == 0 {
-                        self.start_local_game()?;
-                    } else if self.selected_index == 1 {
-                        self.start_online_game()?;
-                    } else {
-                        self.should_quit = true;
+        match self.mode {
+            AppMode::MainMenu => {
+                match key.code {
+                    KeyCode::Up => {
+                        self.selected_index = self.selected_index.saturating_sub(1);
                     }
+                    KeyCode::Down => {
+                        self.selected_index = (self.selected_index + 1).min(3);
+                    }
+                    KeyCode::Enter => {
+                        match self.selected_index {
+                            0 => self.enter_deck_selection()?,
+                            1 => self.start_online_game()?,
+                            2 => self.open_deck_browser()?,
+                            _ => self.should_quit = true,
+                        }
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
+            AppMode::DeckBrowser | AppMode::DeckEditor => {
+                match key.code {
+                    KeyCode::Up => {
+                        self.deck_selected = self.deck_selected.saturating_sub(1);
+                    }
+                    KeyCode::Down => {
+                        let max = self.deck_list.len().saturating_sub(1);
+                        self.deck_selected = (self.deck_selected + 1).min(max);
+                    }
+                    KeyCode::Esc => {
+                        self.reset_to_main_menu();
+                    }
+                    _ => {}
+                }
+            }
+            AppMode::DeckSelection => {
+                match key.code {
+                    KeyCode::Up => {
+                        self.deck_selected = self.deck_selected.saturating_sub(1);
+                    }
+                    KeyCode::Down => {
+                        let max = self.deck_list.len().saturating_sub(1);
+                        self.deck_selected = (self.deck_selected + 1).min(max);
+                    }
+                    KeyCode::Enter => {
+                        self.confirm_deck_selection()?;
+                    }
+                    KeyCode::Esc => {
+                        self.reset_to_main_menu();
+                    }
+                    _ => {}
+                }
+            }
+            _ => {}
         }
 
         Ok(())
@@ -414,6 +475,248 @@ impl App {
         self.action_tx = None;
         self.recovery_tx = None;
         self.game_result_rx = None;
+    }
+
+    fn open_deck_browser(&mut self) -> Result<()> {
+        self.deck_list = DeckManager::list_decks(std::path::Path::new("desks"))
+            .unwrap_or_default();
+        self.deck_selected = 0;
+        self.mode = AppMode::DeckBrowser;
+        Ok(())
+    }
+
+    fn enter_deck_selection(&mut self) -> Result<()> {
+        self.deck_list = DeckManager::list_decks(std::path::Path::new("desks"))
+            .unwrap_or_default();
+        self.deck_selected = 0;
+        self.selection_phase = SelectionPhase::PickPlayerDeck;
+        self.player_deck_path = None;
+        self.ai_deck_path = None;
+        self.mode = AppMode::DeckSelection;
+        Ok(())
+    }
+
+    fn confirm_deck_selection(&mut self) -> Result<()> {
+        let Some(summary) = self.deck_list.get(self.deck_selected) else {
+            return Ok(());
+        };
+        let path = summary.file_path.clone();
+        match self.selection_phase {
+            SelectionPhase::PickPlayerDeck => {
+                self.player_deck_path = Some(path);
+                self.selection_phase = SelectionPhase::PickAiDeck;
+                self.deck_selected = 0;
+            }
+            SelectionPhase::PickAiDeck => {
+                self.ai_deck_path = Some(path);
+                let player_path = self.player_deck_path.clone().unwrap();
+                let ai_path = self.ai_deck_path.clone().unwrap();
+                self.start_game_with_decks(player_path, ai_path)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn start_game_with_decks(
+        &mut self,
+        player_deck_path: PathBuf,
+        ai_deck_path: PathBuf,
+    ) -> Result<()> {
+        let player_deck = DeckManager::load(&player_deck_path)
+            .map_err(|e| anyhow::anyhow!("加载玩家卡组失败: {e}"))?;
+        let ai_deck = DeckManager::load(&ai_deck_path)
+            .map_err(|e| anyhow::anyhow!("加载AI卡组失败: {e}"))?;
+
+        self.mode = AppMode::LocalGame;
+        self.game_title = format!(
+            "本地对战 ({} vs {})",
+            player_deck.name, ai_deck.name
+        );
+        self.game_events.clear();
+        self.game_events.push(format!(
+            "正在加载卡组: {} / {}",
+            player_deck.name, ai_deck.name
+        ));
+        self.visible_state = None;
+        self.pending_actions = None;
+        self.pending_recovery = None;
+        self.selected_action_index = 0;
+        self.selected_recovery_index = 0;
+        self.selected_recovery_cards.clear();
+
+        let (action_tx, action_rx) = mpsc::channel::<PhaseAction>();
+        let (recovery_tx, recovery_rx) = mpsc::channel::<Vec<InstanceId>>();
+        let (ui_event_tx, ui_event_rx) = mpsc::channel::<UiEvent>();
+        let (result_tx, result_rx) = mpsc::channel::<GameResult>();
+
+        self.action_tx = Some(action_tx);
+        self.recovery_tx = Some(recovery_tx);
+        self.ui_event_rx = Some(ui_event_rx);
+        self.game_result_rx = Some(result_rx);
+
+        let tui_client = TuiClient::new(action_rx, recovery_rx, ui_event_tx.clone());
+
+        thread::spawn(move || {
+            info!("local game thread started with real decks");
+            let ai_client = AiClient::new(20260322);
+
+            let scripts_root = find_scripts_root();
+            match build_game_from_decks(
+                player_deck.cards,
+                ai_deck.cards,
+                scripts_root,
+            ) {
+                Ok((state, registry)) => {
+                    let result = run_local_game(
+                        state,
+                        registry,
+                        Box::new(tui_client),
+                        Box::new(ai_client),
+                    );
+                    match result {
+                        Ok(game_result) => {
+                            let visible = game_state_to_visible(
+                                &game_result.final_state,
+                                PlayerId::Player1,
+                            );
+                            let _ = ui_event_tx.send(UiEvent::StateUpdate(visible));
+                            let _ = ui_event_tx
+                                .send(UiEvent::Log("游戏线程已结束".to_string()));
+                            let _ = result_tx.send(game_result);
+                        }
+                        Err(err) => {
+                            error!(?err, "local game failed");
+                            let _ = ui_event_tx
+                                .send(UiEvent::Log(format!("对战启动失败: {err}")));
+                        }
+                    }
+                }
+                Err(err) => {
+                    let _ = ui_event_tx
+                        .send(UiEvent::Log(format!("加载脚本失败: {err}")));
+                }
+            }
+        });
+
+        self.mode = AppMode::InGame;
+        Ok(())
+    }
+
+    fn render_deck_browser(&self, frame: &mut Frame<'_>) {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Min(5),
+                Constraint::Length(2),
+            ])
+            .split(frame.area());
+
+        frame.render_widget(
+            Paragraph::new("卡组管理")
+                .alignment(Alignment::Center)
+                .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            chunks[0],
+        );
+
+        let mut lines: Vec<Line> = Vec::new();
+        if self.deck_list.is_empty() {
+            lines.push(Line::from("  (desks/ 目录下暂无卡组)"));
+        } else {
+            for (idx, summary) in self.deck_list.iter().enumerate() {
+                let prefix = if idx == self.deck_selected { "> " } else { "  " };
+                let style = if idx == self.deck_selected {
+                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+                lines.push(Line::from(Span::styled(
+                    format!("{prefix}{} ({} 张)", summary.name, summary.card_count),
+                    style,
+                )));
+            }
+        }
+
+        frame.render_widget(
+            Paragraph::new(lines)
+                .block(Block::default().borders(Borders::ALL).title("卡组列表")),
+            chunks[1],
+        );
+
+        frame.render_widget(
+            Paragraph::new("↑/↓ 选择 | Esc 返回主菜单")
+                .alignment(Alignment::Center)
+                .style(Style::default().fg(Color::DarkGray)),
+            chunks[2],
+        );
+    }
+
+    fn render_deck_selection(&self, frame: &mut Frame<'_>) {
+        let title = match self.selection_phase {
+            SelectionPhase::PickPlayerDeck => "选择己方卡组",
+            SelectionPhase::PickAiDeck => "选择 AI 卡组",
+        };
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Min(5),
+                Constraint::Length(2),
+            ])
+            .split(frame.area());
+
+        frame.render_widget(
+            Paragraph::new(title)
+                .alignment(Alignment::Center)
+                .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            chunks[0],
+        );
+
+        let mut lines: Vec<Line> = Vec::new();
+        if let Some(p) = &self.player_deck_path {
+            let name = self
+                .deck_list
+                .iter()
+                .find(|s| &s.file_path == p)
+                .map(|s| s.name.as_str())
+                .unwrap_or("?");
+            lines.push(Line::from(Span::styled(
+                format!("  己方卡组: {name}  ✓"),
+                Style::default().fg(Color::Green),
+            )));
+            lines.push(Line::from(""));
+        }
+
+        if self.deck_list.is_empty() {
+            lines.push(Line::from("  (desks/ 目录下暂无卡组，请先创建)"));
+        } else {
+            for (idx, summary) in self.deck_list.iter().enumerate() {
+                let prefix = if idx == self.deck_selected { "> " } else { "  " };
+                let style = if idx == self.deck_selected {
+                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+                lines.push(Line::from(Span::styled(
+                    format!("{prefix}{} ({} 张)", summary.name, summary.card_count),
+                    style,
+                )));
+            }
+        }
+
+        frame.render_widget(
+            Paragraph::new(lines)
+                .block(Block::default().borders(Borders::ALL).title(title)),
+            chunks[1],
+        );
+
+        frame.render_widget(
+            Paragraph::new("↑/↓ 选择 | Enter 确认 | Esc 返回主菜单")
+                .alignment(Alignment::Center)
+                .style(Style::default().fg(Color::DarkGray)),
+            chunks[2],
+        );
     }
 
     fn handle_action_key(&mut self, key: KeyEvent) {
@@ -1032,6 +1335,59 @@ fn run_local_game(
 ) -> Result<GameResult> {
     let engine = GameEngine::new(state, registry, client1, client2);
     Ok(engine.run())
+}
+
+fn find_scripts_root() -> PathBuf {
+    let candidates = [
+        PathBuf::from("scripts"),
+        PathBuf::from("../../scripts"),
+    ];
+    candidates
+        .iter()
+        .find(|p| p.join("S000").exists())
+        .cloned()
+        .unwrap_or(PathBuf::from("scripts"))
+}
+
+fn build_game_from_decks(
+    player_cards: Vec<CardId>,
+    ai_cards: Vec<CardId>,
+    scripts_root: PathBuf,
+) -> Result<(GameState, CardRegistryImpl)> {
+    let index = ScriptIndex::scan(&scripts_root)
+        .map_err(|e| anyhow::anyhow!("扫描脚本目录失败: {e}"))?;
+    let loader = ScriptLoader::new(index);
+    let registry = loader
+        .load_for_game(&player_cards, &ai_cards)
+        .map_err(|e| anyhow::anyhow!("加载卡片定义失败: {e}"))?;
+
+    let rules = GameRules::default();
+    let mut state = GameState::new(rules, 20260322);
+    let mut next_id = 1u32;
+
+    for card_id in &player_cards {
+        let base_attack = registry
+            .get(card_id)
+            .and_then(|def| def.attack.map(|a| a as i32));
+        state.players[0]
+            .zones
+            .deck
+            .push(CardInstance::new(InstanceId(next_id), card_id.clone(), base_attack));
+        next_id += 1;
+    }
+
+    for card_id in &ai_cards {
+        let base_attack = registry
+            .get(card_id)
+            .and_then(|def| def.attack.map(|a| a as i32));
+        state.players[1]
+            .zones
+            .deck
+            .push(CardInstance::new(InstanceId(next_id), card_id.clone(), base_attack));
+        next_id += 1;
+    }
+
+    Ok((state, registry))
 }
 
 fn build_demo_state(rules: GameRules) -> (GameState, CardRegistryImpl) {
