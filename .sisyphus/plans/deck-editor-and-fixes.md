@@ -455,7 +455,7 @@ Max Concurrent: 4 (Wave 1)
   - Files: `crates/card-tui/src/app.rs`, `crates/card-tui/src/deck_ui.rs`, `crates/card-tui/src/main.rs`
   - Pre-commit: `cargo build -p card-tui`
 
-- [ ] 6. TUI 卡组编辑器（左右布局 + 添加/移除卡片）
+- [x] 6. TUI 卡组编辑器（左右布局 + 添加/移除卡片）
 
   **What to do**:
   - 在 `AppMode` 枚举中新增 `DeckEditor`

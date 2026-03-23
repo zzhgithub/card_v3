@@ -313,6 +313,10 @@ impl CardRegistryImpl {
     pub fn is_empty(&self) -> bool {
         self.cards.is_empty()
     }
+
+    pub fn iter(&self) -> impl Iterator<Item = (&CardId, &CardDefinition)> {
+        self.cards.iter()
+    }
 }
 
 impl Default for CardRegistryImpl {

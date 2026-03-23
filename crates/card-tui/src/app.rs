@@ -139,6 +139,12 @@ pub struct App {
     selection_phase: SelectionPhase,
     player_deck_path: Option<PathBuf>,
     ai_deck_path: Option<PathBuf>,
+    editing_deck: Option<Deck>,
+    editing_deck_path: Option<PathBuf>,
+    all_card_defs: Vec<card_core::types::CardDefinition>,
+    editor_focus_right: bool,
+    editor_left_index: usize,
+    editor_right_index: usize,
 }
 
 impl App {
@@ -164,6 +170,12 @@ impl App {
             selection_phase: SelectionPhase::PickPlayerDeck,
             player_deck_path: None,
             ai_deck_path: None,
+            editing_deck: None,
+            editing_deck_path: None,
+            all_card_defs: Vec::new(),
+            editor_focus_right: false,
+            editor_left_index: 0,
+            editor_right_index: 0,
         }
     }
 
@@ -192,7 +204,7 @@ impl App {
             AppMode::MainMenu => self.render_main_menu(frame),
             AppMode::DeckBrowser => self.render_deck_browser(frame),
             AppMode::DeckSelection => self.render_deck_selection(frame),
-            AppMode::DeckEditor => self.render_deck_browser(frame),
+            AppMode::DeckEditor => self.render_deck_editor(frame),
             AppMode::LocalGame | AppMode::OnlineGame | AppMode::InGame | AppMode::GameOver(_) => {
                 self.render_game_screen(frame)
             }
@@ -425,7 +437,7 @@ impl App {
                     _ => {}
                 }
             }
-            AppMode::DeckBrowser | AppMode::DeckEditor => {
+            AppMode::DeckBrowser => {
                 match key.code {
                     KeyCode::Up => {
                         self.deck_selected = self.deck_selected.saturating_sub(1);
@@ -434,8 +446,63 @@ impl App {
                         let max = self.deck_list.len().saturating_sub(1);
                         self.deck_selected = (self.deck_selected + 1).min(max);
                     }
+                    KeyCode::Enter => {
+                        self.open_deck_editor()?;
+                    }
                     KeyCode::Esc => {
                         self.reset_to_main_menu();
+                    }
+                    _ => {}
+                }
+            }
+            AppMode::DeckEditor => {
+                match key.code {
+                    KeyCode::Tab => {
+                        self.editor_focus_right = !self.editor_focus_right;
+                    }
+                    KeyCode::Up => {
+                        if self.editor_focus_right {
+                            self.editor_right_index =
+                                self.editor_right_index.saturating_sub(1);
+                        } else {
+                            self.editor_left_index =
+                                self.editor_left_index.saturating_sub(1);
+                        }
+                    }
+                    KeyCode::Down => {
+                        if self.editor_focus_right {
+                            let max = self.all_card_defs.len().saturating_sub(1);
+                            self.editor_right_index =
+                                (self.editor_right_index + 1).min(max);
+                        } else {
+                            let max = self
+                                .editing_deck
+                                .as_ref()
+                                .map(|d| {
+                                    let mut seen = std::collections::HashSet::new();
+                                    let count = d
+                                        .cards
+                                        .iter()
+                                        .filter(|id| seen.insert(&id.0))
+                                        .count();
+                                    count.saturating_sub(1)
+                                })
+                                .unwrap_or(0);
+                            self.editor_left_index =
+                                (self.editor_left_index + 1).min(max);
+                        }
+                    }
+                    KeyCode::Char('a') | KeyCode::Char('A') => {
+                        self.editor_add_card();
+                    }
+                    KeyCode::Char('r') | KeyCode::Char('R') => {
+                        self.editor_remove_card();
+                    }
+                    KeyCode::Char('s') | KeyCode::Char('S') => {
+                        self.editor_save_deck();
+                    }
+                    KeyCode::Esc => {
+                        self.mode = AppMode::DeckBrowser;
                     }
                     _ => {}
                 }
@@ -483,6 +550,228 @@ impl App {
         self.deck_selected = 0;
         self.mode = AppMode::DeckBrowser;
         Ok(())
+    }
+
+    fn open_deck_editor(&mut self) -> Result<()> {
+        let Some(summary) = self.deck_list.get(self.deck_selected) else {
+            return Ok(());
+        };
+        let deck = DeckManager::load(&summary.file_path)
+            .map_err(|e| anyhow::anyhow!("加载卡组失败: {e}"))?;
+        let path = summary.file_path.clone();
+
+        let scripts_root = find_scripts_root();
+        let all_defs = if scripts_root.exists() {
+            let index = ScriptIndex::scan(&scripts_root)
+                .map_err(|e| anyhow::anyhow!("扫描脚本失败: {e}"))?;
+            let loader = ScriptLoader::new(index);
+            let registry = loader.load_all()
+                .map_err(|e| anyhow::anyhow!("加载卡片失败: {e}"))?;
+            let mut defs: Vec<_> = registry.iter().map(|(_, d)| d.clone()).collect();
+            defs.sort_by(|a, b| a.id.0.cmp(&b.id.0));
+            defs
+        } else {
+            Vec::new()
+        };
+
+        self.editing_deck = Some(deck);
+        self.editing_deck_path = Some(path);
+        self.all_card_defs = all_defs;
+        self.editor_focus_right = false;
+        self.editor_left_index = 0;
+        self.editor_right_index = 0;
+        self.mode = AppMode::DeckEditor;
+        Ok(())
+    }
+
+    fn editor_add_card(&mut self) {
+        let Some(def) = self.all_card_defs.get(self.editor_right_index) else {
+            return;
+        };
+        let card_id = def.id.clone();
+        if let Some(deck) = &mut self.editing_deck {
+            let count = deck.cards.iter().filter(|id| *id == &card_id).count();
+            if count < 3 {
+                deck.cards.push(card_id);
+            }
+        }
+    }
+
+    fn editor_remove_card(&mut self) {
+        let Some(deck) = &mut self.editing_deck else {
+            return;
+        };
+        let unique_ids: Vec<CardId> = {
+            let mut seen = std::collections::HashSet::new();
+            let mut result = Vec::new();
+            for id in &deck.cards {
+                if seen.insert(id.0.clone()) {
+                    result.push(id.clone());
+                }
+            }
+            result.sort_by(|a, b| a.0.cmp(&b.0));
+            result
+        };
+        if let Some(selected_id) = unique_ids.get(self.editor_left_index) {
+            if let Some(pos) = deck.cards.iter().rposition(|id| id == selected_id) {
+                deck.cards.remove(pos);
+            }
+        }
+        let unique_count = unique_ids.len();
+        if self.editor_left_index > 0 && self.editor_left_index >= unique_count {
+            self.editor_left_index -= 1;
+        }
+    }
+
+    fn editor_save_deck(&mut self) {
+        let Some(path) = &self.editing_deck_path else {
+            return;
+        };
+        let Some(deck) = &self.editing_deck else {
+            return;
+        };
+        if let Err(e) = DeckManager::save(path, deck) {
+            error!("save deck failed: {e}");
+        }
+    }
+
+    fn render_deck_editor(&self, frame: &mut Frame<'_>) {
+        use std::collections::HashMap;
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(2),
+                Constraint::Min(8),
+                Constraint::Length(2),
+            ])
+            .split(frame.area());
+
+        let deck_name = self
+            .editing_deck
+            .as_ref()
+            .map(|d| d.name.as_str())
+            .unwrap_or("(无卡组)");
+        let total = self.editing_deck.as_ref().map(|d| d.cards.len()).unwrap_or(0);
+        frame.render_widget(
+            Paragraph::new(format!("编辑卡组: {deck_name} ({total}/60)"))
+                .alignment(Alignment::Center)
+                .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
+            chunks[0],
+        );
+
+        let cols = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+            .split(chunks[1]);
+
+        let left_title = if self.editor_focus_right { "当前卡组" } else { "当前卡组 ◀" };
+        let right_title = if self.editor_focus_right { "可用卡片 ◀" } else { "可用卡片" };
+
+        let mut left_lines: Vec<Line> = Vec::new();
+        if let Some(deck) = &self.editing_deck {
+            let mut grouped: HashMap<&CardId, usize> = HashMap::new();
+            for id in &deck.cards {
+                *grouped.entry(id).or_insert(0) += 1;
+            }
+            let mut entries: Vec<_> = grouped.into_iter().collect();
+            entries.sort_by(|a, b| a.0 .0.cmp(&b.0 .0));
+            for (idx, (id, count)) in entries.iter().enumerate() {
+                let prefix = if !self.editor_focus_right && idx == self.editor_left_index {
+                    "> "
+                } else {
+                    "  "
+                };
+                let style = if !self.editor_focus_right && idx == self.editor_left_index {
+                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+                let name = self
+                    .all_card_defs
+                    .iter()
+                    .find(|d| &d.id == *id)
+                    .map(|d| d.name.as_str())
+                    .unwrap_or("?");
+                left_lines.push(Line::from(Span::styled(
+                    format!("{prefix}{} {} ×{count}", id.0, name),
+                    style,
+                )));
+            }
+        }
+        frame.render_widget(
+            Paragraph::new(left_lines)
+                .block(Block::default().borders(Borders::ALL).title(left_title)),
+            cols[0],
+        );
+
+        let selected_def = self.all_card_defs.get(self.editor_right_index);
+        let mut right_lines: Vec<Line> = Vec::new();
+
+        if self.editor_focus_right {
+            for (idx, def) in self.all_card_defs.iter().enumerate() {
+                let prefix = if idx == self.editor_right_index { "> " } else { "  " };
+                let count_in_deck = self
+                    .editing_deck
+                    .as_ref()
+                    .map(|d| d.cards.iter().filter(|id| *id == &def.id).count())
+                    .unwrap_or(0);
+                let style = if idx == self.editor_right_index {
+                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+                right_lines.push(Line::from(Span::styled(
+                    format!("{prefix}{} {} [{}费] ({}/3)", def.id.0, def.name, def.cost, count_in_deck),
+                    style,
+                )));
+            }
+        } else if let Some(def) = selected_def.or_else(|| {
+            self.editing_deck.as_ref().and_then(|d| {
+                let unique: Vec<CardId> = {
+                    let mut seen = std::collections::HashSet::new();
+                    let mut result = Vec::new();
+                    for id in &d.cards {
+                        if seen.insert(id.0.clone()) {
+                            result.push(id.clone());
+                        }
+                    }
+                    result.sort_by(|a, b| a.0.cmp(&b.0));
+                    result
+                };
+                unique.get(self.editor_left_index).and_then(|id| {
+                    self.all_card_defs.iter().find(|def| &def.id == id)
+                })
+            })
+        }) {
+            right_lines.push(Line::from(format!("ID:   {}", def.id.0)));
+            right_lines.push(Line::from(format!("名称: {}", def.name)));
+            right_lines.push(Line::from(format!("类型: {:?}", def.card_type)));
+            right_lines.push(Line::from(format!("属性: {:?}", def.property)));
+            right_lines.push(Line::from(format!("范畴: {:?}", def.category)));
+            right_lines.push(Line::from(format!("费用: {}", def.cost)));
+            if let Some(atk) = def.attack {
+                right_lines.push(Line::from(format!("攻击: {atk}")));
+            }
+            let effect_count = def.effects.len();
+            right_lines.push(Line::from(format!(
+                "效果: {}",
+                if effect_count == 0 { "(无)".to_string() } else { format!("{effect_count} 个") }
+            )));
+        }
+
+        frame.render_widget(
+            Paragraph::new(right_lines)
+                .block(Block::default().borders(Borders::ALL).title(right_title)),
+            cols[1],
+        );
+
+        frame.render_widget(
+            Paragraph::new("Tab 切换面板 | ↑/↓ 移动 | A 添加 | R 移除 | S 保存 | Esc 返回")
+                .alignment(Alignment::Center)
+                .style(Style::default().fg(Color::DarkGray)),
+            chunks[2],
+        );
     }
 
     fn enter_deck_selection(&mut self) -> Result<()> {
