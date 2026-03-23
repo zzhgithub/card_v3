@@ -648,10 +648,10 @@ Max Concurrent: 4 (Wave 1)
 
 > 4 review agents 并行。全部 APPROVE 后提交给用户确认。
 
-- [ ] F1. **计划合规审计** — `oracle`
-- [ ] F2. **代码质量审查** — `unspecified-high`
-- [ ] F3. **完整 QA** — `unspecified-high`
-- [ ] F4. **范围忠实度检查** — `deep`
+- [x] F1. **计划合规审计** — `oracle`
+- [x] F2. **代码质量审查** — `unspecified-high`
+- [x] F3. **完整 QA** — `unspecified-high`
+- [x] F4. **范围忠实度检查** — `deep`
 
 ---
 
