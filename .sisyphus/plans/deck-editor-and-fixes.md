@@ -606,7 +606,7 @@ Max Concurrent: 4 (Wave 1)
   - Files: `crates/card-tui/src/app.rs`
   - Pre-commit: `cargo build -p card-tui`
 
-- [ ] 8. 集成验证 + 补充测试
+- [x] 8. 集成验证 + 补充测试
 
   **What to do**:
   - 创建 `crates/card-core/tests/deck_tests.rs`：
