@@ -38,9 +38,27 @@ pub struct ReturnButton;
 #[derive(Component)]
 pub struct DeckListItem {
     pub deck_name: String,
-    pub card_count: usize,
     pub file_path: String,
 }
+
+#[derive(Component)]
+pub struct DeckDeleteButton {
+    pub file_path: String,
+}
+
+#[derive(Component)]
+pub struct CreateDeckButton;
+
+#[derive(Component)]
+pub struct DeckNameInput {
+    pub value: String,
+}
+
+#[derive(Component)]
+pub struct ConfirmCreateButton;
+
+#[derive(Component)]
+pub struct CancelCreateButton;
 
 #[derive(Component)]
 pub struct DeckDetailReturnButton;
@@ -49,4 +67,10 @@ pub struct DeckDetailReturnButton;
 pub struct SelectedDeck {
     pub name: String,
     pub cards: Vec<String>,
+}
+
+#[derive(Resource, Default)]
+pub struct CreateDeckState {
+    pub is_inputting: bool,
+    pub deck_name: String,
 }
