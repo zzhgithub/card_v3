@@ -7,6 +7,7 @@ members = [
     "crates/card-client",
     "crates/card-tui",
     "crates/card-matchmaker",
+    "crates/card-bevy",
 ]
 resolver = "2"
 

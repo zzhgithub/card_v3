@@ -1,0 +1,13 @@
+[package]
+name = "card-bevy"
+edition.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "card-bevy"
+path = "src/main.rs"
+
+[dependencies]
+bevy = { version = "0.18", features = ["wayland"] }
+card-core = { path = "../card-core" }
+card-client = { path = "../card-client" }
