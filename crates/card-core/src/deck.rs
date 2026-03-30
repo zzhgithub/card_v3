@@ -49,14 +49,14 @@ impl DeckManager {
         for entry in std::fs::read_dir(dir)? {
             let entry = entry?;
             let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) == Some("json") {
-                if let Ok(deck) = Self::load(&path) {
-                    summaries.push(DeckSummary {
-                        name: deck.name,
-                        card_count: deck.cards.len(),
-                        file_path: path,
-                    });
-                }
+            if path.extension().and_then(|e| e.to_str()) == Some("json")
+                && let Ok(deck) = Self::load(&path)
+            {
+                summaries.push(DeckSummary {
+                    name: deck.name,
+                    card_count: deck.cards.len(),
+                    file_path: path,
+                });
             }
         }
         summaries.sort_by(|a, b| a.name.cmp(&b.name));

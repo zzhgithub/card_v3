@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use card_core::rules::GameRules;
 use card_core::state::CoreGameEvent;
-use card_core::types::{CardId, PlayerId};
+use card_core::types::CardId;
 
 /// Recorded game data for replay and verification.
 #[derive(Debug, Clone, Serialize, Deserialize)]

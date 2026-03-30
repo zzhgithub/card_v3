@@ -1,0 +1,4 @@
+Command: cargo test -p card-core effect::text
+Result: PASS
+Tests: 14 passed, 0 failed, 0 ignored
+Scope: effect::text module conversion and coverage tests

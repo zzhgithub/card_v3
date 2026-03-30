@@ -30,12 +30,12 @@ impl ModifierManager {
         source: InstanceId,
         duration: ModifierDuration,
     ) {
-        if let Modifier::AttackBoost(delta) = &modifier {
-            if let Some(atk) = card.current_attack.as_mut() {
-                *atk += *delta as i32;
-                if *atk < 0 {
-                    *atk = 0;
-                }
+        if let Modifier::AttackBoost(delta) = &modifier
+            && let Some(atk) = card.current_attack.as_mut()
+        {
+            *atk += *delta as i32;
+            if *atk < 0 {
+                *atk = 0;
             }
         }
 
@@ -56,12 +56,12 @@ impl ModifierManager {
 
         let applied = card.modifiers.remove(index);
 
-        if let Modifier::AttackBoost(delta) = &applied.modifier {
-            if let Some(atk) = card.current_attack.as_mut() {
-                *atk -= *delta as i32;
-                if *atk < 0 {
-                    *atk = 0;
-                }
+        if let Modifier::AttackBoost(delta) = &applied.modifier
+            && let Some(atk) = card.current_attack.as_mut()
+        {
+            *atk -= *delta as i32;
+            if *atk < 0 {
+                *atk = 0;
             }
         }
     }
@@ -146,19 +146,19 @@ impl ModifierManager {
             for slot in 0..5 {
                 if let Some(card) = state.players[player_idx].zones.front[slot].as_mut() {
                     for applied in card.modifiers.iter_mut() {
-                        if let ModifierDuration::TurnCount(ref mut n) = applied.duration {
-                            if *n > 0 {
-                                *n -= 1;
-                            }
+                        if let ModifierDuration::TurnCount(ref mut n) = applied.duration
+                            && *n > 0
+                        {
+                            *n -= 1;
                         }
                     }
                 }
                 if let Some(card) = state.players[player_idx].zones.back[slot].as_mut() {
                     for applied in card.modifiers.iter_mut() {
-                        if let ModifierDuration::TurnCount(ref mut n) = applied.duration {
-                            if *n > 0 {
-                                *n -= 1;
-                            }
+                        if let ModifierDuration::TurnCount(ref mut n) = applied.duration
+                            && *n > 0
+                        {
+                            *n -= 1;
                         }
                     }
                 }

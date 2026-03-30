@@ -59,10 +59,10 @@ pub fn extract_referenced_cards(def: &CardDefinition) -> Vec<CardId> {
                 if action.get("type").and_then(JsonValue::as_str) != Some("SummonFromZone") {
                     continue;
                 }
-                if let Some(card_id) = action.get("card_id").and_then(JsonValue::as_str) {
-                    if seen.insert(card_id.to_string()) {
-                        refs.push(CardId::new(card_id));
-                    }
+                if let Some(card_id) = action.get("card_id").and_then(JsonValue::as_str)
+                    && seen.insert(card_id.to_string())
+                {
+                    refs.push(CardId::new(card_id));
                 }
             }
         }
@@ -773,16 +773,14 @@ fn lua_value_to_json(value: Value) -> Result<JsonValue, ScriptError> {
             }
 
             if !has_non_int {
-                let mut expected = 1usize;
                 let mut arr = Vec::new();
-                for (idx, val) in int_keys {
+                for (expected, (idx, val)) in (1usize..).zip(int_keys) {
                     if idx != expected {
                         return Err(ScriptError::ParseError {
                             reason: "array table has sparse keys".to_string(),
                         });
                     }
                     arr.push(lua_value_to_json(val)?);
-                    expected += 1;
                 }
                 return Ok(JsonValue::Array(arr));
             }

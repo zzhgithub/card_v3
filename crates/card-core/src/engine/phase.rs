@@ -50,7 +50,7 @@ impl PhaseRunner {
         let timeout = state.rules.operation_timeout;
 
         // Helper: get client for current turn player
-        let current_client = |state: &GameState| -> &dyn PhaseClient {
+        let _current_client = |state: &GameState| -> &dyn PhaseClient {
             if state.turn_player == PlayerId::Player1 {
                 client1
             } else {
@@ -250,7 +250,7 @@ impl PhaseRunner {
                     if let Some((card, _)) =
                         state.players[player_idx].zones.remove_card(instance_id)
                     {
-                        let to = ZoneLocation::new(state.turn_player, target_zone.clone());
+                        let to = ZoneLocation::new(state.turn_player, target_zone);
                         let _ = state.players[player_idx]
                             .zones
                             .add_card_to_zone(card, target_zone);

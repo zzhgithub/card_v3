@@ -1,44 +1,33 @@
 use std::collections::HashSet;
-use std::net::SocketAddr;
-use std::path::Path;
-use std::str::FromStr;
+use std::path::PathBuf;
 use std::sync::mpsc;
 use std::sync::Mutex;
 use std::thread;
 use std::time::Duration;
 
-use std::path::PathBuf;
-
 use anyhow::Result;
 use card_client::api::{game_state_to_visible, VisibleGameState};
 use card_core::deck::{Deck, DeckManager, DeckSummary};
 use card_core::engine::phase::{PhaseAction, PhaseClient, RecoveryCardOption};
-use card_core::engine::{GameEngine, GameResult};
+use card_core::engine::GameResult;
 use card_core::rules::GameRules;
-use card_core::state::{CardInstance, CardRegistryImpl, GameState};
-use card_core::types::{
-    CardDefinition, CardId, CardType, Category, InstanceId, PlayerId, Property, Zone,
-};
-use card_protocol::codec::TcpConnection;
-use card_protocol::message::{
-    AttackTarget, AvailableAction, Command, CostPayment, GameEvent, NetworkMessage,
-};
+use card_core::types::{CardId, InstanceId, PlayerId, Zone};
 use card_script::loader::{ScriptIndex, ScriptLoader};
 use card_server::AiClient;
-use card_server::GameServer;
 use crossterm::event::{self, Event, KeyCode, KeyEvent};
 use ratatui::backend::Backend;
-use ratatui::layout::{Alignment, Constraint, Direction, Layout, Rect};
-use ratatui::style::{Color, Modifier, Style};
-use ratatui::text::{Line, Span};
-use ratatui::widgets::{Block, Borders, Clear, Paragraph};
 use ratatui::{Frame, Terminal};
 use tracing::{error, info};
 
-use crate::input::{self, ActionInput, RecoveryInput};
-use crate::matchmaker_client::{find_match, MatchResult};
-use crate::ui;
+use crate::cursor::FieldCursor;
+use crate::game_setup;
+use crate::input::{self, InputAction, InputMode};
+use crate::network;
+use crate::ui::log::LogState;
+use crate::ui::overlay::OverlayState;
+use crate::ui::{self, ActionOverlayData, RecoveryOverlayData};
 
+#[allow(clippy::large_enum_variant)]
 #[derive(Debug, Clone)]
 pub enum UiEvent {
     ActionPrompt(Vec<PhaseAction>),
@@ -121,7 +110,7 @@ impl PhaseClient for TuiClient {
 pub struct App {
     mode: AppMode,
     selected_index: usize,
-    game_events: Vec<String>,
+    log_state: LogState,
     should_quit: bool,
     ui_event_rx: Option<mpsc::Receiver<UiEvent>>,
     action_tx: Option<mpsc::Sender<PhaseAction>>,
@@ -145,6 +134,8 @@ pub struct App {
     editor_focus_right: bool,
     editor_left_index: usize,
     editor_right_index: usize,
+    field_cursor: FieldCursor,
+    overlay_state: OverlayState,
 }
 
 impl App {
@@ -152,7 +143,7 @@ impl App {
         Self {
             mode: AppMode::MainMenu,
             selected_index: 0,
-            game_events: Vec::new(),
+            log_state: LogState::new(),
             should_quit: false,
             ui_event_rx: None,
             action_tx: None,
@@ -176,6 +167,8 @@ impl App {
             editor_focus_right: false,
             editor_left_index: 0,
             editor_right_index: 0,
+            field_cursor: FieldCursor::new(),
+            overlay_state: OverlayState::default(),
         }
     }
 
@@ -186,10 +179,10 @@ impl App {
 
             terminal.draw(|frame| self.render(frame))?;
 
-            if event::poll(Duration::from_millis(100))? {
-                if let Event::Key(key) = event::read()? {
-                    self.handle_key(key)?;
-                }
+            if event::poll(Duration::from_millis(100))?
+                && let Event::Key(key) = event::read()?
+            {
+                self.handle_key(key)?;
             }
 
             if self.should_quit {
@@ -201,192 +194,80 @@ impl App {
 
     fn render(&self, frame: &mut Frame<'_>) {
         match self.mode {
-            AppMode::MainMenu => self.render_main_menu(frame),
-            AppMode::DeckBrowser => self.render_deck_browser(frame),
-            AppMode::DeckSelection => self.render_deck_selection(frame),
-            AppMode::DeckEditor => self.render_deck_editor(frame),
-            AppMode::LocalGame | AppMode::OnlineGame | AppMode::InGame | AppMode::GameOver(_) => {
-                self.render_game_screen(frame)
+            AppMode::MainMenu => ui::render_main_menu(frame, self.selected_index),
+            AppMode::DeckBrowser => {
+                ui::render_deck_browser(frame, &self.deck_list, self.deck_selected)
             }
-        }
-    }
-
-    fn render_main_menu(&self, frame: &mut Frame<'_>) {
-        let root = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Percentage(30),
-                Constraint::Length(8),
-                Constraint::Percentage(62),
-            ])
-            .split(frame.area());
-
-        let panel = Block::default().borders(Borders::ALL).title("主菜单");
-        frame.render_widget(panel, root[1]);
-
-        let inner = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-                Constraint::Length(1),
-            ])
-            .margin(1)
-            .split(root[1]);
-
-        let title = Paragraph::new("卡牌对战游戏")
-            .alignment(Alignment::Center)
-            .style(
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            );
-        frame.render_widget(title, inner[0]);
-
-        let menu = ["本地对战 (vs AI)", "联网对战", "卡组管理", "退出"];
-
-        for (idx, item) in menu.iter().enumerate() {
-            let prefix = if idx == self.selected_index {
-                "> "
-            } else {
-                "  "
-            };
-            let style = if idx == self.selected_index {
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(Color::White)
-            };
-            let line = Paragraph::new(Line::from(vec![
-                Span::styled(prefix, style),
-                Span::styled(*item, style),
-            ]))
-            .alignment(Alignment::Center);
-            frame.render_widget(line, inner[idx + 1]);
-        }
-    }
-
-    fn render_game_screen(&self, frame: &mut Frame<'_>) {
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(3),
-                Constraint::Min(5),
-                Constraint::Length(2),
-            ])
-            .split(frame.area());
-
-        let title = match self.mode {
-            AppMode::LocalGame => "正在创建本地对战...",
-            AppMode::OnlineGame => "联网对战：正在连接与匹配...",
-            AppMode::InGame => &self.game_title,
-            AppMode::GameOver(Some(winner)) => {
-                if winner == PlayerId::Player1 {
-                    "对局结束：你获胜"
-                } else {
-                    "对局结束：AI 获胜"
-                }
+            AppMode::DeckSelection => {
+                let player_deck_name = self.player_deck_path.as_ref().and_then(|p| {
+                    self.deck_list
+                        .iter()
+                        .find(|s| &s.file_path == p)
+                        .map(|s| s.name.as_str())
+                });
+                ui::render_deck_selection(
+                    frame,
+                    &self.selection_phase,
+                    player_deck_name,
+                    &self.deck_list,
+                    self.deck_selected,
+                )
             }
-            AppMode::GameOver(None) => "对局结束：平局",
-            _ => "",
-        };
-
-        frame.render_widget(
-            Paragraph::new(title).alignment(Alignment::Center).style(
-                Style::default()
-                    .fg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
+            AppMode::DeckEditor => ui::render_deck_editor(
+                frame,
+                self.editing_deck.as_ref(),
+                &self.all_card_defs,
+                self.editor_focus_right,
+                self.editor_left_index,
+                self.editor_right_index,
             ),
-            chunks[0],
-        );
+            AppMode::LocalGame | AppMode::OnlineGame | AppMode::InGame | AppMode::GameOver(_) => {
+                let action_descriptions = self.pending_actions.as_ref().map(|actions| {
+                    actions
+                        .iter()
+                        .map(|action| self.describe_action(action))
+                        .collect::<Vec<_>>()
+                });
+                let recovery_descriptions = self.pending_recovery.as_ref().map(|(_, options)| {
+                    options
+                        .iter()
+                        .map(|instance_id| self.describe_instance(*instance_id))
+                        .collect::<Vec<_>>()
+                });
 
-        if let Some(state) = &self.visible_state {
-            ui::render_game_board(frame, chunks[1], state, &self.game_events);
-        } else {
-            ui::render_waiting_screen(frame, chunks[1]);
+                let action_overlay =
+                    self.pending_actions
+                        .as_deref()
+                        .map(|actions| ActionOverlayData {
+                            actions,
+                            selected_action_index: self.selected_action_index,
+                            action_descriptions: action_descriptions.as_deref().unwrap_or(&[]),
+                        });
+                let recovery_overlay =
+                    self.pending_recovery
+                        .as_ref()
+                        .map(|(count, options)| RecoveryOverlayData {
+                            count: *count,
+                            options,
+                            selected_recovery_index: self.selected_recovery_index,
+                            selected_recovery_cards: &self.selected_recovery_cards,
+                            option_descriptions: recovery_descriptions.as_deref().unwrap_or(&[]),
+                        });
+
+                ui::render_game_screen(
+                    frame,
+                    &self.mode,
+                    &self.game_title,
+                    self.visible_state.as_ref(),
+                    &self.log_state,
+                    &self.field_cursor,
+                    &self.all_card_defs,
+                    action_overlay,
+                    recovery_overlay,
+                    &self.overlay_state,
+                );
+            }
         }
-
-        let hint = if matches!(self.mode, AppMode::GameOver(_)) {
-            "按 Enter / Esc / q 返回主菜单"
-        } else {
-            "按 q 退出"
-        };
-        frame.render_widget(
-            Paragraph::new(hint)
-                .alignment(Alignment::Center)
-                .style(Style::default().fg(Color::DarkGray)),
-            chunks[2],
-        );
-
-        if let Some(actions) = self.pending_actions.as_deref() {
-            self.render_action_overlay(frame, actions);
-        }
-
-        if let Some((count, options)) = self.pending_recovery.as_ref() {
-            self.render_recovery_overlay(frame, *count, options);
-        }
-    }
-
-    fn render_action_overlay(&self, frame: &mut Frame<'_>, actions: &[PhaseAction]) {
-        let popup = centered_rect(70, 40, frame.area());
-        frame.render_widget(Clear, popup);
-
-        let mut lines = Vec::new();
-        for (idx, action) in actions.iter().enumerate() {
-            let prefix = if idx == self.selected_action_index {
-                "> "
-            } else {
-                "  "
-            };
-            lines.push(Line::from(format!(
-                "{prefix}{}",
-                self.describe_action(action)
-            )));
-        }
-        lines.push(Line::from(""));
-        lines.push(Line::from("↑/↓ 选择  Enter 确认  Esc 跳过"));
-
-        frame.render_widget(
-            Paragraph::new(lines).block(Block::default().borders(Borders::ALL).title("选择操作")),
-            popup,
-        );
-    }
-
-    fn render_recovery_overlay(&self, frame: &mut Frame<'_>, count: usize, options: &[InstanceId]) {
-        let popup = centered_rect(70, 45, frame.area());
-        frame.render_widget(Clear, popup);
-
-        let mut lines = Vec::new();
-        lines.push(Line::from(format!("请最多选择 {count} 张回收卡")));
-        lines.push(Line::from(""));
-
-        for (idx, instance_id) in options.iter().enumerate() {
-            let cursor = if idx == self.selected_recovery_index {
-                ">"
-            } else {
-                " "
-            };
-            let selected = if self.selected_recovery_cards.contains(instance_id) {
-                "x"
-            } else {
-                " "
-            };
-            lines.push(Line::from(format!(
-                "{cursor} [{selected}] {}",
-                self.describe_instance(*instance_id)
-            )));
-        }
-
-        lines.push(Line::from(""));
-        lines.push(Line::from("↑/↓ 移动  Space 勾选  Enter 确认  Esc 取消"));
-
-        frame.render_widget(
-            Paragraph::new(lines).block(Block::default().borders(Borders::ALL).title("回收选择")),
-            popup,
-        );
     }
 
     fn handle_key(&mut self, key: KeyEvent) -> Result<()> {
@@ -407,124 +288,120 @@ impl App {
             return Ok(());
         }
 
-        if self.pending_actions.is_some() {
+        if self.overlay_state.visible && matches!(key.code, KeyCode::Char('m') | KeyCode::Char('M'))
+        {
+            self.overlay_state.toggle_minimized();
+            return Ok(());
+        }
+
+        if self.pending_actions.is_some()
+            && !(self.overlay_state.visible && self.overlay_state.minimized)
+        {
             self.handle_action_key(key);
             return Ok(());
         }
 
-        if self.pending_recovery.is_some() {
+        if self.pending_recovery.is_some()
+            && !(self.overlay_state.visible && self.overlay_state.minimized)
+        {
             self.handle_recovery_key(key);
             return Ok(());
         }
 
+        if self.is_field_cursor_mode_available() && self.handle_field_cursor_key(key) {
+            return Ok(());
+        }
+
         match self.mode {
-            AppMode::MainMenu => {
-                match key.code {
-                    KeyCode::Up => {
-                        self.selected_index = self.selected_index.saturating_sub(1);
-                    }
-                    KeyCode::Down => {
-                        self.selected_index = (self.selected_index + 1).min(3);
-                    }
-                    KeyCode::Enter => {
-                        match self.selected_index {
-                            0 => self.enter_deck_selection()?,
-                            1 => self.start_online_game()?,
-                            2 => self.open_deck_browser()?,
-                            _ => self.should_quit = true,
-                        }
-                    }
-                    _ => {}
+            AppMode::MainMenu => match key.code {
+                KeyCode::Up => {
+                    self.selected_index = self.selected_index.saturating_sub(1);
                 }
-            }
-            AppMode::DeckBrowser => {
-                match key.code {
-                    KeyCode::Up => {
-                        self.deck_selected = self.deck_selected.saturating_sub(1);
-                    }
-                    KeyCode::Down => {
-                        let max = self.deck_list.len().saturating_sub(1);
-                        self.deck_selected = (self.deck_selected + 1).min(max);
-                    }
-                    KeyCode::Enter => {
-                        self.open_deck_editor()?;
-                    }
-                    KeyCode::Esc => {
-                        self.reset_to_main_menu();
-                    }
-                    _ => {}
+                KeyCode::Down => {
+                    self.selected_index = (self.selected_index + 1).min(3);
                 }
-            }
-            AppMode::DeckEditor => {
-                match key.code {
-                    KeyCode::Tab => {
-                        self.editor_focus_right = !self.editor_focus_right;
-                    }
-                    KeyCode::Up => {
-                        if self.editor_focus_right {
-                            self.editor_right_index =
-                                self.editor_right_index.saturating_sub(1);
-                        } else {
-                            self.editor_left_index =
-                                self.editor_left_index.saturating_sub(1);
-                        }
-                    }
-                    KeyCode::Down => {
-                        if self.editor_focus_right {
-                            let max = self.all_card_defs.len().saturating_sub(1);
-                            self.editor_right_index =
-                                (self.editor_right_index + 1).min(max);
-                        } else {
-                            let max = self
-                                .editing_deck
-                                .as_ref()
-                                .map(|d| {
-                                    let mut seen = std::collections::HashSet::new();
-                                    let count = d
-                                        .cards
-                                        .iter()
-                                        .filter(|id| seen.insert(&id.0))
-                                        .count();
-                                    count.saturating_sub(1)
-                                })
-                                .unwrap_or(0);
-                            self.editor_left_index =
-                                (self.editor_left_index + 1).min(max);
-                        }
-                    }
-                    KeyCode::Char('a') | KeyCode::Char('A') => {
-                        self.editor_add_card();
-                    }
-                    KeyCode::Char('r') | KeyCode::Char('R') => {
-                        self.editor_remove_card();
-                    }
-                    KeyCode::Char('s') | KeyCode::Char('S') => {
-                        self.editor_save_deck();
-                    }
-                    KeyCode::Esc => {
-                        self.mode = AppMode::DeckBrowser;
-                    }
-                    _ => {}
+                KeyCode::Enter => match self.selected_index {
+                    0 => self.enter_deck_selection()?,
+                    1 => self.start_online_game()?,
+                    2 => self.open_deck_browser()?,
+                    _ => self.should_quit = true,
+                },
+                _ => {}
+            },
+            AppMode::DeckBrowser => match key.code {
+                KeyCode::Up => {
+                    self.deck_selected = self.deck_selected.saturating_sub(1);
                 }
-            }
-            AppMode::DeckSelection => {
-                match key.code {
-                    KeyCode::Up => {
-                        self.deck_selected = self.deck_selected.saturating_sub(1);
-                    }
-                    KeyCode::Down => {
-                        let max = self.deck_list.len().saturating_sub(1);
-                        self.deck_selected = (self.deck_selected + 1).min(max);
-                    }
-                    KeyCode::Enter => {
-                        self.confirm_deck_selection()?;
-                    }
-                    KeyCode::Esc => {
-                        self.reset_to_main_menu();
-                    }
-                    _ => {}
+                KeyCode::Down => {
+                    let max = self.deck_list.len().saturating_sub(1);
+                    self.deck_selected = (self.deck_selected + 1).min(max);
                 }
-            }
+                KeyCode::Enter => {
+                    self.open_deck_editor()?;
+                }
+                KeyCode::Esc => {
+                    self.reset_to_main_menu();
+                }
+                _ => {}
+            },
+            AppMode::DeckEditor => match key.code {
+                KeyCode::Tab => {
+                    self.editor_focus_right = !self.editor_focus_right;
+                }
+                KeyCode::Up => {
+                    if self.editor_focus_right {
+                        self.editor_right_index = self.editor_right_index.saturating_sub(1);
+                    } else {
+                        self.editor_left_index = self.editor_left_index.saturating_sub(1);
+                    }
+                }
+                KeyCode::Down => {
+                    if self.editor_focus_right {
+                        let max = self.all_card_defs.len().saturating_sub(1);
+                        self.editor_right_index = (self.editor_right_index + 1).min(max);
+                    } else {
+                        let max = self
+                            .editing_deck
+                            .as_ref()
+                            .map(|d| {
+                                let mut seen = std::collections::HashSet::new();
+                                let count = d.cards.iter().filter(|id| seen.insert(&id.0)).count();
+                                count.saturating_sub(1)
+                            })
+                            .unwrap_or(0);
+                        self.editor_left_index = (self.editor_left_index + 1).min(max);
+                    }
+                }
+                KeyCode::Char('a') | KeyCode::Char('A') => {
+                    self.editor_add_card();
+                }
+                KeyCode::Char('r') | KeyCode::Char('R') => {
+                    self.editor_remove_card();
+                }
+                KeyCode::Char('s') | KeyCode::Char('S') => {
+                    self.editor_save_deck();
+                }
+                KeyCode::Esc => {
+                    self.mode = AppMode::DeckBrowser;
+                }
+                _ => {}
+            },
+            AppMode::DeckSelection => match key.code {
+                KeyCode::Up => {
+                    self.deck_selected = self.deck_selected.saturating_sub(1);
+                }
+                KeyCode::Down => {
+                    let max = self.deck_list.len().saturating_sub(1);
+                    self.deck_selected = (self.deck_selected + 1).min(max);
+                }
+                KeyCode::Enter => {
+                    self.confirm_deck_selection()?;
+                }
+                KeyCode::Esc => {
+                    self.reset_to_main_menu();
+                }
+                _ => {}
+            },
             _ => {}
         }
 
@@ -534,7 +411,7 @@ impl App {
     fn reset_to_main_menu(&mut self) {
         self.mode = AppMode::MainMenu;
         self.selected_index = 0;
-        self.game_events.clear();
+        self.log_state = LogState::new();
         self.visible_state = None;
         self.pending_actions = None;
         self.pending_recovery = None;
@@ -542,11 +419,12 @@ impl App {
         self.action_tx = None;
         self.recovery_tx = None;
         self.game_result_rx = None;
+        self.field_cursor = FieldCursor::new();
+        self.overlay_state.clear();
     }
 
     fn open_deck_browser(&mut self) -> Result<()> {
-        self.deck_list = DeckManager::list_decks(std::path::Path::new("desks"))
-            .unwrap_or_default();
+        self.deck_list = DeckManager::list_decks(std::path::Path::new("desks")).unwrap_or_default();
         self.deck_selected = 0;
         self.mode = AppMode::DeckBrowser;
         Ok(())
@@ -560,12 +438,13 @@ impl App {
             .map_err(|e| anyhow::anyhow!("加载卡组失败: {e}"))?;
         let path = summary.file_path.clone();
 
-        let scripts_root = find_scripts_root();
+        let scripts_root = game_setup::find_scripts_root();
         let all_defs = if scripts_root.exists() {
             let index = ScriptIndex::scan(&scripts_root)
                 .map_err(|e| anyhow::anyhow!("扫描脚本失败: {e}"))?;
             let loader = ScriptLoader::new(index);
-            let registry = loader.load_all()
+            let registry = loader
+                .load_all()
                 .map_err(|e| anyhow::anyhow!("加载卡片失败: {e}"))?;
             let mut defs: Vec<_> = registry.iter().map(|(_, d)| d.clone()).collect();
             defs.sort_by(|a, b| a.id.0.cmp(&b.id.0));
@@ -612,10 +491,10 @@ impl App {
             result.sort_by(|a, b| a.0.cmp(&b.0));
             result
         };
-        if let Some(selected_id) = unique_ids.get(self.editor_left_index) {
-            if let Some(pos) = deck.cards.iter().rposition(|id| id == selected_id) {
-                deck.cards.remove(pos);
-            }
+        if let Some(selected_id) = unique_ids.get(self.editor_left_index)
+            && let Some(pos) = deck.cards.iter().rposition(|id| id == selected_id)
+        {
+            deck.cards.remove(pos);
         }
         let unique_count = unique_ids.len();
         if self.editor_left_index > 0 && self.editor_left_index >= unique_count {
@@ -635,148 +514,8 @@ impl App {
         }
     }
 
-    fn render_deck_editor(&self, frame: &mut Frame<'_>) {
-        use std::collections::HashMap;
-
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(2),
-                Constraint::Min(8),
-                Constraint::Length(2),
-            ])
-            .split(frame.area());
-
-        let deck_name = self
-            .editing_deck
-            .as_ref()
-            .map(|d| d.name.as_str())
-            .unwrap_or("(无卡组)");
-        let total = self.editing_deck.as_ref().map(|d| d.cards.len()).unwrap_or(0);
-        frame.render_widget(
-            Paragraph::new(format!("编辑卡组: {deck_name} ({total}/60)"))
-                .alignment(Alignment::Center)
-                .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            chunks[0],
-        );
-
-        let cols = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
-            .split(chunks[1]);
-
-        let left_title = if self.editor_focus_right { "当前卡组" } else { "当前卡组 ◀" };
-        let right_title = if self.editor_focus_right { "可用卡片 ◀" } else { "可用卡片" };
-
-        let mut left_lines: Vec<Line> = Vec::new();
-        if let Some(deck) = &self.editing_deck {
-            let mut grouped: HashMap<&CardId, usize> = HashMap::new();
-            for id in &deck.cards {
-                *grouped.entry(id).or_insert(0) += 1;
-            }
-            let mut entries: Vec<_> = grouped.into_iter().collect();
-            entries.sort_by(|a, b| a.0 .0.cmp(&b.0 .0));
-            for (idx, (id, count)) in entries.iter().enumerate() {
-                let prefix = if !self.editor_focus_right && idx == self.editor_left_index {
-                    "> "
-                } else {
-                    "  "
-                };
-                let style = if !self.editor_focus_right && idx == self.editor_left_index {
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(Color::White)
-                };
-                let name = self
-                    .all_card_defs
-                    .iter()
-                    .find(|d| &d.id == *id)
-                    .map(|d| d.name.as_str())
-                    .unwrap_or("?");
-                left_lines.push(Line::from(Span::styled(
-                    format!("{prefix}{} {} ×{count}", id.0, name),
-                    style,
-                )));
-            }
-        }
-        frame.render_widget(
-            Paragraph::new(left_lines)
-                .block(Block::default().borders(Borders::ALL).title(left_title)),
-            cols[0],
-        );
-
-        let selected_def = self.all_card_defs.get(self.editor_right_index);
-        let mut right_lines: Vec<Line> = Vec::new();
-
-        if self.editor_focus_right {
-            for (idx, def) in self.all_card_defs.iter().enumerate() {
-                let prefix = if idx == self.editor_right_index { "> " } else { "  " };
-                let count_in_deck = self
-                    .editing_deck
-                    .as_ref()
-                    .map(|d| d.cards.iter().filter(|id| *id == &def.id).count())
-                    .unwrap_or(0);
-                let style = if idx == self.editor_right_index {
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(Color::White)
-                };
-                right_lines.push(Line::from(Span::styled(
-                    format!("{prefix}{} {} [{}费] ({}/3)", def.id.0, def.name, def.cost, count_in_deck),
-                    style,
-                )));
-            }
-        } else if let Some(def) = selected_def.or_else(|| {
-            self.editing_deck.as_ref().and_then(|d| {
-                let unique: Vec<CardId> = {
-                    let mut seen = std::collections::HashSet::new();
-                    let mut result = Vec::new();
-                    for id in &d.cards {
-                        if seen.insert(id.0.clone()) {
-                            result.push(id.clone());
-                        }
-                    }
-                    result.sort_by(|a, b| a.0.cmp(&b.0));
-                    result
-                };
-                unique.get(self.editor_left_index).and_then(|id| {
-                    self.all_card_defs.iter().find(|def| &def.id == id)
-                })
-            })
-        }) {
-            right_lines.push(Line::from(format!("ID:   {}", def.id.0)));
-            right_lines.push(Line::from(format!("名称: {}", def.name)));
-            right_lines.push(Line::from(format!("类型: {:?}", def.card_type)));
-            right_lines.push(Line::from(format!("属性: {:?}", def.property)));
-            right_lines.push(Line::from(format!("范畴: {:?}", def.category)));
-            right_lines.push(Line::from(format!("费用: {}", def.cost)));
-            if let Some(atk) = def.attack {
-                right_lines.push(Line::from(format!("攻击: {atk}")));
-            }
-            let effect_count = def.effects.len();
-            right_lines.push(Line::from(format!(
-                "效果: {}",
-                if effect_count == 0 { "(无)".to_string() } else { format!("{effect_count} 个") }
-            )));
-        }
-
-        frame.render_widget(
-            Paragraph::new(right_lines)
-                .block(Block::default().borders(Borders::ALL).title(right_title)),
-            cols[1],
-        );
-
-        frame.render_widget(
-            Paragraph::new("Tab 切换面板 | ↑/↓ 移动 | A 添加 | R 移除 | S 保存 | Esc 返回")
-                .alignment(Alignment::Center)
-                .style(Style::default().fg(Color::DarkGray)),
-            chunks[2],
-        );
-    }
-
     fn enter_deck_selection(&mut self) -> Result<()> {
-        self.deck_list = DeckManager::list_decks(std::path::Path::new("desks"))
-            .unwrap_or_default();
+        self.deck_list = DeckManager::list_decks(std::path::Path::new("desks")).unwrap_or_default();
         self.deck_selected = 0;
         self.selection_phase = SelectionPhase::PickPlayerDeck;
         self.player_deck_path = None;
@@ -813,25 +552,24 @@ impl App {
     ) -> Result<()> {
         let player_deck = DeckManager::load(&player_deck_path)
             .map_err(|e| anyhow::anyhow!("加载玩家卡组失败: {e}"))?;
-        let ai_deck = DeckManager::load(&ai_deck_path)
-            .map_err(|e| anyhow::anyhow!("加载AI卡组失败: {e}"))?;
+        let ai_deck =
+            DeckManager::load(&ai_deck_path).map_err(|e| anyhow::anyhow!("加载AI卡组失败: {e}"))?;
 
         self.mode = AppMode::LocalGame;
-        self.game_title = format!(
-            "本地对战 ({} vs {})",
-            player_deck.name, ai_deck.name
-        );
-        self.game_events.clear();
-        self.game_events.push(format!(
-            "正在加载卡组: {} / {}",
-            player_deck.name, ai_deck.name
-        ));
+        self.game_title = format!("本地对战 ({} vs {})", player_deck.name, ai_deck.name);
+        self.log_state = LogState::new();
+        self.log_state.push(crate::ui::log::LogEntry {
+            message: format!("正在加载卡组: {} / {}", player_deck.name, ai_deck.name),
+            source: crate::ui::log::LogSource::System,
+        });
         self.visible_state = None;
         self.pending_actions = None;
         self.pending_recovery = None;
         self.selected_action_index = 0;
         self.selected_recovery_index = 0;
         self.selected_recovery_cards.clear();
+        self.field_cursor = FieldCursor::new();
+        self.overlay_state.clear();
 
         let (action_tx, action_rx) = mpsc::channel::<PhaseAction>();
         let (recovery_tx, recovery_rx) = mpsc::channel::<Vec<InstanceId>>();
@@ -849,14 +587,11 @@ impl App {
             info!("local game thread started with real decks");
             let ai_client = AiClient::new(20260322);
 
-            let scripts_root = find_scripts_root();
-            match build_game_from_decks(
-                player_deck.cards,
-                ai_deck.cards,
-                scripts_root,
-            ) {
+            let scripts_root = game_setup::find_scripts_root();
+            match game_setup::build_game_from_decks(player_deck.cards, ai_deck.cards, scripts_root)
+            {
                 Ok((state, registry)) => {
-                    let result = run_local_game(
+                    let result = game_setup::run_local_game(
                         state,
                         registry,
                         Box::new(tui_client),
@@ -864,25 +599,20 @@ impl App {
                     );
                     match result {
                         Ok(game_result) => {
-                            let visible = game_state_to_visible(
-                                &game_result.final_state,
-                                PlayerId::Player1,
-                            );
+                            let visible =
+                                game_state_to_visible(&game_result.final_state, PlayerId::Player1);
                             let _ = ui_event_tx.send(UiEvent::StateUpdate(visible));
-                            let _ = ui_event_tx
-                                .send(UiEvent::Log("游戏线程已结束".to_string()));
+                            let _ = ui_event_tx.send(UiEvent::Log("游戏线程已结束".to_string()));
                             let _ = result_tx.send(game_result);
                         }
                         Err(err) => {
                             error!(?err, "local game failed");
-                            let _ = ui_event_tx
-                                .send(UiEvent::Log(format!("对战启动失败: {err}")));
+                            let _ = ui_event_tx.send(UiEvent::Log(format!("对战启动失败: {err}")));
                         }
                     }
                 }
                 Err(err) => {
-                    let _ = ui_event_tx
-                        .send(UiEvent::Log(format!("加载脚本失败: {err}")));
+                    let _ = ui_event_tx.send(UiEvent::Log(format!("加载脚本失败: {err}")));
                 }
             }
         });
@@ -891,121 +621,116 @@ impl App {
         Ok(())
     }
 
-    fn render_deck_browser(&self, frame: &mut Frame<'_>) {
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(3),
-                Constraint::Min(5),
-                Constraint::Length(2),
-            ])
-            .split(frame.area());
+    #[allow(dead_code)]
+    fn start_local_game(&mut self) -> Result<()> {
+        self.mode = AppMode::LocalGame;
+        self.game_title = "本地对战进行中 (Player1: TUI, Player2: AI)".to_string();
+        self.log_state = LogState::new();
+        self.log_state.push(crate::ui::log::LogEntry {
+            message: "准备启动本地对战...".to_string(),
+            source: crate::ui::log::LogSource::System,
+        });
+        self.visible_state = None;
 
-        frame.render_widget(
-            Paragraph::new("卡组管理")
-                .alignment(Alignment::Center)
-                .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            chunks[0],
-        );
+        let rules = GameRules::default();
+        let (state, registry) = game_setup::build_demo_state(rules);
+        self.visible_state = Some(game_state_to_visible(&state, PlayerId::Player1));
+        self.pending_actions = None;
+        self.pending_recovery = None;
+        self.selected_action_index = 0;
+        self.selected_recovery_index = 0;
+        self.selected_recovery_cards.clear();
+        self.field_cursor = FieldCursor::new();
+        self.overlay_state.clear();
 
-        let mut lines: Vec<Line> = Vec::new();
-        if self.deck_list.is_empty() {
-            lines.push(Line::from("  (desks/ 目录下暂无卡组)"));
-        } else {
-            for (idx, summary) in self.deck_list.iter().enumerate() {
-                let prefix = if idx == self.deck_selected { "> " } else { "  " };
-                let style = if idx == self.deck_selected {
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(Color::White)
-                };
-                lines.push(Line::from(Span::styled(
-                    format!("{prefix}{} ({} 张)", summary.name, summary.card_count),
-                    style,
-                )));
+        let (action_tx, action_rx) = mpsc::channel::<PhaseAction>();
+        let (recovery_tx, recovery_rx) = mpsc::channel::<Vec<InstanceId>>();
+        let (ui_event_tx, ui_event_rx) = mpsc::channel::<UiEvent>();
+        let (result_tx, result_rx) = mpsc::channel::<GameResult>();
+
+        self.action_tx = Some(action_tx.clone());
+        self.recovery_tx = Some(recovery_tx.clone());
+        self.ui_event_rx = Some(ui_event_rx);
+        self.game_result_rx = Some(result_rx);
+
+        let tui_client = TuiClient::new(action_rx, recovery_rx, ui_event_tx.clone());
+
+        thread::spawn(move || {
+            info!("local game thread started");
+            let ai_client = AiClient::new(20260322);
+
+            let result = game_setup::run_local_game(
+                state,
+                registry,
+                Box::new(tui_client),
+                Box::new(ai_client),
+            );
+            match result {
+                Ok(game_result) => {
+                    let visible =
+                        game_state_to_visible(&game_result.final_state, PlayerId::Player1);
+                    let _ = ui_event_tx.send(UiEvent::StateUpdate(visible));
+                    let _ = ui_event_tx.send(UiEvent::Log("游戏线程已结束".to_string()));
+                    let _ = result_tx.send(game_result);
+                }
+                Err(err) => {
+                    error!(?err, "local game failed");
+                    let _ = ui_event_tx.send(UiEvent::Log(format!("本地对战启动失败: {err}")));
+                }
             }
-        }
+        });
 
-        frame.render_widget(
-            Paragraph::new(lines)
-                .block(Block::default().borders(Borders::ALL).title("卡组列表")),
-            chunks[1],
-        );
-
-        frame.render_widget(
-            Paragraph::new("↑/↓ 选择 | Esc 返回主菜单")
-                .alignment(Alignment::Center)
-                .style(Style::default().fg(Color::DarkGray)),
-            chunks[2],
-        );
+        self.mode = AppMode::InGame;
+        Ok(())
     }
 
-    fn render_deck_selection(&self, frame: &mut Frame<'_>) {
-        let title = match self.selection_phase {
-            SelectionPhase::PickPlayerDeck => "选择己方卡组",
-            SelectionPhase::PickAiDeck => "选择 AI 卡组",
-        };
+    fn start_online_game(&mut self) -> Result<()> {
+        self.mode = AppMode::OnlineGame;
+        self.game_title = "联网对战进行中".to_string();
+        self.log_state = LogState::new();
+        self.log_state.push(crate::ui::log::LogEntry {
+            message: "连接匹配服务器...".to_string(),
+            source: crate::ui::log::LogSource::System,
+        });
+        self.visible_state = None;
+        self.pending_actions = None;
+        self.pending_recovery = None;
+        self.selected_action_index = 0;
+        self.selected_recovery_index = 0;
+        self.selected_recovery_cards.clear();
+        self.field_cursor = FieldCursor::new();
+        self.overlay_state.clear();
 
-        let chunks = Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([
-                Constraint::Length(3),
-                Constraint::Min(5),
-                Constraint::Length(2),
-            ])
-            .split(frame.area());
+        let (action_tx, action_rx) = mpsc::channel::<PhaseAction>();
+        let (recovery_tx, recovery_rx) = mpsc::channel::<Vec<InstanceId>>();
+        let (ui_event_tx, ui_event_rx) = mpsc::channel::<UiEvent>();
 
-        frame.render_widget(
-            Paragraph::new(title)
-                .alignment(Alignment::Center)
-                .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)),
-            chunks[0],
-        );
+        self.action_tx = Some(action_tx);
+        self.recovery_tx = Some(recovery_tx);
+        self.ui_event_rx = Some(ui_event_rx);
+        self.game_result_rx = None;
 
-        let mut lines: Vec<Line> = Vec::new();
-        if let Some(p) = &self.player_deck_path {
-            let name = self
-                .deck_list
-                .iter()
-                .find(|s| &s.file_path == p)
-                .map(|s| s.name.as_str())
-                .unwrap_or("?");
-            lines.push(Line::from(Span::styled(
-                format!("  己方卡组: {name}  ✓"),
-                Style::default().fg(Color::Green),
-            )));
-            lines.push(Line::from(""));
-        }
-
-        if self.deck_list.is_empty() {
-            lines.push(Line::from("  (desks/ 目录下暂无卡组，请先创建)"));
-        } else {
-            for (idx, summary) in self.deck_list.iter().enumerate() {
-                let prefix = if idx == self.deck_selected { "> " } else { "  " };
-                let style = if idx == self.deck_selected {
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(Color::White)
-                };
-                lines.push(Line::from(Span::styled(
-                    format!("{prefix}{} ({} 张)", summary.name, summary.card_count),
-                    style,
-                )));
+        thread::spawn(move || {
+            let runtime = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build();
+            match runtime {
+                Ok(rt) => {
+                    if let Err(err) = rt.block_on(network::run_online_game_session(
+                        action_rx,
+                        recovery_rx,
+                        ui_event_tx.clone(),
+                    )) {
+                        let _ = ui_event_tx.send(UiEvent::Log(format!("联网对战失败: {err}")));
+                    }
+                }
+                Err(err) => {
+                    let _ = ui_event_tx.send(UiEvent::Log(format!("无法创建异步运行时: {err}")));
+                }
             }
-        }
+        });
 
-        frame.render_widget(
-            Paragraph::new(lines)
-                .block(Block::default().borders(Borders::ALL).title(title)),
-            chunks[1],
-        );
-
-        frame.render_widget(
-            Paragraph::new("↑/↓ 选择 | Enter 确认 | Esc 返回主菜单")
-                .alignment(Alignment::Center)
-                .style(Style::default().fg(Color::DarkGray)),
-            chunks[2],
-        );
+        Ok(())
     }
 
     fn handle_action_key(&mut self, key: KeyEvent) {
@@ -1013,20 +738,20 @@ impl App {
             return;
         };
 
-        match input::map_action_key(key) {
-            ActionInput::MoveUp => {
+        match input::map_key(InputMode::ActionSelect, key) {
+            InputAction::MoveUp => {
                 input::move_cursor_up(&mut self.selected_action_index, actions.len());
             }
-            ActionInput::MoveDown => {
+            InputAction::MoveDown => {
                 input::move_cursor_down(&mut self.selected_action_index, actions.len());
             }
-            ActionInput::Confirm => {
+            InputAction::Confirm => {
                 if let Some(action) = actions.get(self.selected_action_index) {
                     let action = self.normalize_action(action.clone());
                     self.submit_action(action);
                 }
             }
-            ActionInput::Escape => {
+            InputAction::Escape => {
                 if let Some(pass) = actions
                     .iter()
                     .find(|action| matches!(action, PhaseAction::Pass))
@@ -1034,7 +759,10 @@ impl App {
                     self.submit_action(pass.clone());
                 }
             }
-            ActionInput::Noop => {}
+            InputAction::MinimizeOverlay => {
+                self.overlay_state.toggle_minimized();
+            }
+            _ => {}
         }
     }
 
@@ -1043,14 +771,14 @@ impl App {
             return;
         };
 
-        match input::map_recovery_key(key) {
-            RecoveryInput::MoveUp => {
+        match input::map_key(InputMode::RecoverySelect, key) {
+            InputAction::MoveUp => {
                 input::move_cursor_up(&mut self.selected_recovery_index, options.len());
             }
-            RecoveryInput::MoveDown => {
+            InputAction::MoveDown => {
                 input::move_cursor_down(&mut self.selected_recovery_index, options.len());
             }
-            RecoveryInput::Toggle => {
+            InputAction::Toggle => {
                 if let Some(instance_id) = options.get(self.selected_recovery_index) {
                     if self.selected_recovery_cards.contains(instance_id) {
                         self.selected_recovery_cards.remove(instance_id);
@@ -1059,7 +787,7 @@ impl App {
                     }
                 }
             }
-            RecoveryInput::Confirm => {
+            InputAction::Confirm => {
                 let selected = options
                     .iter()
                     .filter(|id| self.selected_recovery_cards.contains(id))
@@ -1068,34 +796,96 @@ impl App {
                     .collect::<Vec<_>>();
                 self.submit_recovery(selected);
             }
-            RecoveryInput::Escape => {
+            InputAction::Escape => {
                 self.submit_recovery(Vec::new());
             }
-            RecoveryInput::Noop => {}
+            InputAction::MinimizeOverlay => {
+                self.overlay_state.toggle_minimized();
+            }
+            _ => {}
         }
     }
 
     fn submit_action(&mut self, action: PhaseAction) {
-        if let Some(action_tx) = &self.action_tx {
-            if action_tx.send(action.clone()).is_ok() {
-                self.game_events
-                    .push(format!("已确认操作: {}", self.describe_action(&action)));
-            }
+        if let Some(action_tx) = &self.action_tx
+            && action_tx.send(action.clone()).is_ok()
+        {
+            self.log_state.push(crate::ui::log::LogEntry {
+                message: format!("已确认操作: {}", self.describe_action(&action)),
+                source: crate::ui::log::LogSource::Me,
+            });
         }
         self.pending_actions = None;
         self.selected_action_index = 0;
+        self.overlay_state.clear();
     }
 
     fn submit_recovery(&mut self, selected: Vec<InstanceId>) {
-        if let Some(recovery_tx) = &self.recovery_tx {
-            if recovery_tx.send(selected.clone()).is_ok() {
-                self.game_events
-                    .push(format!("已确认回收张数: {}", selected.len()));
-            }
+        if let Some(recovery_tx) = &self.recovery_tx
+            && recovery_tx.send(selected.clone()).is_ok()
+        {
+            self.log_state.push(crate::ui::log::LogEntry {
+                message: format!("已确认回收张数: {}", selected.len()),
+                source: crate::ui::log::LogSource::Me,
+            });
         }
         self.pending_recovery = None;
         self.selected_recovery_cards.clear();
         self.selected_recovery_index = 0;
+        self.overlay_state.clear();
+    }
+
+    fn is_field_cursor_mode_available(&self) -> bool {
+        matches!(
+            self.mode,
+            AppMode::LocalGame | AppMode::OnlineGame | AppMode::InGame
+        )
+    }
+
+    fn handle_field_cursor_key(&mut self, key: KeyEvent) -> bool {
+        let action = input::map_key(InputMode::FieldBrowse, key);
+
+        match action {
+            InputAction::ToggleFieldBrowse => {
+                if self.field_cursor.active {
+                    self.field_cursor.deactivate();
+                } else {
+                    self.field_cursor.activate();
+                }
+                true
+            }
+            _ if !self.field_cursor.active => false,
+            InputAction::Escape => {
+                self.field_cursor.deactivate();
+                true
+            }
+            InputAction::MoveLeft => {
+                self.field_cursor.move_left();
+                true
+            }
+            InputAction::MoveRight => {
+                self.field_cursor.move_right();
+                true
+            }
+            InputAction::MoveUp => {
+                self.field_cursor.move_up();
+                true
+            }
+            InputAction::MoveDown => {
+                self.field_cursor.move_down();
+                true
+            }
+            InputAction::QuickJump(zone) => {
+                self.field_cursor.jump_to(zone);
+                true
+            }
+            InputAction::MinimizeOverlay => {
+                self.overlay_state.toggle_minimized();
+                true
+            }
+            InputAction::FocusLog => true,
+            _ => false,
+        }
     }
 
     fn normalize_action(&self, action: PhaseAction) -> PhaseAction {
@@ -1170,543 +960,227 @@ impl App {
         format!("实例#{:?}", instance_id)
     }
 
-    fn start_local_game(&mut self) -> Result<()> {
-        self.mode = AppMode::LocalGame;
-        self.game_title = "本地对战进行中 (Player1: TUI, Player2: AI)".to_string();
-        self.game_events.clear();
-        self.game_events.push("准备启动本地对战...".to_string());
-        self.visible_state = None;
-
-        let rules = GameRules::default();
-        let (state, registry) = build_demo_state(rules);
-        self.visible_state = Some(game_state_to_visible(&state, PlayerId::Player1));
-        self.pending_actions = None;
-        self.pending_recovery = None;
-        self.selected_action_index = 0;
-        self.selected_recovery_index = 0;
-        self.selected_recovery_cards.clear();
-
-        let (action_tx, action_rx) = mpsc::channel::<PhaseAction>();
-        let (recovery_tx, recovery_rx) = mpsc::channel::<Vec<InstanceId>>();
-        let (ui_event_tx, ui_event_rx) = mpsc::channel::<UiEvent>();
-        let (result_tx, result_rx) = mpsc::channel::<GameResult>();
-
-        self.action_tx = Some(action_tx.clone());
-        self.recovery_tx = Some(recovery_tx.clone());
-        self.ui_event_rx = Some(ui_event_rx);
-        self.game_result_rx = Some(result_rx);
-
-        let tui_client = TuiClient::new(action_rx, recovery_rx, ui_event_tx.clone());
-
-        thread::spawn(move || {
-            info!("local game thread started");
-            let ai_client = AiClient::new(20260322);
-
-            let result = run_local_game(state, registry, Box::new(tui_client), Box::new(ai_client));
-            match result {
-                Ok(game_result) => {
-                    let visible =
-                        game_state_to_visible(&game_result.final_state, PlayerId::Player1);
-                    let _ = ui_event_tx.send(UiEvent::StateUpdate(visible));
-                    let _ = ui_event_tx.send(UiEvent::Log("游戏线程已结束".to_string()));
-                    let _ = result_tx.send(game_result);
-                }
-                Err(err) => {
-                    error!(?err, "local game failed");
-                    let _ = ui_event_tx.send(UiEvent::Log(format!("本地对战启动失败: {err}")));
-                }
-            }
-        });
-
-        self.mode = AppMode::InGame;
-        Ok(())
-    }
-
-    fn start_online_game(&mut self) -> Result<()> {
-        self.mode = AppMode::OnlineGame;
-        self.game_title = "联网对战进行中".to_string();
-        self.game_events.clear();
-        self.game_events.push("连接匹配服务器...".to_string());
-        self.visible_state = None;
-        self.pending_actions = None;
-        self.pending_recovery = None;
-        self.selected_action_index = 0;
-        self.selected_recovery_index = 0;
-        self.selected_recovery_cards.clear();
-
-        let (action_tx, action_rx) = mpsc::channel::<PhaseAction>();
-        let (recovery_tx, recovery_rx) = mpsc::channel::<Vec<InstanceId>>();
-        let (ui_event_tx, ui_event_rx) = mpsc::channel::<UiEvent>();
-
-        self.action_tx = Some(action_tx);
-        self.recovery_tx = Some(recovery_tx);
-        self.ui_event_rx = Some(ui_event_rx);
-        self.game_result_rx = None;
-
-        thread::spawn(move || {
-            let runtime = tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build();
-            match runtime {
-                Ok(rt) => {
-                    if let Err(err) = rt.block_on(run_online_game_session(
-                        action_rx,
-                        recovery_rx,
-                        ui_event_tx.clone(),
-                    )) {
-                        let _ = ui_event_tx.send(UiEvent::Log(format!("联网对战失败: {err}")));
-                    }
-                }
-                Err(err) => {
-                    let _ = ui_event_tx.send(UiEvent::Log(format!("无法创建异步运行时: {err}")));
-                }
-            }
-        });
-
-        Ok(())
-    }
-
     fn drain_game_events(&mut self) {
         if let Some(rx) = &self.ui_event_rx {
             while let Ok(event) = rx.try_recv() {
-                let msg = match event {
+                match event {
                     UiEvent::ActionPrompt(actions) => {
                         self.pending_actions = Some(actions.clone());
                         self.pending_recovery = None;
                         self.selected_action_index = 0;
                         self.selected_recovery_cards.clear();
-                        format!("等待行动选择，候选数: {}", actions.len())
+                        self.overlay_state = OverlayState::for_action();
+                        self.log_state.push(crate::ui::log::LogEntry {
+                            message: format!("等待行动选择，候选数: {}", actions.len()),
+                            source: crate::ui::log::LogSource::System,
+                        });
                     }
                     UiEvent::RecoveryPrompt { count, options } => {
                         self.pending_recovery = Some((count, options.clone()));
                         self.pending_actions = None;
                         self.selected_recovery_index = 0;
                         self.selected_recovery_cards.clear();
-                        format!(
-                            "等待恢复选择，需选择 {} 张（可选 {}）",
-                            count,
-                            options.len()
-                        )
+                        self.overlay_state = OverlayState::for_recovery();
+                        self.log_state.push(crate::ui::log::LogEntry {
+                            message: format!(
+                                "等待恢复选择，需选择 {} 张（可选 {}）",
+                                count,
+                                options.len()
+                            ),
+                            source: crate::ui::log::LogSource::System,
+                        });
                     }
                     UiEvent::StateUpdate(state) => {
                         self.visible_state = Some(state);
-                        "板面状态已刷新".to_string()
+                        self.log_state.push(crate::ui::log::LogEntry {
+                            message: "板面状态已刷新".to_string(),
+                            source: crate::ui::log::LogSource::System,
+                        });
                     }
-                    UiEvent::Log(message) => message,
+                    UiEvent::Log(message) => {
+                        self.log_state.push(crate::ui::log::LogEntry {
+                            message,
+                            source: crate::ui::log::LogSource::System,
+                        });
+                    }
                     UiEvent::EnterOnlineBattle { opponent_name } => {
                         self.mode = AppMode::InGame;
                         self.game_title = format!("联网对战进行中 (你 vs {opponent_name})");
-                        format!("匹配成功，对手: {opponent_name}")
+                        self.log_state.push(crate::ui::log::LogEntry {
+                            message: format!("匹配成功，对手: {opponent_name}"),
+                            source: crate::ui::log::LogSource::System,
+                        });
                     }
-                };
-                self.game_events.push(msg);
+                }
             }
         }
     }
 
     fn drain_game_result(&mut self) {
-        if let Some(rx) = &self.game_result_rx {
-            if let Ok(result) = rx.try_recv() {
-                self.visible_state = Some(game_state_to_visible(
-                    &result.final_state,
-                    PlayerId::Player1,
-                ));
-                self.game_events.push(format!("胜者: {:?}", result.winner));
-                self.game_events
-                    .push(format!("结束原因: {:?}", result.reason));
-                self.game_events
-                    .push(format!("回合数: {}", result.final_state.turn_number));
-                self.game_events
-                    .push(format!("事件总数: {}", result.event_log.len()));
-                self.mode = AppMode::GameOver(result.winner);
-            }
-        }
-    }
-}
-
-async fn run_online_game_session(
-    action_rx: mpsc::Receiver<PhaseAction>,
-    recovery_rx: mpsc::Receiver<Vec<InstanceId>>,
-    ui_event_tx: mpsc::Sender<UiEvent>,
-) -> Result<()> {
-    let _ = ui_event_tx.send(UiEvent::Log("连接匹配服务器...".to_string()));
-    let match_result = find_match("ws://127.0.0.1:9090", "Player", "0.1.0").await?;
-    let _ = ui_event_tx.send(UiEvent::Log(format!(
-        "匹配成功：对手={}，主机={}，我方是否主机={}",
-        match_result.opponent_name, match_result.host_addr, match_result.is_host
-    )));
-
-    if match_result.is_host {
-        run_host_flow(match_result, action_rx, recovery_rx, ui_event_tx).await
-    } else {
-        run_guest_flow(match_result, action_rx, recovery_rx, ui_event_tx).await
-    }
-}
-
-async fn run_host_flow(
-    match_result: MatchResult,
-    action_rx: mpsc::Receiver<PhaseAction>,
-    recovery_rx: mpsc::Receiver<Vec<InstanceId>>,
-    ui_event_tx: mpsc::Sender<UiEvent>,
-) -> Result<()> {
-    let bind_addr = derive_host_bind_addr(&match_result.host_addr);
-    let script_index = ScriptIndex::scan(Path::new("/tmp/card_tui_empty_scripts"))
-        .map_err(|err| anyhow::anyhow!("扫描脚本目录失败: {err}"))?;
-
-    let server = GameServer::new(
-        bind_addr,
-        script_index,
-        GameRules::default(),
-        "0.1.0".to_string(),
-        20260322,
-    );
-    let server_tx = ui_event_tx.clone();
-    tokio::spawn(async move {
-        if let Err(err) = server.start().await {
-            let _ = server_tx.send(UiEvent::Log(format!("游戏服务器错误: {err}")));
-        }
-    });
-
-    let _ = ui_event_tx.send(UiEvent::Log(format!(
-        "已启动本地游戏服务器，监听地址: {bind_addr}"
-    )));
-
-    tokio::time::sleep(Duration::from_millis(200)).await;
-    run_network_client(
-        &bind_addr.to_string(),
-        &match_result,
-        action_rx,
-        recovery_rx,
-        ui_event_tx,
-    )
-    .await
-}
-
-async fn run_guest_flow(
-    match_result: MatchResult,
-    action_rx: mpsc::Receiver<PhaseAction>,
-    recovery_rx: mpsc::Receiver<Vec<InstanceId>>,
-    ui_event_tx: mpsc::Sender<UiEvent>,
-) -> Result<()> {
-    run_network_client(
-        &match_result.host_addr,
-        &match_result,
-        action_rx,
-        recovery_rx,
-        ui_event_tx,
-    )
-    .await
-}
-
-fn derive_host_bind_addr(host_addr: &str) -> SocketAddr {
-    if let Ok(addr) = SocketAddr::from_str(host_addr) {
-        return SocketAddr::new(addr.ip(), 10000);
-    }
-    SocketAddr::from(([127, 0, 0, 1], 10000))
-}
-
-async fn run_network_client(
-    server_addr: &str,
-    match_result: &MatchResult,
-    action_rx: mpsc::Receiver<PhaseAction>,
-    recovery_rx: mpsc::Receiver<Vec<InstanceId>>,
-    ui_event_tx: mpsc::Sender<UiEvent>,
-) -> Result<()> {
-    let stream = tokio::net::TcpStream::connect(server_addr)
-        .await
-        .map_err(|err| anyhow::anyhow!("无法连接游戏服务器 {server_addr}: {err}"))?;
-    let mut conn = TcpConnection::from_stream(stream);
-
-    let server_version = match conn.recv().await? {
-        NetworkMessage::Hello {
-            version,
-            player_name: _,
-        } => version,
-        other => {
-            anyhow::bail!("握手失败，收到无效消息: {other:?}")
-        }
-    };
-
-    conn.send(&NetworkMessage::Hello {
-        version: server_version,
-        player_name: "Player".to_string(),
-    })
-    .await?;
-
-    match conn.recv().await? {
-        NetworkMessage::HelloAck { player_id } => {
-            let _ = ui_event_tx.send(UiEvent::Log(format!("握手成功，分配身份: {player_id:?}")));
-        }
-        other => anyhow::bail!("握手确认失败: {other:?}"),
-    }
-
-    conn.send(&NetworkMessage::DeckSubmit {
-        card_ids: build_demo_deck_ids(),
-    })
-    .await?;
-
-    match conn.recv().await? {
-        NetworkMessage::DeckAccepted => {
-            let _ = ui_event_tx.send(UiEvent::Log("卡组校验通过".to_string()));
-        }
-        NetworkMessage::DeckRejected { reason } => {
-            anyhow::bail!("卡组被拒绝: {reason}")
-        }
-        other => anyhow::bail!("等待卡组校验结果时收到无效消息: {other:?}"),
-    }
-
-    match conn.recv().await? {
-        NetworkMessage::GameStart { .. } => {
-            let _ = ui_event_tx.send(UiEvent::EnterOnlineBattle {
-                opponent_name: match_result.opponent_name.clone(),
+        if let Some(rx) = &self.game_result_rx
+            && let Ok(result) = rx.try_recv()
+        {
+            self.visible_state = Some(game_state_to_visible(
+                &result.final_state,
+                PlayerId::Player1,
+            ));
+            self.log_state.push(crate::ui::log::LogEntry {
+                message: format!("胜者: {:?}", result.winner),
+                source: crate::ui::log::LogSource::System,
             });
-        }
-        other => anyhow::bail!("等待开局消息时收到无效消息: {other:?}"),
-    }
-
-    loop {
-        match conn.recv().await? {
-            NetworkMessage::EventNotification { event } => {
-                if let GameEvent::GameOver { winner, reason } = event {
-                    let _ = ui_event_tx.send(UiEvent::Log(format!(
-                        "对局结束，胜者: {winner:?}，原因: {reason:?}"
-                    )));
-                    break;
-                } else {
-                    let _ = ui_event_tx.send(UiEvent::Log(format!("游戏事件: {event:?}")));
-                }
-            }
-            NetworkMessage::RequestAction {
-                available_actions, ..
-            } => {
-                let actions = available_actions_to_phase_actions(&available_actions);
-                let _ = ui_event_tx.send(UiEvent::ActionPrompt(actions));
-                let chosen = action_rx
-                    .recv()
-                    .map_err(|_| anyhow::anyhow!("无法获取操作输入"))?;
-                let command = phase_action_to_command(chosen);
-                conn.send(&NetworkMessage::CommandResponse { command }).await?;
-            }
-            NetworkMessage::RequestCardSelection {
-                candidates, count, ..
-            } => {
-                let _ = ui_event_tx.send(UiEvent::RecoveryPrompt {
-                    count,
-                    options: candidates.clone(),
-                });
-                let selected = recovery_rx
-                    .recv()
-                    .map_err(|_| anyhow::anyhow!("无法获取选牌输入"))?;
-                conn.send(&NetworkMessage::CardResponse {
-                    instance_ids: selected,
-                })
-                .await?;
-            }
-            NetworkMessage::RequestTargetSelection { .. } => {
-                conn.send(&NetworkMessage::TargetResponse { targets: Vec::new() })
-                    .await?;
-            }
-            NetworkMessage::Ping => {
-                conn.send(&NetworkMessage::Pong).await?;
-            }
-            NetworkMessage::Disconnect { reason } => {
-                anyhow::bail!("服务器断开连接: {reason}")
-            }
-            NetworkMessage::Hello { .. }
-            | NetworkMessage::HelloAck { .. }
-            | NetworkMessage::DeckSubmit { .. }
-            | NetworkMessage::DeckAccepted
-            | NetworkMessage::DeckRejected { .. }
-            | NetworkMessage::GameStart { .. }
-            | NetworkMessage::CommandResponse { .. }
-            | NetworkMessage::TargetResponse { .. }
-            | NetworkMessage::CardResponse { .. }
-            | NetworkMessage::Pong => {}
+            self.log_state.push(crate::ui::log::LogEntry {
+                message: format!("结束原因: {:?}", result.reason),
+                source: crate::ui::log::LogSource::System,
+            });
+            self.log_state.push(crate::ui::log::LogEntry {
+                message: format!("回合数: {}", result.final_state.turn_number),
+                source: crate::ui::log::LogSource::System,
+            });
+            self.log_state.push(crate::ui::log::LogEntry {
+                message: format!("事件总数: {}", result.event_log.len()),
+                source: crate::ui::log::LogSource::System,
+            });
+            self.mode = AppMode::GameOver(result.winner);
         }
     }
-
-    Ok(())
 }
 
-fn available_actions_to_phase_actions(available: &[AvailableAction]) -> Vec<PhaseAction> {
-    let mut actions = Vec::new();
-    for action in available {
-        match action {
-            AvailableAction::PlayCard { instance_id } => actions.push(PhaseAction::PlayCard {
-                instance_id: *instance_id,
-                target_zone: Zone::Front(0),
-                cost_payment: Vec::new(),
-            }),
-            AvailableAction::DeclareAttack {
-                attacker,
-                possible_targets,
-            } => {
-                let target_slot = possible_targets.iter().find_map(|target| match target {
-                    AttackTarget::FrontSlot(slot) => Some(*slot),
-                    AttackTarget::DirectAttack => None,
-                });
-                actions.push(PhaseAction::DeclareAttack {
-                    attacker: *attacker,
-                    target_slot,
-                });
-            }
-            AvailableAction::ChainPass => actions.push(PhaseAction::Pass),
-            AvailableAction::Surrender => actions.push(PhaseAction::Surrender),
-            AvailableAction::ActivateEffect { .. }
-            | AvailableAction::ChainActivate { .. }
-            | AvailableAction::SelectRecoveryCards { .. } => {}
-        }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cursor::FieldZone;
+    use crate::ui::overlay::OverlayType;
+
+    fn key(code: KeyCode) -> KeyEvent {
+        KeyEvent::from(code)
     }
 
-    if actions.is_empty() {
-        actions.push(PhaseAction::Pass);
-    }
-    actions
-}
+    #[test]
+    fn tab_toggles_browse_mode_and_esc_exits() {
+        let mut app = App::new();
+        app.mode = AppMode::InGame;
 
-fn phase_action_to_command(action: PhaseAction) -> Command {
-    match action {
-        PhaseAction::PlayCard {
-            instance_id,
-            target_zone,
-            ..
-        } => Command::PlayCard {
-            instance_id,
-            target_zone,
-            cost_payment: CostPayment {
-                hand_cards: Vec::new(),
-                real_point: 0,
-            },
-        },
-        PhaseAction::DeclareAttack {
-            attacker,
-            target_slot,
-        } => Command::DeclareAttack {
-            attacker,
-            target: target_slot
-                .map(AttackTarget::FrontSlot)
-                .unwrap_or(AttackTarget::DirectAttack),
-        },
-        PhaseAction::Pass => Command::ChainPass,
-        PhaseAction::Surrender => Command::Surrender,
-    }
-}
+        app.handle_key(key(KeyCode::Tab)).expect("tab enter");
+        assert!(app.field_cursor.active);
 
-fn build_demo_deck_ids() -> Vec<CardId> {
-    (0..40).map(|_| CardId::new("S000-C-001")).collect()
-}
+        app.handle_key(key(KeyCode::Tab)).expect("tab exit");
+        assert!(!app.field_cursor.active);
 
-fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
-    let vertical = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Percentage((100 - percent_y) / 2),
-            Constraint::Percentage(percent_y),
-            Constraint::Percentage((100 - percent_y) / 2),
-        ])
-        .split(area);
-
-    Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage((100 - percent_x) / 2),
-            Constraint::Percentage(percent_x),
-            Constraint::Percentage((100 - percent_x) / 2),
-        ])
-        .split(vertical[1])[1]
-}
-
-fn run_local_game(
-    state: GameState,
-    registry: CardRegistryImpl,
-    client1: Box<dyn PhaseClient>,
-    client2: Box<dyn PhaseClient>,
-) -> Result<GameResult> {
-    let engine = GameEngine::new(state, registry, client1, client2);
-    Ok(engine.run())
-}
-
-fn find_scripts_root() -> PathBuf {
-    let candidates = [
-        PathBuf::from("scripts"),
-        PathBuf::from("../../scripts"),
-    ];
-    candidates
-        .iter()
-        .find(|p| p.join("S000").exists())
-        .cloned()
-        .unwrap_or(PathBuf::from("scripts"))
-}
-
-fn build_game_from_decks(
-    player_cards: Vec<CardId>,
-    ai_cards: Vec<CardId>,
-    scripts_root: PathBuf,
-) -> Result<(GameState, CardRegistryImpl)> {
-    let index = ScriptIndex::scan(&scripts_root)
-        .map_err(|e| anyhow::anyhow!("扫描脚本目录失败: {e}"))?;
-    let loader = ScriptLoader::new(index);
-    let registry = loader
-        .load_for_game(&player_cards, &ai_cards)
-        .map_err(|e| anyhow::anyhow!("加载卡片定义失败: {e}"))?;
-
-    let rules = GameRules::default();
-    let mut state = GameState::new(rules, 20260322);
-    let mut next_id = 1u32;
-
-    for card_id in &player_cards {
-        let base_attack = registry
-            .get(card_id)
-            .and_then(|def| def.attack.map(|a| a as i32));
-        state.players[0]
-            .zones
-            .deck
-            .push(CardInstance::new(InstanceId(next_id), card_id.clone(), base_attack));
-        next_id += 1;
+        app.handle_key(key(KeyCode::Tab)).expect("tab re-enter");
+        assert!(app.field_cursor.active);
+        app.handle_key(key(KeyCode::Esc)).expect("esc exit");
+        assert!(!app.field_cursor.active);
     }
 
-    for card_id in &ai_cards {
-        let base_attack = registry
-            .get(card_id)
-            .and_then(|def| def.attack.map(|a| a as i32));
-        state.players[1]
-            .zones
-            .deck
-            .push(CardInstance::new(InstanceId(next_id), card_id.clone(), base_attack));
-        next_id += 1;
+    #[test]
+    fn arrows_move_cursor_only_in_browse_mode() {
+        let mut app = App::new();
+        app.mode = AppMode::InGame;
+
+        app.handle_key(key(KeyCode::Right)).expect("right noop");
+        assert_eq!(*app.field_cursor.current_zone(), FieldZone::MyFront(0));
+
+        app.handle_key(key(KeyCode::Tab)).expect("activate");
+        app.handle_key(key(KeyCode::Right)).expect("move right");
+        assert_eq!(*app.field_cursor.current_zone(), FieldZone::MyFront(1));
+
+        app.handle_key(key(KeyCode::Up)).expect("move up");
+        assert_eq!(
+            *app.field_cursor.current_zone(),
+            FieldZone::OpponentFront(1)
+        );
     }
 
-    Ok((state, registry))
-}
+    #[test]
+    fn quick_keys_jump_to_expected_zones() {
+        let mut app = App::new();
+        app.mode = AppMode::InGame;
+        app.handle_key(key(KeyCode::Tab)).expect("activate");
 
-fn build_demo_state(rules: GameRules) -> (GameState, CardRegistryImpl) {
-    let mut registry = CardRegistryImpl::new();
-    let base_card_id = CardId::new("S000-C-001");
-    registry.insert(CardDefinition::new(
-        base_card_id.clone(),
-        "训练木桩".to_string(),
-        CardType::Character,
-        Property::Rational,
-        Category::Math,
-        1,
-    ));
+        app.handle_key(key(KeyCode::Char('3'))).expect("my front 3");
+        assert_eq!(*app.field_cursor.current_zone(), FieldZone::MyFront(2));
 
-    let mut state = GameState::new(rules, 20260322);
-    let mut next_id = 1u32;
-    for _ in 0..20 {
-        state.players[0].zones.deck.push(CardInstance::new(
-            InstanceId(next_id),
-            base_card_id.clone(),
-            Some(300),
-        ));
-        next_id += 1;
-        state.players[1].zones.deck.push(CardInstance::new(
-            InstanceId(next_id),
-            base_card_id.clone(),
-            Some(300),
-        ));
-        next_id += 1;
+        app.handle_key(key(KeyCode::Char('%'))).expect("my back 5");
+        assert_eq!(*app.field_cursor.current_zone(), FieldZone::MyBack(4));
+
+        app.handle_key(key(KeyCode::Char('h'))).expect("my hand");
+        assert_eq!(*app.field_cursor.current_zone(), FieldZone::MyHand(0));
+
+        app.handle_key(key(KeyCode::Char('c'))).expect("my cost");
+        assert_eq!(*app.field_cursor.current_zone(), FieldZone::MyCostZone(0));
+
+        app.handle_key(key(KeyCode::Char('f')))
+            .expect("opponent front");
+        assert_eq!(
+            *app.field_cursor.current_zone(),
+            FieldZone::OpponentFront(0)
+        );
+
+        app.handle_key(key(KeyCode::Char('b')))
+            .expect("opponent back");
+        assert_eq!(*app.field_cursor.current_zone(), FieldZone::OpponentBack(0));
     }
 
-    (state, registry)
+    #[test]
+    fn pending_action_overlay_keeps_popup_first_key_path() {
+        let mut app = App::new();
+        app.mode = AppMode::InGame;
+        app.pending_actions = Some(vec![PhaseAction::Pass]);
+
+        app.handle_key(key(KeyCode::Tab))
+            .expect("tab while overlay");
+
+        assert!(!app.field_cursor.active);
+        assert!(app.pending_actions.is_some());
+    }
+
+    #[test]
+    fn overlay_minimize_toggle_with_m_key() {
+        let mut app = App::new();
+        app.mode = AppMode::InGame;
+        app.pending_actions = Some(vec![PhaseAction::Pass]);
+        app.overlay_state.visible = true;
+        app.overlay_state.minimized = false;
+        app.overlay_state.overlay_type = OverlayType::ActionSelect;
+
+        app.handle_key(key(KeyCode::Char('m')))
+            .expect("minimize overlay");
+        assert!(app.overlay_state.minimized);
+
+        app.handle_key(key(KeyCode::Char('m')))
+            .expect("restore overlay");
+        assert!(!app.overlay_state.minimized);
+    }
+
+    #[test]
+    fn minimized_overlay_allows_field_cursor_browsing() {
+        let mut app = App::new();
+        app.mode = AppMode::InGame;
+        app.pending_actions = Some(vec![PhaseAction::Pass]);
+        app.overlay_state.visible = true;
+        app.overlay_state.minimized = true;
+        app.overlay_state.overlay_type = OverlayType::ActionSelect;
+
+        app.handle_key(key(KeyCode::Tab))
+            .expect("tab enters field browse when minimized");
+
+        assert!(app.field_cursor.active);
+        assert!(app.pending_actions.is_some());
+    }
+
+    #[test]
+    fn non_minimized_overlay_still_blocks_field_cursor_tab() {
+        let mut app = App::new();
+        app.mode = AppMode::InGame;
+        app.pending_actions = Some(vec![PhaseAction::Pass]);
+        app.overlay_state.visible = true;
+        app.overlay_state.minimized = false;
+        app.overlay_state.overlay_type = OverlayType::ActionSelect;
+
+        app.handle_key(key(KeyCode::Tab))
+            .expect("tab while overlay not minimized");
+
+        assert!(!app.field_cursor.active);
+        assert!(app.pending_actions.is_some());
+    }
 }

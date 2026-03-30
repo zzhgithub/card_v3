@@ -111,6 +111,7 @@ dependencies = [
 name = "card-core"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "chrono",
  "rand",
  "rand_chacha 0.3.1",

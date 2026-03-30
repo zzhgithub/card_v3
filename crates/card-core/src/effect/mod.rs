@@ -14,6 +14,7 @@ use crate::types::{
 mod tests;
 
 pub mod evaluator;
+pub mod text;
 pub use evaluator::{evaluate_condition, resolve_value};
 
 // ─── Core Effect Structure ───────────────────────────────────────────────────

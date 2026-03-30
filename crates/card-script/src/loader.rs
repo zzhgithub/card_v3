@@ -43,16 +43,16 @@ impl ScriptIndex {
 
             if path.is_dir() {
                 Self::scan_dir(&path, entries)?;
-            } else if path.extension().and_then(|e| e.to_str()) == Some("lua") {
-                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
-                    match stem.parse::<CardId>() {
-                        Ok(card_id) => {
-                            debug!("indexed script: {} -> {:?}", stem, path);
-                            entries.insert(card_id, path);
-                        }
-                        Err(_) => {
-                            warn!("skipping non-CardId lua file: {:?}", path);
-                        }
+            } else if path.extension().and_then(|e| e.to_str()) == Some("lua")
+                && let Some(stem) = path.file_stem().and_then(|s| s.to_str())
+            {
+                match stem.parse::<CardId>() {
+                    Ok(card_id) => {
+                        debug!("indexed script: {} -> {:?}", stem, path);
+                        entries.insert(card_id, path);
+                    }
+                    Err(_) => {
+                        warn!("skipping non-CardId lua file: {:?}", path);
                     }
                 }
             }

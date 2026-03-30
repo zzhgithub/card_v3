@@ -1,24 +1,84 @@
 {
-  "active_plan": "/Users/zhouzihao/RustroverProjects/card_v3/.sisyphus/plans/card-game-engine.md",
-  "started_at": "2026-03-13T16:03:12.636Z",
+  "active_plan": "/Users/zhouzihao/RustroverProjects/card_v3/.sisyphus/plans/tui-refactor.md",
+  "started_at": "2026-03-24T14:52:03.979Z",
   "session_ids": [
-    "ses_31d64f4dbffervsaiHEmw0GfK0",
-    "ses_2efa7dea9ffe1jzKoYBttGFSDX",
-    "ses_2ed12a321ffegDgeRBgwcCKZLu",
-    "ses_2ed0d3da9fferqYQsdf8itnhfy",
-    "ses_2eaa7f240ffevaEFMwoQ2cswPU",
-    "ses_2ea7f0212ffeEZ5fhDfqE4NDrk",
-    "ses_2ea6c4f28ffezU8930gDxNveGn",
-    "ses_2ea5e3039ffeYq31EZu8jwWq8h",
-    "ses_2ea5816f1ffeu6cZjBtCvOAQOn",
-    "ses_2ea4f445effeEjQD8ZHilVGKS0",
-    "ses_2ea4517e6ffeXLk9s3cZupLByl",
-    "ses_2ea39ef8bffejCPnURmexr0pUu",
-    "ses_2ea31f473ffeT2k5eDOtUtb3sv",
-    "ses_2ea2b7f0cffeJXWDMYtzVmlOhm",
-    "ses_2ea241eabffeLw89Kck1hn5hoo"
+    "ses_2e4a8d9eaffeWIDz9U4dThsu4z",
+    "ses_2dfa74b50ffeyvATV2fTQPRwYe",
+    "ses_2df937f90ffe4UrUKf9Luic6WL",
+    "ses_2cfaa9a7cffevHq6kJx9InWUcG",
+    "ses_2cfaa9062ffeFzSDNg13uYjC4p",
+    "ses_2cfa77b56ffe6r9mOGSTnPG4Qc",
+    "ses_2cfa72defffe0Vz2Nau0UVUOMc",
+    "ses_2cfa7b3a3ffeoOxM9L451M89mj",
+    "ses_2cac39637ffeb2Cw1WACpEIICP",
+    "ses_2cab474c9ffeu8yc7NPS7DgU4n",
+    "ses_2c8e775e3ffeChnsS5ATMXWLjW",
+    "ses_2c6498424ffewU0VNn5iZoJGsa",
+    "ses_2c6396bafffeJGKkzQprXsF2xU",
+    "ses_2c5b3ac4affeaEmfCXA6YsV5ba",
+    "ses_2c4435ab9ffeY4P6kq4XhsOy4s",
+    "ses_2c439b363ffezL4ZGGFRKxKU3C",
+    "ses_2c43a95d4ffeIjindxpAFKXqO1",
+    "ses_2c439a791ffe4sgTinr9Wr69rZ",
+    "ses_2c417de94ffeFJnRAbiK132S1P"
   ],
-  "plan_name": "card-game-engine",
+  "plan_name": "tui-refactor",
   "worktree_path": "/Users/zhouzihao/RustroverProjects/card_v3",
-  "agent": "atlas"
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:6": {
+      "task_key": "todo:6",
+      "task_label": "6",
+      "task_title": "右侧信息面板（卡片信息+效果文本+状态）",
+      "session_id": "ses_2cab474c9ffeu8yc7NPS7DgU4n",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-03-28T16:46:55.973Z"
+    },
+    "todo:9": {
+      "task_key": "todo:9",
+      "task_label": "9",
+      "task_title": "场地光标导航+高亮+快捷键",
+      "session_id": "ses_2c6498424ffewU0VNn5iZoJGsa",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-03-29T13:22:41.913Z"
+    },
+    "todo:10": {
+      "task_key": "todo:10",
+      "task_label": "10",
+      "task_title": "半透明弹窗系统（可最小化/切换）",
+      "session_id": "ses_2c6396bafffeJGKkzQprXsF2xU",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-03-29T13:37:05.952Z"
+    },
+    "todo:11": {
+      "task_key": "todo:11",
+      "task_label": "11",
+      "task_title": "输入系统重构+快捷键映射",
+      "session_id": "ses_2c5b3ac4affeaEmfCXA6YsV5ba",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-03-29T15:58:38.283Z"
+    },
+    "todo:12": {
+      "task_key": "todo:12",
+      "task_label": "12",
+      "task_title": "全流程集成联调",
+      "session_id": "ses_2c57e8466ffeQLO3YnYMjC9Mt2",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-03-29T17:20:58.860Z"
+    },
+    "todo:13": {
+      "task_key": "todo:13",
+      "task_label": "13",
+      "task_title": "编译检查+clippy清理",
+      "session_id": "ses_2c4435ab9ffeY4P6kq4XhsOy4s",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-low",
+      "updated_at": "2026-03-29T22:43:26.885Z"
+    }
+  }
 }

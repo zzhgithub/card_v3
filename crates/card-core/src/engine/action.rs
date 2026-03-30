@@ -7,9 +7,7 @@ use crate::effect::{Action, Modifier, ModifierDuration};
 use crate::engine::modifier::{ImmunityCheck, ModifierManager};
 use crate::state::events::GameOverReason;
 use crate::state::{CardInstance, CoreGameEvent, GameState};
-use crate::types::{
-    CardId, CardRef, EffectKey, InstanceId, PlayerId, PlayerRef, Zone, ZoneLocation,
-};
+use crate::types::{CardId, CardRef, InstanceId, PlayerId, PlayerRef, Zone, ZoneLocation};
 
 /// Stateless action executor.
 pub struct ActionExecutor;
@@ -45,7 +43,7 @@ impl ActionExecutor {
                 card_id,
                 from_zones,
                 to_zone,
-                no_cost,
+                no_cost: _,
             } => Self::do_summon_from_zone(state, card_id, from_zones, to_zone, perspective),
             Action::ReturnToHand { target } => {
                 if let Some(id) = resolve_card_ref(target, source, targets) {
@@ -155,10 +153,10 @@ impl ActionExecutor {
 
     fn do_destroy(state: &mut GameState, target_id: InstanceId) -> Vec<CoreGameEvent> {
         // Immunity check
-        if let Some((card, _, _)) = state.get_card(target_id) {
-            if ModifierManager::has_immunity(card, &ImmunityCheck::Destruction) {
-                return vec![];
-            }
+        if let Some((card, _, _)) = state.get_card(target_id)
+            && ModifierManager::has_immunity(card, &ImmunityCheck::Destruction)
+        {
+            return vec![];
         }
         for idx in 0..2 {
             if let Some((card, _)) = state.players[idx].zones.remove_card(target_id) {
@@ -195,17 +193,17 @@ impl ActionExecutor {
                 }
             }
         }
-        if let Some(iid) = found_iid {
-            if let Some((card, _)) = state.players[idx].zones.remove_card(iid) {
-                let _ = state.players[idx]
-                    .zones
-                    .add_card_to_zone(card, to_zone.clone());
-                let to = ZoneLocation::new(perspective, to_zone.clone());
-                return vec![CoreGameEvent::CardSummoned {
-                    instance_id: iid,
-                    to,
-                }];
-            }
+        if let Some(iid) = found_iid
+            && let Some((card, _)) = state.players[idx].zones.remove_card(iid)
+        {
+            let _ = state.players[idx]
+                .zones
+                .add_card_to_zone(card, *to_zone);
+            let to = ZoneLocation::new(perspective, *to_zone);
+            return vec![CoreGameEvent::CardSummoned {
+                instance_id: iid,
+                to,
+            }];
         }
         vec![]
     }
@@ -262,29 +260,29 @@ impl ActionExecutor {
     ) -> Vec<CoreGameEvent> {
         for idx in 0..2 {
             for slot in 0..5 {
-                if let Some(card) = state.players[idx].zones.front[slot].as_mut() {
-                    if card.instance_id == target_id {
-                        let old = card.current_attack.unwrap_or(0);
-                        let new = (old + amount as i32).max(0);
-                        card.current_attack = Some(new);
-                        return vec![CoreGameEvent::AttackModified {
-                            instance_id: target_id,
-                            old_attack: old,
-                            new_attack: new,
-                        }];
-                    }
+                if let Some(card) = state.players[idx].zones.front[slot].as_mut()
+                    && card.instance_id == target_id
+                {
+                    let old = card.current_attack.unwrap_or(0);
+                    let new = (old + amount as i32).max(0);
+                    card.current_attack = Some(new);
+                    return vec![CoreGameEvent::AttackModified {
+                        instance_id: target_id,
+                        old_attack: old,
+                        new_attack: new,
+                    }];
                 }
-                if let Some(card) = state.players[idx].zones.back[slot].as_mut() {
-                    if card.instance_id == target_id {
-                        let old = card.current_attack.unwrap_or(0);
-                        let new = (old + amount as i32).max(0);
-                        card.current_attack = Some(new);
-                        return vec![CoreGameEvent::AttackModified {
-                            instance_id: target_id,
-                            old_attack: old,
-                            new_attack: new,
-                        }];
-                    }
+                if let Some(card) = state.players[idx].zones.back[slot].as_mut()
+                    && card.instance_id == target_id
+                {
+                    let old = card.current_attack.unwrap_or(0);
+                    let new = (old + amount as i32).max(0);
+                    card.current_attack = Some(new);
+                    return vec![CoreGameEvent::AttackModified {
+                        instance_id: target_id,
+                        old_attack: old,
+                        new_attack: new,
+                    }];
                 }
             }
         }
@@ -352,17 +350,17 @@ impl ActionExecutor {
     ) -> Vec<CoreGameEvent> {
         for idx in 0..2 {
             for slot in 0..5 {
-                if let Some(card) = state.players[idx].zones.front[slot].as_mut() {
-                    if card.instance_id == target_id {
-                        ModifierManager::apply_modifier(card, modifier, source, duration);
-                        return vec![];
-                    }
+                if let Some(card) = state.players[idx].zones.front[slot].as_mut()
+                    && card.instance_id == target_id
+                {
+                    ModifierManager::apply_modifier(card, modifier, source, duration);
+                    return vec![];
                 }
-                if let Some(card) = state.players[idx].zones.back[slot].as_mut() {
-                    if card.instance_id == target_id {
-                        ModifierManager::apply_modifier(card, modifier, source, duration);
-                        return vec![];
-                    }
+                if let Some(card) = state.players[idx].zones.back[slot].as_mut()
+                    && card.instance_id == target_id
+                {
+                    ModifierManager::apply_modifier(card, modifier, source, duration);
+                    return vec![];
                 }
             }
         }
@@ -376,15 +374,15 @@ impl ActionExecutor {
     ) -> Vec<CoreGameEvent> {
         for idx in 0..2 {
             for slot in 0..5 {
-                if let Some(card) = state.players[idx].zones.front[slot].as_mut() {
-                    if card.instance_id == target_id {
-                        if let Some(i) = card.modifiers.iter().position(|m| {
-                            matches!(&m.modifier, Modifier::Special { key } if key == modifier_key)
-                        }) {
-                            ModifierManager::remove_modifier(card, i);
-                        }
-                        return vec![];
+                if let Some(card) = state.players[idx].zones.front[slot].as_mut()
+                    && card.instance_id == target_id
+                {
+                    if let Some(i) = card.modifiers.iter().position(|m| {
+                        matches!(&m.modifier, Modifier::Special { key } if key == modifier_key)
+                    }) {
+                        ModifierManager::remove_modifier(card, i);
                     }
+                    return vec![];
                 }
             }
         }
@@ -404,7 +402,7 @@ fn resolve_player(player_ref: &PlayerRef, perspective: PlayerId) -> PlayerId {
 fn resolve_card_ref(
     card_ref: &CardRef,
     source: InstanceId,
-    targets: &[InstanceId],
+    _targets: &[InstanceId],
 ) -> Option<InstanceId> {
     match card_ref {
         CardRef::This => Some(source),

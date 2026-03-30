@@ -109,40 +109,40 @@ impl CardFilter {
     }
 
     pub fn matches(&self, card: &CardDefinition) -> bool {
-        if let Some(card_type) = self.card_type {
-            if card.card_type != card_type {
-                return false;
-            }
+        if let Some(card_type) = self.card_type
+            && card.card_type != card_type
+        {
+            return false;
         }
 
-        if let Some(property) = self.property {
-            if card.property != property {
-                return false;
-            }
+        if let Some(property) = self.property
+            && card.property != property
+        {
+            return false;
         }
 
-        if let Some(category) = self.category {
-            if card.category != category {
-                return false;
-            }
+        if let Some(category) = self.category
+            && card.category != category
+        {
+            return false;
         }
 
-        if let Some(ref tags) = self.tags {
-            if !tags.iter().all(|tag| card.tags.contains(tag)) {
-                return false;
-            }
+        if let Some(ref tags) = self.tags
+            && !tags.iter().all(|tag| card.tags.contains(tag))
+        {
+            return false;
         }
 
-        if let Some(min_cost) = self.min_cost {
-            if card.cost < min_cost {
-                return false;
-            }
+        if let Some(min_cost) = self.min_cost
+            && card.cost < min_cost
+        {
+            return false;
         }
 
-        if let Some(max_cost) = self.max_cost {
-            if card.cost > max_cost {
-                return false;
-            }
+        if let Some(max_cost) = self.max_cost
+            && card.cost > max_cost
+        {
+            return false;
         }
 
         true

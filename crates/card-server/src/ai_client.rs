@@ -32,7 +32,7 @@ impl PhaseClient for AiClient {
             return None;
         }
         let mut rng = self.rng.lock().unwrap();
-        let idx = rand_index(&mut *rng, available.len());
+        let idx = rand_index(&mut rng, available.len());
         Some(available[idx].clone())
     }
 
@@ -51,7 +51,7 @@ impl PhaseClient for AiClient {
         let mut selected = Vec::with_capacity(take);
         for i in 0..take {
             let remaining = indices.len() - i;
-            let j = i + rand_index(&mut *rng, remaining);
+            let j = i + rand_index(&mut rng, remaining);
             indices.swap(i, j);
             selected.push(options[indices[i]].instance_id);
         }

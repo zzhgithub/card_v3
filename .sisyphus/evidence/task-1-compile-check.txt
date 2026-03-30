@@ -1,0 +1,58 @@
+warning: unused import: `EffectKey`
+  --> crates/card-core/src/engine/action.rs:11:22
+   |
+11 |     CardId, CardRef, EffectKey, InstanceId, PlayerId, PlayerRef, Zone, ZoneLocation,
+   |                      ^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `no_cost`
+  --> crates/card-core/src/engine/action.rs:48:17
+   |
+48 |                 no_cost,
+   |                 ^^^^^^^ help: try ignoring the field: `no_cost: _`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `targets`
+   --> crates/card-core/src/engine/action.rs:407:5
+    |
+407 |     targets: &[InstanceId],
+    |     ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_targets`
+
+warning: unused variable: `current_client`
+  --> crates/card-core/src/engine/phase.rs:53:13
+   |
+53 |         let current_client = |state: &GameState| -> &dyn PhaseClient {
+   |             ^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_current_client`
+
+warning: `card-core` (lib) generated 4 warnings (run `cargo fix --lib -p card-core` to apply 4 suggestions)
+warning: unused import: `PlayerId`
+ --> crates/card-server/src/replay.rs:8:32
+  |
+8 | use card_core::types::{CardId, PlayerId};
+  |                                ^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `card-server` (lib) generated 1 warning (run `cargo fix --lib -p card-server` to apply 1 suggestion)
+   Compiling card-tui v0.1.0 (/Users/zhouzihao/RustroverProjects/card_v3/crates/card-tui)
+warning: method `start_local_game` is never used
+   --> crates/card-tui/src/app.rs:595:8
+    |
+135 | impl App {
+    | -------- method in this implementation
+...
+595 |     fn start_local_game(&mut self) -> Result<()> {
+    |        ^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `build_demo_state` is never used
+  --> crates/card-tui/src/game_setup.rs:73:8
+   |
+73 | pub fn build_demo_state(rules: GameRules) -> (GameState, CardRegistryImpl) {
+   |        ^^^^^^^^^^^^^^^^
+
+warning: `card-tui` (bin "card-tui") generated 2 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.62s

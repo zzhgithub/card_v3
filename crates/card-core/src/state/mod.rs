@@ -450,17 +450,17 @@ impl GameState {
                 }
             }
             for (i, slot) in player_state.zones.front.iter().enumerate() {
-                if let Some(card) = slot {
-                    if card.instance_id == id {
-                        return Some((card, player_state.id, Zone::Front(i)));
-                    }
+                if let Some(card) = slot
+                    && card.instance_id == id
+                {
+                    return Some((card, player_state.id, Zone::Front(i)));
                 }
             }
             for (i, slot) in player_state.zones.back.iter().enumerate() {
-                if let Some(card) = slot {
-                    if card.instance_id == id {
-                        return Some((card, player_state.id, Zone::Back(i)));
-                    }
+                if let Some(card) = slot
+                    && card.instance_id == id
+                {
+                    return Some((card, player_state.id, Zone::Back(i)));
                 }
             }
             for card in &player_state.zones.cost_zone {
