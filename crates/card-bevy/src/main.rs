@@ -12,8 +12,9 @@ mod ui_components;
 use crate::app_state::{AppState, CreateDeckState, SelectedDeck};
 use crate::deck_detail::{enter_deck_detail, handle_deck_detail_return_button};
 use crate::deck_editor::{
-    enter_deck_editor, handle_cancel_create, handle_confirm_create, handle_create_button,
-    handle_deck_list_interaction, handle_delete_button, handle_text_input_submit, DeckListData,
+    cleanup_create_deck_modal, enter_deck_editor, handle_cancel_create, handle_confirm_create,
+    handle_create_button, handle_deck_list_interaction, handle_delete_button,
+    handle_text_input_submit, DeckListData,
 };
 use crate::local_game::enter_local_game;
 use crate::main_menu::{enter_main_menu, handle_keyboard_navigation, handle_menu_buttons};
@@ -92,6 +93,10 @@ fn main() {
         .add_systems(
             Update,
             handle_delete_button.run_if(in_state(AppState::DeckEditor)),
+        )
+        .add_systems(
+            Update,
+            cleanup_create_deck_modal.run_if(in_state(AppState::DeckEditor)),
         )
         .run();
 }

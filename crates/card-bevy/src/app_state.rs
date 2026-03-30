@@ -50,6 +50,9 @@ pub struct DeckDeleteButton {
 pub struct CreateDeckButton;
 
 #[derive(Component)]
+pub struct CreateDeckModal;
+
+#[derive(Component)]
 pub struct ConfirmCreateButton;
 
 #[derive(Component)]

@@ -1,6 +1,6 @@
 use crate::app_state::{
-    CancelCreateButton, ConfirmCreateButton, CreateDeckButton, CreateDeckState, DeckDeleteButton,
-    DeckListItem, SelectedDeck,
+    CancelCreateButton, ConfirmCreateButton, CreateDeckButton, CreateDeckModal, CreateDeckState,
+    DeckDeleteButton, DeckListItem, SelectedDeck,
 };
 use crate::colors::*;
 use crate::ui_components::{spawn_return_button, spawn_status_bar, spawn_version_display};
@@ -74,10 +74,6 @@ pub fn enter_deck_editor(
                 ..default()
             });
 
-            if create_state.is_inputting {
-                spawn_create_input_ui(parent, &asset_server);
-            }
-
             if deck_list_data.decks.is_empty() {
                 parent.spawn((
                     Text::new("暂无卡组，点击上方按钮创建新卡组"),
@@ -94,6 +90,10 @@ pub fn enter_deck_editor(
                 }
             }
         });
+
+    if create_state.is_inputting {
+        spawn_create_input_ui(&mut commands, &asset_server);
+    }
 }
 
 fn spawn_create_deck_button(parent: &mut ChildSpawnerCommands, asset_server: &AssetServer) {
@@ -125,84 +125,120 @@ fn spawn_create_deck_button(parent: &mut ChildSpawnerCommands, asset_server: &As
         });
 }
 
-fn spawn_create_input_ui(parent: &mut ChildSpawnerCommands, asset_server: &AssetServer) {
+fn spawn_create_input_ui(commands: &mut Commands, asset_server: &AssetServer) {
     let font = asset_server.load(FONT_PATH);
 
-    parent
-        .spawn(Node {
-            flex_direction: FlexDirection::Column,
-            align_items: AlignItems::Center,
-            padding: UiRect::all(Val::Px(20.0)),
-            ..default()
-        })
-        .with_children(|parent| {
-            parent.spawn((
-                Text::new("输入卡组名称:"),
-                TextFont {
-                    font: font.clone(),
-                    font_size: 24.0,
-                    ..default()
-                },
-                TextColor(COLOR_TEXT),
-            ));
-
-            parent.spawn(Node {
-                height: Val::Px(10.0),
+    commands
+        .spawn((
+            Node {
+                position_type: PositionType::Absolute,
+                left: Val::Px(0.0),
+                right: Val::Px(0.0),
+                top: Val::Px(0.0),
+                bottom: Val::Px(0.0),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
                 ..default()
-            });
-
+            },
+            BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.7)),
+            CreateDeckModal,
+            ZIndex(100),
+        ))
+        .with_children(|parent| {
             parent
                 .spawn((
                     Node {
-                        width: Val::Px(300.0),
-                        height: Val::Px(50.0),
-                        padding: UiRect::all(Val::Px(10.0)),
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
+                        padding: UiRect::all(Val::Px(30.0)),
                         ..default()
                     },
-                    BackgroundColor(Color::srgb(0.15, 0.15, 0.2)),
+                    BackgroundColor(Color::srgb(0.2, 0.2, 0.25)),
                 ))
                 .with_children(|parent| {
                     parent.spawn((
-                        TextInput,
-                        Node {
-                            width: Val::Percent(100.0),
-                            height: Val::Percent(100.0),
+                        Text::new("创建新卡组"),
+                        TextFont {
+                            font: font.clone(),
+                            font_size: 28.0,
                             ..default()
                         },
-                        bevy_simple_text_input::TextInputTextFont(TextFont {
+                        TextColor(COLOR_TEXT),
+                    ));
+
+                    parent.spawn(Node {
+                        height: Val::Px(20.0),
+                        ..default()
+                    });
+
+                    parent.spawn((
+                        Text::new("输入卡组名称:"),
+                        TextFont {
                             font: font.clone(),
                             font_size: 20.0,
                             ..default()
-                        }),
-                        bevy_simple_text_input::TextInputTextColor(TextColor(COLOR_TEXT)),
-                        TextInputPlaceholder {
-                            value: "点击输入名称...".to_string(),
-                            text_font: Some(TextFont {
-                                font: font.clone(),
-                                font_size: 20.0,
-                                ..default()
-                            }),
-                            text_color: Some(TextColor(COLOR_TEXT_DIM)),
-                            hide_on_focus: true,
                         },
-                        TextInputInactive(false),
+                        TextColor(COLOR_TEXT_DIM),
                     ));
-                });
 
-            parent.spawn(Node {
-                height: Val::Px(10.0),
-                ..default()
-            });
+                    parent.spawn(Node {
+                        height: Val::Px(10.0),
+                        ..default()
+                    });
 
-            parent
-                .spawn(Node {
-                    flex_direction: FlexDirection::Row,
-                    column_gap: Val::Px(20.0),
-                    ..default()
-                })
-                .with_children(|parent| {
-                    spawn_confirm_button(parent, asset_server);
-                    spawn_cancel_button(parent, asset_server);
+                    parent
+                        .spawn((
+                            Node {
+                                width: Val::Px(300.0),
+                                height: Val::Px(50.0),
+                                padding: UiRect::all(Val::Px(10.0)),
+                                ..default()
+                            },
+                            BackgroundColor(Color::srgb(0.15, 0.15, 0.2)),
+                        ))
+                        .with_children(|parent| {
+                            parent.spawn((
+                                TextInput,
+                                Node {
+                                    width: Val::Percent(100.0),
+                                    height: Val::Percent(100.0),
+                                    ..default()
+                                },
+                                bevy_simple_text_input::TextInputTextFont(TextFont {
+                                    font: font.clone(),
+                                    font_size: 20.0,
+                                    ..default()
+                                }),
+                                bevy_simple_text_input::TextInputTextColor(TextColor(COLOR_TEXT)),
+                                TextInputPlaceholder {
+                                    value: "在此输入卡组名称...".to_string(),
+                                    text_font: Some(TextFont {
+                                        font: font.clone(),
+                                        font_size: 20.0,
+                                        ..default()
+                                    }),
+                                    text_color: Some(TextColor(COLOR_TEXT_DIM)),
+                                    hide_on_focus: true,
+                                },
+                                TextInputInactive(false),
+                            ));
+                        });
+
+                    parent.spawn(Node {
+                        height: Val::Px(20.0),
+                        ..default()
+                    });
+
+                    parent
+                        .spawn(Node {
+                            flex_direction: FlexDirection::Row,
+                            column_gap: Val::Px(20.0),
+                            ..default()
+                        })
+                        .with_children(|parent| {
+                            spawn_confirm_button(parent, asset_server);
+                            spawn_cancel_button(parent, asset_server);
+                        });
                 });
         });
 }
@@ -541,4 +577,16 @@ fn get_desks_directory() -> PathBuf {
     }
 
     PathBuf::from("desks")
+}
+
+pub fn cleanup_create_deck_modal(
+    mut commands: Commands,
+    create_state: Res<CreateDeckState>,
+    modal_query: Query<Entity, With<CreateDeckModal>>,
+) {
+    if !create_state.is_inputting {
+        for entity in modal_query.iter() {
+            commands.entity(entity).despawn();
+        }
+    }
 }
