@@ -185,7 +185,7 @@ fn spawn_create_input_ui(parent: &mut ChildSpawnerCommands, asset_server: &Asset
                             text_color: Some(TextColor(COLOR_TEXT_DIM)),
                             hide_on_focus: true,
                         },
-                        TextInputInactive(true),
+                        TextInputInactive(false),
                     ));
                 });
 
@@ -423,11 +423,19 @@ pub fn handle_text_input_submit(
     mut messages: MessageReader<TextInputSubmitMessage>,
     mut create_state: ResMut<CreateDeckState>,
     mut deck_list_data: ResMut<DeckListData>,
+    mut selected_deck: ResMut<SelectedDeck>,
+    mut next_state: ResMut<NextState<AppState>>,
 ) {
     for message in messages.read() {
         let deck_name = message.value.trim();
         if !deck_name.is_empty() {
-            create_deck(deck_name, &mut deck_list_data);
+            if let Some(file_path) = create_deck(deck_name, &mut deck_list_data) {
+                selected_deck.name = deck_name.to_string();
+                if let Ok(deck) = DeckManager::load(&file_path) {
+                    selected_deck.cards = deck.cards.iter().map(|c| c.to_string()).collect();
+                }
+                next_state.set(AppState::DeckEditorDetail);
+            }
         }
         create_state.is_inputting = false;
     }
@@ -437,6 +445,8 @@ pub fn handle_confirm_create(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<ConfirmCreateButton>)>,
     mut create_state: ResMut<CreateDeckState>,
     mut deck_list_data: ResMut<DeckListData>,
+    mut selected_deck: ResMut<SelectedDeck>,
+    mut next_state: ResMut<NextState<AppState>>,
     text_input_query: Query<&TextInputValue>,
 ) {
     for interaction in &mut interaction_query {
@@ -444,7 +454,14 @@ pub fn handle_confirm_create(
             for text_value in text_input_query.iter() {
                 let deck_name = text_value.0.trim();
                 if !deck_name.is_empty() {
-                    create_deck(deck_name, &mut deck_list_data);
+                    if let Some(file_path) = create_deck(deck_name, &mut deck_list_data) {
+                        selected_deck.name = deck_name.to_string();
+                        if let Ok(deck) = DeckManager::load(&file_path) {
+                            selected_deck.cards =
+                                deck.cards.iter().map(|c| c.to_string()).collect();
+                        }
+                        next_state.set(AppState::DeckEditorDetail);
+                    }
                 }
             }
             create_state.is_inputting = false;
@@ -452,13 +469,13 @@ pub fn handle_confirm_create(
     }
 }
 
-fn create_deck(deck_name: &str, deck_list_data: &mut ResMut<DeckListData>) {
+fn create_deck(deck_name: &str, deck_list_data: &mut ResMut<DeckListData>) -> Option<PathBuf> {
     let desk_dir = get_desks_directory();
 
     if !desk_dir.exists() {
         if let Err(e) = std::fs::create_dir_all(&desk_dir) {
             eprintln!("Failed to create desks directory: {}", e);
-            return;
+            return None;
         }
     }
 
@@ -468,8 +485,10 @@ fn create_deck(deck_name: &str, deck_list_data: &mut ResMut<DeckListData>) {
     let new_deck = Deck::new(deck_name);
     if let Err(e) = DeckManager::save(&file_path, &new_deck) {
         eprintln!("Failed to create deck: {}", e);
+        None
     } else {
         deck_list_data.decks = DeckManager::list_decks(&desk_dir).unwrap_or_default();
+        Some(file_path)
     }
 }
 
