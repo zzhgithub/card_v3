@@ -50,11 +50,6 @@ pub struct DeckDeleteButton {
 pub struct CreateDeckButton;
 
 #[derive(Component)]
-pub struct DeckNameInput {
-    pub value: String,
-}
-
-#[derive(Component)]
 pub struct ConfirmCreateButton;
 
 #[derive(Component)]
@@ -72,5 +67,4 @@ pub struct SelectedDeck {
 #[derive(Resource, Default)]
 pub struct CreateDeckState {
     pub is_inputting: bool,
-    pub deck_name: String,
 }
