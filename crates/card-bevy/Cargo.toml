@@ -9,5 +9,6 @@ path = "src/main.rs"
 
 [dependencies]
 bevy = { version = "0.18", features = ["wayland"] }
+bevy_simple_text_input = "0.14"
 card-core = { path = "../card-core" }
 card-client = { path = "../card-client" }

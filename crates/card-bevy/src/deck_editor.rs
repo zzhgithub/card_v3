@@ -1,11 +1,14 @@
 use crate::app_state::{
     CancelCreateButton, ConfirmCreateButton, CreateDeckButton, CreateDeckState, DeckDeleteButton,
-    DeckListItem, DeckNameInput, SelectedDeck,
+    DeckListItem, SelectedDeck,
 };
 use crate::colors::*;
 use crate::ui_components::{spawn_return_button, spawn_status_bar, spawn_version_display};
 use crate::AppState;
 use bevy::prelude::*;
+use bevy_simple_text_input::{
+    TextInput, TextInputInactive, TextInputPlaceholder, TextInputSubmitMessage, TextInputValue,
+};
 use card_core::deck::{Deck, DeckManager, DeckSummary};
 use std::path::PathBuf;
 
@@ -17,12 +20,15 @@ pub struct DeckListData {
 pub fn enter_deck_editor(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    deck_list_data: Res<DeckListData>,
+    mut deck_list_data: ResMut<DeckListData>,
     create_state: Res<CreateDeckState>,
 ) {
     spawn_version_display(&mut commands, &asset_server);
     spawn_status_bar(&mut commands, &asset_server, "卡组编辑");
     spawn_return_button(&mut commands, &asset_server);
+
+    let desk_dir = get_desks_directory();
+    deck_list_data.decks = DeckManager::list_decks(&desk_dir).unwrap_or_default();
 
     let font = asset_server.load(FONT_PATH);
 
@@ -69,7 +75,7 @@ pub fn enter_deck_editor(
             });
 
             if create_state.is_inputting {
-                spawn_create_input_ui(parent, &asset_server, &create_state.deck_name);
+                spawn_create_input_ui(parent, &asset_server);
             }
 
             if deck_list_data.decks.is_empty() {
@@ -119,11 +125,7 @@ fn spawn_create_deck_button(parent: &mut ChildSpawnerCommands, asset_server: &As
         });
 }
 
-fn spawn_create_input_ui(
-    parent: &mut ChildSpawnerCommands,
-    asset_server: &AssetServer,
-    current_value: &str,
-) {
+fn spawn_create_input_ui(parent: &mut ChildSpawnerCommands, asset_server: &AssetServer) {
     let font = asset_server.load(FONT_PATH);
 
     parent
@@ -154,33 +156,36 @@ fn spawn_create_input_ui(
                     Node {
                         width: Val::Px(300.0),
                         height: Val::Px(50.0),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
+                        padding: UiRect::all(Val::Px(10.0)),
                         ..default()
                     },
-                    BackgroundColor(Color::srgb(0.2, 0.2, 0.25)),
-                    DeckNameInput {
-                        value: current_value.to_string(),
-                    },
+                    BackgroundColor(Color::srgb(0.15, 0.15, 0.2)),
                 ))
                 .with_children(|parent| {
-                    let display_text = if current_value.is_empty() {
-                        "点击输入名称...".to_string()
-                    } else {
-                        current_value.to_string()
-                    };
                     parent.spawn((
-                        Text::new(display_text),
-                        TextFont {
+                        TextInput,
+                        Node {
+                            width: Val::Percent(100.0),
+                            height: Val::Percent(100.0),
+                            ..default()
+                        },
+                        bevy_simple_text_input::TextInputTextFont(TextFont {
                             font: font.clone(),
                             font_size: 20.0,
                             ..default()
-                        },
-                        TextColor(if current_value.is_empty() {
-                            COLOR_TEXT_DIM
-                        } else {
-                            COLOR_TEXT
                         }),
+                        bevy_simple_text_input::TextInputTextColor(TextColor(COLOR_TEXT)),
+                        TextInputPlaceholder {
+                            value: "点击输入名称...".to_string(),
+                            text_font: Some(TextFont {
+                                font: font.clone(),
+                                font_size: 20.0,
+                                ..default()
+                            }),
+                            text_color: Some(TextColor(COLOR_TEXT_DIM)),
+                            hide_on_focus: true,
+                        },
+                        TextInputInactive(true),
                     ));
                 });
 
@@ -403,7 +408,6 @@ pub fn handle_create_button(
         match *interaction {
             Interaction::Pressed => {
                 create_state.is_inputting = true;
-                create_state.deck_name.clear();
             }
             Interaction::Hovered => {
                 *color = BackgroundColor(Color::srgb(0.3, 0.9, 0.4));
@@ -415,71 +419,17 @@ pub fn handle_create_button(
     }
 }
 
-pub fn handle_name_input(
-    mut input_query: Query<&Interaction, (Changed<Interaction>, With<DeckNameInput>)>,
-    keyboard: Res<ButtonInput<KeyCode>>,
+pub fn handle_text_input_submit(
+    mut messages: MessageReader<TextInputSubmitMessage>,
     mut create_state: ResMut<CreateDeckState>,
+    mut deck_list_data: ResMut<DeckListData>,
 ) {
-    for _interaction in &mut input_query {
-        if create_state.is_inputting {
-            for key in keyboard.get_just_pressed() {
-                match key {
-                    KeyCode::Backspace => {
-                        create_state.deck_name.pop();
-                    }
-                    KeyCode::Space => {
-                        create_state.deck_name.push(' ');
-                    }
-                    _ => {
-                        if let Some(c) = key_code_to_char(*key) {
-                            create_state.deck_name.push(c);
-                        }
-                    }
-                }
-            }
+    for message in messages.read() {
+        let deck_name = message.value.trim();
+        if !deck_name.is_empty() {
+            create_deck(deck_name, &mut deck_list_data);
         }
-    }
-}
-
-fn key_code_to_char(key: KeyCode) -> Option<char> {
-    match key {
-        KeyCode::KeyA => Some('a'),
-        KeyCode::KeyB => Some('b'),
-        KeyCode::KeyC => Some('c'),
-        KeyCode::KeyD => Some('d'),
-        KeyCode::KeyE => Some('e'),
-        KeyCode::KeyF => Some('f'),
-        KeyCode::KeyG => Some('g'),
-        KeyCode::KeyH => Some('h'),
-        KeyCode::KeyI => Some('i'),
-        KeyCode::KeyJ => Some('j'),
-        KeyCode::KeyK => Some('k'),
-        KeyCode::KeyL => Some('l'),
-        KeyCode::KeyM => Some('m'),
-        KeyCode::KeyN => Some('n'),
-        KeyCode::KeyO => Some('o'),
-        KeyCode::KeyP => Some('p'),
-        KeyCode::KeyQ => Some('q'),
-        KeyCode::KeyR => Some('r'),
-        KeyCode::KeyS => Some('s'),
-        KeyCode::KeyT => Some('t'),
-        KeyCode::KeyU => Some('u'),
-        KeyCode::KeyV => Some('v'),
-        KeyCode::KeyW => Some('w'),
-        KeyCode::KeyX => Some('x'),
-        KeyCode::KeyY => Some('y'),
-        KeyCode::KeyZ => Some('z'),
-        KeyCode::Digit0 => Some('0'),
-        KeyCode::Digit1 => Some('1'),
-        KeyCode::Digit2 => Some('2'),
-        KeyCode::Digit3 => Some('3'),
-        KeyCode::Digit4 => Some('4'),
-        KeyCode::Digit5 => Some('5'),
-        KeyCode::Digit6 => Some('6'),
-        KeyCode::Digit7 => Some('7'),
-        KeyCode::Digit8 => Some('8'),
-        KeyCode::Digit9 => Some('9'),
-        _ => None,
+        create_state.is_inputting = false;
     }
 }
 
@@ -487,25 +437,39 @@ pub fn handle_confirm_create(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<ConfirmCreateButton>)>,
     mut create_state: ResMut<CreateDeckState>,
     mut deck_list_data: ResMut<DeckListData>,
+    text_input_query: Query<&TextInputValue>,
 ) {
     for interaction in &mut interaction_query {
         if *interaction == Interaction::Pressed {
-            let deck_name = create_state.deck_name.trim();
-            if !deck_name.is_empty() {
-                let desk_dir = get_desks_directory();
-                let file_name = format!("{}.json", deck_name);
-                let file_path = desk_dir.join(&file_name);
-
-                let new_deck = Deck::new(deck_name);
-                if let Err(e) = DeckManager::save(&file_path, &new_deck) {
-                    eprintln!("Failed to create deck: {}", e);
-                } else {
-                    deck_list_data.decks = DeckManager::list_decks(&desk_dir).unwrap_or_default();
+            for text_value in text_input_query.iter() {
+                let deck_name = text_value.0.trim();
+                if !deck_name.is_empty() {
+                    create_deck(deck_name, &mut deck_list_data);
                 }
             }
             create_state.is_inputting = false;
-            create_state.deck_name.clear();
         }
+    }
+}
+
+fn create_deck(deck_name: &str, deck_list_data: &mut ResMut<DeckListData>) {
+    let desk_dir = get_desks_directory();
+
+    if !desk_dir.exists() {
+        if let Err(e) = std::fs::create_dir_all(&desk_dir) {
+            eprintln!("Failed to create desks directory: {}", e);
+            return;
+        }
+    }
+
+    let file_name = format!("{}.json", deck_name);
+    let file_path = desk_dir.join(&file_name);
+
+    let new_deck = Deck::new(deck_name);
+    if let Err(e) = DeckManager::save(&file_path, &new_deck) {
+        eprintln!("Failed to create deck: {}", e);
+    } else {
+        deck_list_data.decks = DeckManager::list_decks(&desk_dir).unwrap_or_default();
     }
 }
 
@@ -516,7 +480,6 @@ pub fn handle_cancel_create(
     for interaction in &mut interaction_query {
         if *interaction == Interaction::Pressed {
             create_state.is_inputting = false;
-            create_state.deck_name.clear();
         }
     }
 }

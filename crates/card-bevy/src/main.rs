@@ -13,7 +13,7 @@ use crate::app_state::{AppState, CreateDeckState, SelectedDeck};
 use crate::deck_detail::{enter_deck_detail, handle_deck_detail_return_button};
 use crate::deck_editor::{
     enter_deck_editor, handle_cancel_create, handle_confirm_create, handle_create_button,
-    handle_deck_list_interaction, handle_delete_button, handle_name_input, DeckListData,
+    handle_deck_list_interaction, handle_delete_button, handle_text_input_submit, DeckListData,
 };
 use crate::local_game::enter_local_game;
 use crate::main_menu::{enter_main_menu, handle_keyboard_navigation, handle_menu_buttons};
@@ -22,19 +22,23 @@ use crate::settings::{enter_settings, handle_return_button};
 use crate::splash::{enter_splash_screen, exit_splash_screen, update_splash_screen};
 use crate::ui_components::cleanup_ui;
 use bevy::prelude::*;
+use bevy_simple_text_input::TextInputPlugin;
 
 fn main() {
     App::new()
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            primary_window: Some(Window {
-                title: "Card Game".to_string(),
-                mode: bevy::window::WindowMode::BorderlessFullscreen(
-                    bevy::window::MonitorSelection::Current,
-                ),
+        .add_plugins((
+            DefaultPlugins.set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Card Game".to_string(),
+                    mode: bevy::window::WindowMode::BorderlessFullscreen(
+                        bevy::window::MonitorSelection::Current,
+                    ),
+                    ..default()
+                }),
                 ..default()
             }),
-            ..default()
-        }))
+            TextInputPlugin,
+        ))
         .init_state::<AppState>()
         .init_resource::<SelectedDeck>()
         .init_resource::<DeckListData>()
@@ -75,7 +79,7 @@ fn main() {
         )
         .add_systems(
             Update,
-            handle_name_input.run_if(in_state(AppState::DeckEditor)),
+            handle_text_input_submit.run_if(in_state(AppState::DeckEditor)),
         )
         .add_systems(
             Update,
