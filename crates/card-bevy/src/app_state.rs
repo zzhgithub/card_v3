@@ -47,6 +47,9 @@ pub struct DeckDeleteButton {
 }
 
 #[derive(Component)]
+pub struct DeckListContainer;
+
+#[derive(Component)]
 pub struct CreateDeckButton;
 
 #[derive(Component)]
@@ -57,6 +60,9 @@ pub struct ConfirmCreateButton;
 
 #[derive(Component)]
 pub struct CancelCreateButton;
+
+#[derive(Component)]
+pub struct ImeTextInput;
 
 #[derive(Component)]
 pub struct DeckDetailReturnButton;

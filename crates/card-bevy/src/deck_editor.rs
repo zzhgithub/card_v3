@@ -1,14 +1,14 @@
 use crate::app_state::{
     CancelCreateButton, ConfirmCreateButton, CreateDeckButton, CreateDeckModal, CreateDeckState,
-    DeckDeleteButton, DeckListItem, SelectedDeck,
+    DeckDeleteButton, DeckListContainer, DeckListItem, ImeTextInput, SelectedDeck,
 };
 use crate::colors::*;
 use crate::ui_components::{spawn_return_button, spawn_status_bar, spawn_version_display};
 use crate::AppState;
+use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
-use bevy_simple_text_input::{
-    TextInput, TextInputInactive, TextInputPlaceholder, TextInputSubmitMessage, TextInputValue,
-};
+use bevy::window::Ime;
+
 use card_core::deck::{Deck, DeckManager, DeckSummary};
 use std::path::PathBuf;
 
@@ -21,7 +21,6 @@ pub fn enter_deck_editor(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut deck_list_data: ResMut<DeckListData>,
-    create_state: Res<CreateDeckState>,
 ) {
     spawn_version_display(&mut commands, &asset_server);
     spawn_status_bar(&mut commands, &asset_server, "卡组编辑");
@@ -74,25 +73,46 @@ pub fn enter_deck_editor(
                 ..default()
             });
 
-            if deck_list_data.decks.is_empty() {
-                parent.spawn((
-                    Text::new("暂无卡组，点击上方按钮创建新卡组"),
-                    TextFont {
-                        font: font.clone(),
-                        font_size: 24.0,
+            // Deck list container - will be rebuilt when data changes
+            parent
+                .spawn((
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        align_items: AlignItems::Center,
                         ..default()
                     },
-                    TextColor(COLOR_TEXT_DIM),
-                ));
-            } else {
-                for deck in deck_list_data.decks.iter() {
-                    spawn_deck_list_item(parent, &asset_server, deck);
-                }
-            }
+                    DeckListContainer,
+                ))
+                .with_children(|parent| {
+                    if deck_list_data.decks.is_empty() {
+                        parent.spawn((
+                            Text::new("暂无卡组，点击上方按钮创建新卡组"),
+                            TextFont {
+                                font: font.clone(),
+                                font_size: 24.0,
+                                ..default()
+                            },
+                            TextColor(COLOR_TEXT_DIM),
+                        ));
+                    } else {
+                        for deck in deck_list_data.decks.iter() {
+                            spawn_deck_list_item(parent, &asset_server, deck);
+                        }
+                    }
+                });
         });
+}
 
-    if create_state.is_inputting {
-        spawn_create_input_ui(&mut commands, &asset_server);
+pub fn spawn_modal_on_demand(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    create_state: Res<CreateDeckState>,
+    modal_query: Query<Entity, With<CreateDeckModal>>,
+) {
+    if create_state.is_changed() {
+        if create_state.is_inputting && modal_query.is_empty() {
+            spawn_create_input_ui(&mut commands, &asset_server);
+        }
     }
 }
 
@@ -198,29 +218,14 @@ fn spawn_create_input_ui(commands: &mut Commands, asset_server: &AssetServer) {
                         ))
                         .with_children(|parent| {
                             parent.spawn((
-                                TextInput,
-                                Node {
-                                    width: Val::Percent(100.0),
-                                    height: Val::Percent(100.0),
-                                    ..default()
-                                },
-                                bevy_simple_text_input::TextInputTextFont(TextFont {
+                                Text::new(""),
+                                TextFont {
                                     font: font.clone(),
                                     font_size: 20.0,
                                     ..default()
-                                }),
-                                bevy_simple_text_input::TextInputTextColor(TextColor(COLOR_TEXT)),
-                                TextInputPlaceholder {
-                                    value: "在此输入卡组名称...".to_string(),
-                                    text_font: Some(TextFont {
-                                        font: font.clone(),
-                                        font_size: 20.0,
-                                        ..default()
-                                    }),
-                                    text_color: Some(TextColor(COLOR_TEXT_DIM)),
-                                    hide_on_focus: true,
                                 },
-                                TextInputInactive(false),
+                                TextColor(COLOR_TEXT),
+                                ImeTextInput,
                             ));
                         });
 
@@ -455,40 +460,18 @@ pub fn handle_create_button(
     }
 }
 
-pub fn handle_text_input_submit(
-    mut messages: MessageReader<TextInputSubmitMessage>,
-    mut create_state: ResMut<CreateDeckState>,
-    mut deck_list_data: ResMut<DeckListData>,
-    mut selected_deck: ResMut<SelectedDeck>,
-    mut next_state: ResMut<NextState<AppState>>,
-) {
-    for message in messages.read() {
-        let deck_name = message.value.trim();
-        if !deck_name.is_empty() {
-            if let Some(file_path) = create_deck(deck_name, &mut deck_list_data) {
-                selected_deck.name = deck_name.to_string();
-                if let Ok(deck) = DeckManager::load(&file_path) {
-                    selected_deck.cards = deck.cards.iter().map(|c| c.to_string()).collect();
-                }
-                next_state.set(AppState::DeckEditorDetail);
-            }
-        }
-        create_state.is_inputting = false;
-    }
-}
-
 pub fn handle_confirm_create(
     mut interaction_query: Query<&Interaction, (Changed<Interaction>, With<ConfirmCreateButton>)>,
     mut create_state: ResMut<CreateDeckState>,
     mut deck_list_data: ResMut<DeckListData>,
     mut selected_deck: ResMut<SelectedDeck>,
     mut next_state: ResMut<NextState<AppState>>,
-    text_input_query: Query<&TextInputValue>,
+    text_query: Query<&Text, With<ImeTextInput>>,
 ) {
     for interaction in &mut interaction_query {
         if *interaction == Interaction::Pressed {
-            for text_value in text_input_query.iter() {
-                let deck_name = text_value.0.trim();
+            for text in text_query.iter() {
+                let deck_name = text.0.trim();
                 if !deck_name.is_empty() {
                     if let Some(file_path) = create_deck(deck_name, &mut deck_list_data) {
                         selected_deck.name = deck_name.to_string();
@@ -588,5 +571,159 @@ pub fn cleanup_create_deck_modal(
         for entity in modal_query.iter() {
             commands.entity(entity).despawn();
         }
+    }
+}
+
+pub fn rebuild_deck_list(
+    mut commands: Commands,
+    deck_list_data: Res<DeckListData>,
+    asset_server: Res<AssetServer>,
+    container_query: Query<(Entity, Option<&Children>), With<DeckListContainer>>,
+) {
+    if deck_list_data.is_changed() {
+        let font = asset_server.load(FONT_PATH);
+
+        for (container_entity, children) in container_query.iter() {
+            if let Some(children) = children {
+                for child in children.iter() {
+                    commands.entity(child).despawn();
+                }
+            }
+
+            commands.entity(container_entity).with_children(|parent| {
+                if deck_list_data.decks.is_empty() {
+                    parent.spawn((
+                        Text::new("暂无卡组，点击上方按钮创建新卡组"),
+                        TextFont {
+                            font: font.clone(),
+                            font_size: 24.0,
+                            ..default()
+                        },
+                        TextColor(COLOR_TEXT_DIM),
+                    ));
+                } else {
+                    for deck in deck_list_data.decks.iter() {
+                        spawn_deck_list_item(parent, &asset_server, deck);
+                    }
+                }
+            });
+        }
+    }
+}
+
+/// Handle keyboard and IME events for text input
+/// Supports both regular keyboard input and Chinese IME composition
+pub fn handle_ime_text_input(
+    mut key_events: MessageReader<KeyboardInput>,
+    mut ime_events: MessageReader<Ime>,
+    mut text_query: Query<&mut Text, With<ImeTextInput>>,
+    key_input: Res<ButtonInput<KeyCode>>,
+) {
+    // Track if IME is currently composing (preedit state)
+    static mut IME_COMPOSING: bool = false;
+
+    for event in ime_events.read() {
+        match event {
+            Ime::Preedit { .. } => unsafe {
+                IME_COMPOSING = true;
+            },
+            Ime::Commit { value, .. } => {
+                unsafe {
+                    IME_COMPOSING = false;
+                }
+                for mut text in text_query.iter_mut() {
+                    text.0.push_str(value);
+                }
+            }
+            Ime::Enabled { .. } => unsafe {
+                IME_COMPOSING = true;
+            },
+            Ime::Disabled { .. } => unsafe {
+                IME_COMPOSING = false;
+            },
+        }
+    }
+
+    // Only process keyboard input when not in IME composition mode
+    let composing = unsafe { IME_COMPOSING };
+    if !composing {
+        for event in key_events.read() {
+            if !event.state.is_pressed() {
+                continue;
+            }
+
+            for mut text in text_query.iter_mut() {
+                match event.key_code {
+                    KeyCode::Backspace => {
+                        text.0.pop();
+                    }
+                    _ => {
+                        // Handle regular character input when not using IME
+                        if let Some(char) = keycode_to_char(
+                            event.key_code,
+                            key_input.pressed(KeyCode::ShiftLeft)
+                                || key_input.pressed(KeyCode::ShiftRight),
+                        ) {
+                            text.0.push(char);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Convert KeyCode to character (basic implementation for non-IME input)
+fn keycode_to_char(key_code: KeyCode, shift: bool) -> Option<char> {
+    match key_code {
+        KeyCode::KeyA => Some(if shift { 'A' } else { 'a' }),
+        KeyCode::KeyB => Some(if shift { 'B' } else { 'b' }),
+        KeyCode::KeyC => Some(if shift { 'C' } else { 'c' }),
+        KeyCode::KeyD => Some(if shift { 'D' } else { 'd' }),
+        KeyCode::KeyE => Some(if shift { 'E' } else { 'e' }),
+        KeyCode::KeyF => Some(if shift { 'F' } else { 'f' }),
+        KeyCode::KeyG => Some(if shift { 'G' } else { 'g' }),
+        KeyCode::KeyH => Some(if shift { 'H' } else { 'h' }),
+        KeyCode::KeyI => Some(if shift { 'I' } else { 'i' }),
+        KeyCode::KeyJ => Some(if shift { 'J' } else { 'j' }),
+        KeyCode::KeyK => Some(if shift { 'K' } else { 'k' }),
+        KeyCode::KeyL => Some(if shift { 'L' } else { 'l' }),
+        KeyCode::KeyM => Some(if shift { 'M' } else { 'm' }),
+        KeyCode::KeyN => Some(if shift { 'N' } else { 'n' }),
+        KeyCode::KeyO => Some(if shift { 'O' } else { 'o' }),
+        KeyCode::KeyP => Some(if shift { 'P' } else { 'p' }),
+        KeyCode::KeyQ => Some(if shift { 'Q' } else { 'q' }),
+        KeyCode::KeyR => Some(if shift { 'R' } else { 'r' }),
+        KeyCode::KeyS => Some(if shift { 'S' } else { 's' }),
+        KeyCode::KeyT => Some(if shift { 'T' } else { 't' }),
+        KeyCode::KeyU => Some(if shift { 'U' } else { 'u' }),
+        KeyCode::KeyV => Some(if shift { 'V' } else { 'v' }),
+        KeyCode::KeyW => Some(if shift { 'W' } else { 'w' }),
+        KeyCode::KeyX => Some(if shift { 'X' } else { 'x' }),
+        KeyCode::KeyY => Some(if shift { 'Y' } else { 'y' }),
+        KeyCode::KeyZ => Some(if shift { 'Z' } else { 'z' }),
+        KeyCode::Digit0 => Some(if shift { ')' } else { '0' }),
+        KeyCode::Digit1 => Some(if shift { '!' } else { '1' }),
+        KeyCode::Digit2 => Some(if shift { '@' } else { '2' }),
+        KeyCode::Digit3 => Some(if shift { '#' } else { '3' }),
+        KeyCode::Digit4 => Some(if shift { '$' } else { '4' }),
+        KeyCode::Digit5 => Some(if shift { '%' } else { '5' }),
+        KeyCode::Digit6 => Some(if shift { '^' } else { '6' }),
+        KeyCode::Digit7 => Some(if shift { '&' } else { '7' }),
+        KeyCode::Digit8 => Some(if shift { '*' } else { '8' }),
+        KeyCode::Digit9 => Some(if shift { '(' } else { '9' }),
+        KeyCode::Space => Some(' '),
+        KeyCode::Minus => Some(if shift { '_' } else { '-' }),
+        KeyCode::Equal => Some(if shift { '+' } else { '=' }),
+        KeyCode::BracketLeft => Some(if shift { '{' } else { '[' }),
+        KeyCode::BracketRight => Some(if shift { '}' } else { ']' }),
+        KeyCode::Backslash => Some(if shift { '|' } else { '\\' }),
+        KeyCode::Semicolon => Some(if shift { ':' } else { ';' }),
+        KeyCode::Quote => Some(if shift { '"' } else { '\'' }),
+        KeyCode::Comma => Some(if shift { '<' } else { ',' }),
+        KeyCode::Period => Some(if shift { '>' } else { '.' }),
+        KeyCode::Slash => Some(if shift { '?' } else { '/' }),
+        KeyCode::Backquote => Some(if shift { '~' } else { '`' }),
+        _ => None,
     }
 }

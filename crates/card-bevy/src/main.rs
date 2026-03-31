@@ -14,7 +14,7 @@ use crate::deck_detail::{enter_deck_detail, handle_deck_detail_return_button};
 use crate::deck_editor::{
     cleanup_create_deck_modal, enter_deck_editor, handle_cancel_create, handle_confirm_create,
     handle_create_button, handle_deck_list_interaction, handle_delete_button,
-    handle_text_input_submit, DeckListData,
+    handle_ime_text_input, rebuild_deck_list, spawn_modal_on_demand, DeckListData,
 };
 use crate::local_game::enter_local_game;
 use crate::main_menu::{enter_main_menu, handle_keyboard_navigation, handle_menu_buttons};
@@ -34,6 +34,8 @@ fn main() {
                     mode: bevy::window::WindowMode::BorderlessFullscreen(
                         bevy::window::MonitorSelection::Current,
                     ),
+                    // Enable IME support for Chinese input
+                    ime_enabled: true,
                     ..default()
                 }),
                 ..default()
@@ -80,7 +82,11 @@ fn main() {
         )
         .add_systems(
             Update,
-            handle_text_input_submit.run_if(in_state(AppState::DeckEditor)),
+            spawn_modal_on_demand.run_if(in_state(AppState::DeckEditor)),
+        )
+        .add_systems(
+            Update,
+            handle_ime_text_input.run_if(in_state(AppState::DeckEditor)),
         )
         .add_systems(
             Update,
@@ -93,6 +99,10 @@ fn main() {
         .add_systems(
             Update,
             handle_delete_button.run_if(in_state(AppState::DeckEditor)),
+        )
+        .add_systems(
+            Update,
+            rebuild_deck_list.run_if(in_state(AppState::DeckEditor)),
         )
         .add_systems(
             Update,
