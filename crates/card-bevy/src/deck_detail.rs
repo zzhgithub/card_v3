@@ -1,7 +1,7 @@
 use crate::app_state::{
-    AddCardButton, AppState, AvailableCardItem, AvailableCards, DeckCardItem,
-    DeckDetailReturnButton, LeftPanel, MiddlePanel, RemoveCardButton, SaveDeckButton, SelectedCard,
-    SelectedDeck,
+    AddCardButton, AppState, AvailableCardItem, AvailableCards, DeckCardItem, DeckCountText,
+    DeckDetailReturnButton, LeftPanel, MiddlePanel, RemoveCardButton, RightPanel, SaveDeckButton,
+    SelectedCard, SelectedDeck,
 };
 use crate::colors::*;
 use crate::ui_components::{spawn_status_bar, spawn_version_display};
@@ -294,6 +294,7 @@ fn spawn_middle_panel(
                     ..default()
                 },
                 TextColor(COLOR_TEXT),
+                DeckCountText,
             ));
 
             parent.spawn(Node {
@@ -305,6 +306,7 @@ fn spawn_middle_panel(
                 .spawn((
                     Node {
                         flex_direction: FlexDirection::Column,
+                        height: Val::Percent(100.0),
                         overflow: Overflow::scroll_y(),
                         ..default()
                     },
@@ -438,11 +440,15 @@ fn spawn_right_panel(
             });
 
             parent
-                .spawn(Node {
-                    flex_direction: FlexDirection::Column,
-                    overflow: Overflow::scroll_y(),
-                    ..default()
-                })
+                .spawn((
+                    Node {
+                        flex_direction: FlexDirection::Column,
+                        height: Val::Percent(100.0),
+                        overflow: Overflow::scroll_y(),
+                        ..default()
+                    },
+                    RightPanel,
+                ))
                 .with_children(|parent| {
                     let mut cards: Vec<_> = available_cards.registry.iter().collect();
                     cards.sort_by(|a, b| a.0 .0.cmp(&b.0 .0));
@@ -674,6 +680,54 @@ pub fn handle_available_card_hover(
                 });
             }
             _ => {}
+        }
+    }
+}
+
+pub fn handle_deck_card_hover(
+    mut interaction_query: Query<
+        (&Interaction, &mut BackgroundColor, &DeckCardItem),
+        Changed<Interaction>,
+    >,
+    available_cards: Res<AvailableCards>,
+) {
+    for (interaction, mut color, item) in &mut interaction_query {
+        let card_type = available_cards
+            .registry
+            .get(&item.card_id)
+            .map(|c| c.card_type);
+
+        match *interaction {
+            Interaction::Hovered => {
+                *color = BackgroundColor(match card_type {
+                    Some(CardType::Character) => COLOR_CARD_CHARACTER_HOVER,
+                    Some(CardType::Strategy) => COLOR_CARD_STRATEGY_HOVER,
+                    Some(CardType::Item) => COLOR_CARD_ITEM_HOVER,
+                    Some(CardType::Legendary) => COLOR_CARD_LEGENDARY_HOVER,
+                    None => COLOR_BUTTON_HOVER,
+                });
+            }
+            Interaction::None => {
+                *color = BackgroundColor(match card_type {
+                    Some(CardType::Character) => COLOR_CARD_CHARACTER,
+                    Some(CardType::Strategy) => COLOR_CARD_STRATEGY,
+                    Some(CardType::Item) => COLOR_CARD_ITEM,
+                    Some(CardType::Legendary) => COLOR_CARD_LEGENDARY,
+                    None => COLOR_BUTTON,
+                });
+            }
+            _ => {}
+        }
+    }
+}
+
+pub fn update_deck_count(
+    selected_deck: Res<SelectedDeck>,
+    mut text_query: Query<&mut Text, With<DeckCountText>>,
+) {
+    if selected_deck.is_changed() {
+        for mut text in text_query.iter_mut() {
+            text.0 = format!("卡组 ({}张)", selected_deck.cards.len());
         }
     }
 }

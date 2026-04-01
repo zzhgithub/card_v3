@@ -138,6 +138,9 @@ pub struct AvailableCardItem {
     pub card_id: CardId,
 }
 
+#[derive(Component)]
+pub struct DeckCountText;
+
 #[derive(Resource, Default)]
 pub struct SelectedDeck {
     pub name: String,
