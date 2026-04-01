@@ -188,6 +188,7 @@ pub enum ValueExpr {
 /// Actions execute in order. Target references (`CardRef`) are resolved
 /// at runtime — `CardRef::This` refers to the effect's source card.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "type")]
 pub enum Action {
     /// A player draws cards from their deck.
     Draw { player: PlayerRef, count: u8 },

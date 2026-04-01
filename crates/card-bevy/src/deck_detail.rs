@@ -51,7 +51,7 @@ pub fn enter_deck_detail(
 
     commands.entity(main_container).with_children(|parent| {
         spawn_left_panel(parent, &asset_server, None);
-        spawn_middle_panel(parent, &asset_server, &selected_deck);
+        spawn_middle_panel(parent, &asset_server, &selected_deck, &available_cards);
         spawn_right_panel(parent, &asset_server, &available_cards);
     });
 }
@@ -273,6 +273,7 @@ fn spawn_middle_panel(
     parent: &mut ChildSpawnerCommands,
     asset_server: &AssetServer,
     selected_deck: &SelectedDeck,
+    available_cards: &AvailableCards,
 ) {
     let font = asset_server.load(FONT_PATH);
 
@@ -322,7 +323,13 @@ fn spawn_middle_panel(
                         ));
                     } else {
                         for (index, card_id_str) in selected_deck.cards.iter().enumerate() {
-                            spawn_deck_card_item(parent, &font, card_id_str, index);
+                            spawn_deck_card_item(
+                                parent,
+                                &font,
+                                card_id_str,
+                                index,
+                                available_cards,
+                            );
                         }
                     }
                 });
@@ -334,8 +341,15 @@ fn spawn_deck_card_item(
     font: &Handle<Font>,
     card_id_str: &str,
     index: usize,
+    available_cards: &AvailableCards,
 ) {
     if let Ok(card_id) = card_id_str.parse::<CardId>() {
+        let bg_color = available_cards
+            .registry
+            .get(&card_id)
+            .map(|c| get_card_type_color(&c.card_type))
+            .unwrap_or_else(|| Color::srgba(0.25, 0.25, 0.3, 1.0));
+
         parent
             .spawn((
                 Button,
@@ -348,7 +362,7 @@ fn spawn_deck_card_item(
                     margin: UiRect::vertical(Val::Px(2.0)),
                     ..default()
                 },
-                BackgroundColor(Color::srgba(0.25, 0.25, 0.3, 1.0)),
+                BackgroundColor(bg_color),
                 DeckCardItem {
                     card_id: card_id.clone(),
                     index,
@@ -681,6 +695,7 @@ pub fn rebuild_middle_panel(
     mut commands: Commands,
     selected_deck: Res<SelectedDeck>,
     asset_server: Res<AssetServer>,
+    available_cards: Res<AvailableCards>,
     container_query: Query<(Entity, Option<&Children>), With<MiddlePanel>>,
 ) {
     if selected_deck.is_changed() {
@@ -706,7 +721,7 @@ pub fn rebuild_middle_panel(
                     ));
                 } else {
                     for (index, card_id_str) in selected_deck.cards.iter().enumerate() {
-                        spawn_deck_card_item(parent, &font, card_id_str, index);
+                        spawn_deck_card_item(parent, &font, card_id_str, index, &available_cards);
                     }
                 }
             });
