@@ -423,6 +423,7 @@ pub fn handle_deck_list_interaction(
         match *interaction {
             Interaction::Pressed => {
                 selected_deck.name = deck_item.deck_name.clone();
+                selected_deck.file_path = deck_item.file_path.clone();
                 if let Ok(deck) = DeckManager::load(PathBuf::from(&deck_item.file_path).as_path()) {
                     selected_deck.cards = deck.cards.iter().map(|c| c.to_string()).collect();
                 }
@@ -475,6 +476,7 @@ pub fn handle_confirm_create(
                 if !deck_name.is_empty() {
                     if let Some(file_path) = create_deck(deck_name, &mut deck_list_data) {
                         selected_deck.name = deck_name.to_string();
+                        selected_deck.file_path = file_path.to_string_lossy().to_string();
                         if let Ok(deck) = DeckManager::load(&file_path) {
                             selected_deck.cards =
                                 deck.cards.iter().map(|c| c.to_string()).collect();

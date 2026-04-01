@@ -8,7 +8,9 @@ name = "card-bevy"
 path = "src/main.rs"
 
 [dependencies]
+anyhow = "1.0"
 bevy = { version = "0.18", features = ["wayland"] }
 bevy_simple_text_input = "0.14"
 card-core = { path = "../card-core" }
 card-client = { path = "../card-client" }
+card-script = { path = "../card-script" }

@@ -9,8 +9,13 @@ mod settings;
 mod splash;
 mod ui_components;
 
-use crate::app_state::{AppState, CreateDeckState, SelectedDeck};
-use crate::deck_detail::{enter_deck_detail, handle_deck_detail_return_button};
+use crate::app_state::{AppState, AvailableCards, CreateDeckState, SelectedCard, SelectedDeck};
+use crate::deck_detail::{
+    cleanup_deck_detail, enter_deck_detail, handle_add_card_button, handle_available_card_click,
+    handle_available_card_hover, handle_deck_card_click, handle_deck_detail_return_button,
+    handle_remove_card_button, handle_save_deck_button, load_available_cards, rebuild_middle_panel,
+    update_left_panel,
+};
 use crate::deck_editor::{
     cleanup_create_deck_modal, enter_deck_editor, handle_cancel_create, handle_confirm_create,
     handle_create_button, handle_deck_list_interaction, handle_delete_button,
@@ -46,6 +51,8 @@ fn main() {
         .init_resource::<SelectedDeck>()
         .init_resource::<DeckListData>()
         .init_resource::<CreateDeckState>()
+        .init_resource::<AvailableCards>()
+        .init_resource::<SelectedCard>()
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -61,8 +68,11 @@ fn main() {
         .add_systems(OnExit(AppState::OnlineGame), cleanup_ui)
         .add_systems(OnEnter(AppState::DeckEditor), enter_deck_editor)
         .add_systems(OnExit(AppState::DeckEditor), cleanup_ui)
-        .add_systems(OnEnter(AppState::DeckEditorDetail), enter_deck_detail)
-        .add_systems(OnExit(AppState::DeckEditorDetail), cleanup_ui)
+        .add_systems(
+            OnEnter(AppState::DeckEditorDetail),
+            (load_available_cards, enter_deck_detail).chain(),
+        )
+        .add_systems(OnExit(AppState::DeckEditorDetail), cleanup_deck_detail)
         .add_systems(OnEnter(AppState::Settings), enter_settings)
         .add_systems(OnExit(AppState::Settings), cleanup_ui)
         .add_systems(Update, handle_menu_buttons)
@@ -75,6 +85,38 @@ fn main() {
         .add_systems(
             Update,
             handle_deck_detail_return_button.run_if(in_state(AppState::DeckEditorDetail)),
+        )
+        .add_systems(
+            Update,
+            handle_save_deck_button.run_if(in_state(AppState::DeckEditorDetail)),
+        )
+        .add_systems(
+            Update,
+            handle_add_card_button.run_if(in_state(AppState::DeckEditorDetail)),
+        )
+        .add_systems(
+            Update,
+            handle_remove_card_button.run_if(in_state(AppState::DeckEditorDetail)),
+        )
+        .add_systems(
+            Update,
+            handle_deck_card_click.run_if(in_state(AppState::DeckEditorDetail)),
+        )
+        .add_systems(
+            Update,
+            handle_available_card_click.run_if(in_state(AppState::DeckEditorDetail)),
+        )
+        .add_systems(
+            Update,
+            handle_available_card_hover.run_if(in_state(AppState::DeckEditorDetail)),
+        )
+        .add_systems(
+            Update,
+            rebuild_middle_panel.run_if(in_state(AppState::DeckEditorDetail)),
+        )
+        .add_systems(
+            Update,
+            update_left_panel.run_if(in_state(AppState::DeckEditorDetail)),
         )
         .add_systems(
             Update,

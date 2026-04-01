@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use card_core::state::CardRegistryImpl;
+use card_core::types::CardId;
 
 #[derive(States, Clone, Copy, Default, Eq, PartialEq, Hash, Debug)]
 pub enum AppState {
@@ -10,6 +12,24 @@ pub enum AppState {
     DeckEditor,
     DeckEditorDetail,
     Settings,
+}
+
+#[derive(Resource)]
+pub struct AvailableCards {
+    pub registry: CardRegistryImpl,
+}
+
+impl Default for AvailableCards {
+    fn default() -> Self {
+        Self {
+            registry: CardRegistryImpl::new(),
+        }
+    }
+}
+
+#[derive(Resource, Default)]
+pub struct SelectedCard {
+    pub id: Option<CardId>,
 }
 
 #[derive(Clone, Copy)]
@@ -67,10 +87,62 @@ pub struct ImeTextInput;
 #[derive(Component)]
 pub struct DeckDetailReturnButton;
 
+#[derive(Component)]
+pub struct SaveDeckButton;
+
+#[derive(Component)]
+pub struct CardListItem {
+    pub card_id: CardId,
+    pub is_in_deck: bool,
+}
+
+#[derive(Component)]
+pub struct DeckCardItem {
+    pub card_id: CardId,
+    pub index: usize,
+}
+
+#[derive(Component)]
+pub struct AddCardButton {
+    pub card_id: CardId,
+}
+
+#[derive(Component)]
+pub struct RemoveCardButton {
+    pub index: usize,
+}
+
+#[derive(Component)]
+pub struct CardDetailPanel;
+
+#[derive(Component)]
+pub struct CardImagePlaceholder;
+
+#[derive(Component)]
+pub struct CardInfoText;
+
+#[derive(Component)]
+pub struct CardEffectsText;
+
+#[derive(Component)]
+pub struct LeftPanel;
+
+#[derive(Component)]
+pub struct MiddlePanel;
+
+#[derive(Component)]
+pub struct RightPanel;
+
+#[derive(Component)]
+pub struct AvailableCardItem {
+    pub card_id: CardId,
+}
+
 #[derive(Resource, Default)]
 pub struct SelectedDeck {
     pub name: String,
     pub cards: Vec<String>,
+    pub file_path: String,
 }
 
 #[derive(Resource, Default)]
