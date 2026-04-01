@@ -306,7 +306,7 @@ fn spawn_middle_panel(
                 .spawn((
                     Node {
                         flex_direction: FlexDirection::Column,
-                        height: Val::Percent(100.0),
+                        flex_grow: 1.0,
                         overflow: Overflow::scroll_y(),
                         ..default()
                     },
@@ -443,7 +443,7 @@ fn spawn_right_panel(
                 .spawn((
                     Node {
                         flex_direction: FlexDirection::Column,
-                        height: Val::Percent(100.0),
+                        flex_grow: 1.0,
                         overflow: Overflow::scroll_y(),
                         ..default()
                     },
