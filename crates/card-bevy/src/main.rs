@@ -14,7 +14,8 @@ use crate::deck_detail::{
     cleanup_deck_detail, enter_deck_detail, handle_add_card_button, handle_available_card_click,
     handle_available_card_hover, handle_deck_card_click, handle_deck_card_hover,
     handle_deck_detail_return_button, handle_remove_card_button, handle_save_deck_button,
-    load_available_cards, rebuild_middle_panel, update_deck_count, update_left_panel,
+    load_available_cards, on_scroll_handler, rebuild_middle_panel, send_scroll_events,
+    update_deck_count, update_left_panel,
 };
 use crate::deck_editor::{
     cleanup_create_deck_modal, enter_deck_editor, handle_cancel_create, handle_confirm_create,
@@ -68,10 +69,9 @@ fn main() {
         .add_systems(OnExit(AppState::OnlineGame), cleanup_ui)
         .add_systems(OnEnter(AppState::DeckEditor), enter_deck_editor)
         .add_systems(OnExit(AppState::DeckEditor), cleanup_ui)
-        .add_systems(
-            OnEnter(AppState::DeckEditorDetail),
-            (load_available_cards, enter_deck_detail).chain(),
-        )
+        .add_systems(OnExit(AppState::DeckEditorDetail), cleanup_deck_detail)
+        .add_observer(on_scroll_handler)
+        .add_systems(Update, send_scroll_events)
         .add_systems(OnExit(AppState::DeckEditorDetail), cleanup_deck_detail)
         .add_systems(OnEnter(AppState::Settings), enter_settings)
         .add_systems(OnExit(AppState::Settings), cleanup_ui)
