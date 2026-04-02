@@ -658,6 +658,7 @@ pub fn handle_available_card_hover(
         Changed<Interaction>,
     >,
     available_cards: Res<AvailableCards>,
+    mut selected_card: ResMut<SelectedCard>,
 ) {
     for (interaction, mut color, item) in &mut interaction_query {
         let card_type = available_cards
@@ -674,6 +675,7 @@ pub fn handle_available_card_hover(
                     Some(CardType::Legendary) => COLOR_CARD_LEGENDARY_HOVER,
                     None => COLOR_BUTTON_HOVER,
                 });
+                selected_card.id = Some(item.card_id.clone());
             }
             Interaction::None => {
                 *color = BackgroundColor(match card_type {
@@ -695,6 +697,7 @@ pub fn handle_deck_card_hover(
         Changed<Interaction>,
     >,
     available_cards: Res<AvailableCards>,
+    mut selected_card: ResMut<SelectedCard>,
 ) {
     for (interaction, mut color, item) in &mut interaction_query {
         let card_type = available_cards
@@ -711,6 +714,7 @@ pub fn handle_deck_card_hover(
                     Some(CardType::Legendary) => COLOR_CARD_LEGENDARY_HOVER,
                     None => COLOR_BUTTON_HOVER,
                 });
+                selected_card.id = Some(item.card_id.clone());
             }
             Interaction::None => {
                 *color = BackgroundColor(match card_type {

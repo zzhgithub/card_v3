@@ -69,7 +69,10 @@ fn main() {
         .add_systems(OnExit(AppState::OnlineGame), cleanup_ui)
         .add_systems(OnEnter(AppState::DeckEditor), enter_deck_editor)
         .add_systems(OnExit(AppState::DeckEditor), cleanup_ui)
-        .add_systems(OnEnter(AppState::DeckEditorDetail), enter_deck_detail)
+        .add_systems(
+            OnEnter(AppState::DeckEditorDetail),
+            (load_available_cards, enter_deck_detail).chain(),
+        )
         .add_systems(OnExit(AppState::DeckEditorDetail), cleanup_deck_detail)
         .add_observer(on_scroll_handler)
         .add_systems(Update, send_scroll_events)
