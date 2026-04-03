@@ -742,10 +742,10 @@ pub fn update_deck_count(
 }
 
 pub fn cleanup_deck_detail(
-    mut commands: Commands,
     query: Query<Entity, With<Node>>,
     version_query: Query<Entity, With<crate::app_state::VersionText>>,
     status_query: Query<Entity, With<crate::app_state::StatusBarText>>,
+    mut commands: Commands,
 ) {
     for entity in query.iter() {
         if !version_query.get(entity).is_ok() && !status_query.get(entity).is_ok() {
@@ -755,11 +755,11 @@ pub fn cleanup_deck_detail(
 }
 
 pub fn rebuild_middle_panel(
-    mut commands: Commands,
     selected_deck: Res<SelectedDeck>,
     asset_server: Res<AssetServer>,
     available_cards: Res<AvailableCards>,
     container_query: Query<(Entity, Option<&Children>), With<MiddlePanel>>,
+    mut commands: Commands,
 ) {
     if selected_deck.is_changed() {
         let font = asset_server.load(FONT_PATH);
@@ -793,11 +793,11 @@ pub fn rebuild_middle_panel(
 }
 
 pub fn update_left_panel(
-    mut commands: Commands,
     selected_card: Res<SelectedCard>,
     available_cards: Res<AvailableCards>,
     asset_server: Res<AssetServer>,
     left_panel_query: Query<(Entity, Option<&Children>), With<LeftPanel>>,
+    mut commands: Commands,
 ) {
     if selected_card.is_changed() {
         let font = asset_server.load(FONT_PATH);

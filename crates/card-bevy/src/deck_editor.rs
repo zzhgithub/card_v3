@@ -565,9 +565,9 @@ fn get_desks_directory() -> PathBuf {
 }
 
 pub fn cleanup_create_deck_modal(
-    mut commands: Commands,
     create_state: Res<CreateDeckState>,
     modal_query: Query<Entity, With<CreateDeckModal>>,
+    mut commands: Commands,
 ) {
     if !create_state.is_inputting {
         for entity in modal_query.iter() {
@@ -577,10 +577,10 @@ pub fn cleanup_create_deck_modal(
 }
 
 pub fn rebuild_deck_list(
-    mut commands: Commands,
     deck_list_data: Res<DeckListData>,
     asset_server: Res<AssetServer>,
     container_query: Query<(Entity, Option<&Children>), With<DeckListContainer>>,
+    mut commands: Commands,
 ) {
     if deck_list_data.is_changed() {
         let font = asset_server.load(FONT_PATH);

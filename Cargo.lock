@@ -1874,6 +1874,8 @@ dependencies = [
  "card-client",
  "card-core",
  "card-script",
+ "card-server",
+ "tokio",
 ]
 
 [[package]]

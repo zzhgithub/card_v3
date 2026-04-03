@@ -7,6 +7,7 @@ pub enum AppState {
     #[default]
     SplashScreen,
     MainMenu,
+    LocalGameSetup,
     LocalGame,
     OnlineGame,
     DeckEditor,

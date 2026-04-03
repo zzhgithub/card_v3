@@ -70,7 +70,7 @@ pub fn spawn_return_button(commands: &mut Commands, asset_server: &AssetServer) 
                 Text::new("返回"),
                 TextFont {
                     font: asset_server.load(FONT_PATH),
-                    font_size: 18.0,
+                    font_size: 20.0,
                     ..default()
                 },
                 TextColor(COLOR_TEXT),
@@ -85,8 +85,7 @@ pub fn spawn_menu_button(
     target_state: Option<AppState>,
     action: Option<MenuAction>,
 ) {
-    let is_exit = matches!(action, Some(MenuAction::Exit));
-    let bg_color = if is_exit {
+    let bg_color = if matches!(action, Some(MenuAction::Exit)) {
         COLOR_BUTTON_EXIT
     } else {
         COLOR_BUTTON
@@ -122,8 +121,8 @@ pub fn spawn_menu_button(
 }
 
 pub fn cleanup_ui(
-    mut commands: Commands,
     ui_query: Query<Entity, Or<(With<Node>, With<Text>, With<Button>)>>,
+    mut commands: Commands,
 ) {
     for entity in ui_query.iter() {
         commands.entity(entity).despawn();

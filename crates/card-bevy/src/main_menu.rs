@@ -22,7 +22,7 @@ pub fn enter_main_menu(mut commands: Commands, asset_server: Res<AssetServer>) {
                 parent,
                 &asset_server,
                 "本地游戏",
-                Some(AppState::LocalGame),
+                Some(AppState::LocalGameSetup),
                 None,
             );
             spawn_menu_button(

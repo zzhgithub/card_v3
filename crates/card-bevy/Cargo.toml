@@ -14,3 +14,5 @@ bevy_simple_text_input = "0.14"
 card-core = { path = "../card-core" }
 card-client = { path = "../card-client" }
 card-script = { path = "../card-script" }
+card-server = { path = "../card-server" }
+tokio = { workspace = true }

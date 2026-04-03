@@ -28,6 +28,13 @@ fn rand_index(rng: &mut ChaCha8Rng, len: usize) -> usize {
 
 impl PhaseClient for AiClient {
     fn choose_action(&self, available: &[PhaseAction], _timeout: Duration) -> Option<PhaseAction> {
+        // Filter out Surrender action - AI never gives up
+        let available: Vec<_> = available
+            .iter()
+            .filter(|a| !matches!(a, PhaseAction::Surrender))
+            .cloned()
+            .collect();
+
         if available.is_empty() {
             return None;
         }

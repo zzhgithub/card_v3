@@ -3,11 +3,19 @@ mod colors;
 mod deck_detail;
 mod deck_editor;
 mod local_game;
+mod local_game_setup;
 mod main_menu;
 mod online_game;
 mod settings;
 mod splash;
 mod ui_components;
+
+#[derive(Resource)]
+pub struct GameServerInfo {
+    pub bind_addr: SocketAddr,
+    pub runtime: Runtime,
+    pub script_index: ScriptIndex,
+}
 
 use crate::app_state::{AppState, AvailableCards, CreateDeckState, SelectedCard, SelectedDeck};
 use crate::deck_detail::{
@@ -22,7 +30,13 @@ use crate::deck_editor::{
     handle_create_button, handle_deck_list_interaction, handle_delete_button,
     handle_ime_text_input, rebuild_deck_list, spawn_modal_on_demand, DeckListData,
 };
-use crate::local_game::enter_local_game;
+use crate::local_game::{
+    cleanup_local_game, enter_local_game, handle_action_button_click, update_local_game,
+};
+use crate::local_game_setup::{
+    cleanup_local_game_setup, enter_local_game_setup, handle_deck_selection,
+    handle_start_game_button, LocalGameSetupState,
+};
 use crate::main_menu::{enter_main_menu, handle_keyboard_navigation, handle_menu_buttons};
 use crate::online_game::enter_online_game;
 use crate::settings::{enter_settings, handle_return_button};
@@ -30,8 +44,36 @@ use crate::splash::{enter_splash_screen, exit_splash_screen, update_splash_scree
 use crate::ui_components::cleanup_ui;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
+use card_core::rules::GameRules;
+use card_script::loader::ScriptIndex;
+use card_server::GameServer;
+use std::net::SocketAddr;
+use tokio::runtime::Runtime;
 
 fn main() {
+    // Create tokio runtime for async server operations
+    let runtime = Runtime::new().expect("Failed to create Tokio runtime");
+
+    // Create script index by scanning the scripts directory
+    let script_index = ScriptIndex::scan(std::path::Path::new("scripts"))
+        .expect("Failed to scan scripts directory");
+
+    // Start TCP listener to get bind address for display
+    let bind_addr = runtime.block_on(async {
+        let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+            .await
+            .expect("Failed to bind to address");
+        let addr = listener.local_addr().expect("Failed to get local address");
+        drop(listener);
+        addr
+    });
+
+    let server_info = GameServerInfo {
+        bind_addr,
+        runtime,
+        script_index,
+    };
+
     App::new()
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
@@ -40,7 +82,6 @@ fn main() {
                     mode: bevy::window::WindowMode::BorderlessFullscreen(
                         bevy::window::MonitorSelection::Current,
                     ),
-                    // Enable IME support for Chinese input
                     ime_enabled: true,
                     ..default()
                 }),
@@ -50,10 +91,12 @@ fn main() {
         ))
         .init_state::<AppState>()
         .init_resource::<SelectedDeck>()
+        .init_resource::<LocalGameSetupState>()
         .init_resource::<DeckListData>()
         .init_resource::<CreateDeckState>()
         .init_resource::<AvailableCards>()
         .init_resource::<SelectedCard>()
+        .insert_resource(server_info)
         .add_systems(Startup, setup)
         .add_systems(
             Update,
@@ -64,7 +107,15 @@ fn main() {
         .add_systems(OnEnter(AppState::MainMenu), enter_main_menu)
         .add_systems(OnExit(AppState::MainMenu), cleanup_ui)
         .add_systems(OnEnter(AppState::LocalGame), enter_local_game)
-        .add_systems(OnExit(AppState::LocalGame), cleanup_ui)
+        .add_systems(
+            Update,
+            (update_local_game, handle_action_button_click)
+                .chain()
+                .run_if(in_state(AppState::LocalGame)),
+        )
+        .add_systems(OnExit(AppState::LocalGame), cleanup_local_game)
+        .add_systems(OnEnter(AppState::LocalGameSetup), enter_local_game_setup)
+        .add_systems(OnExit(AppState::LocalGameSetup), cleanup_local_game_setup)
         .add_systems(OnEnter(AppState::OnlineGame), enter_online_game)
         .add_systems(OnExit(AppState::OnlineGame), cleanup_ui)
         .add_systems(OnEnter(AppState::DeckEditor), enter_deck_editor)
@@ -79,6 +130,14 @@ fn main() {
         .add_systems(OnEnter(AppState::Settings), enter_settings)
         .add_systems(OnExit(AppState::Settings), cleanup_ui)
         .add_systems(Update, handle_menu_buttons)
+        .add_systems(
+            Update,
+            handle_deck_selection.run_if(in_state(AppState::LocalGameSetup)),
+        )
+        .add_systems(
+            Update,
+            handle_start_game_button.run_if(in_state(AppState::LocalGameSetup)),
+        )
         .add_systems(Update, handle_return_button)
         .add_systems(Update, handle_keyboard_navigation)
         .add_systems(
@@ -112,14 +171,6 @@ fn main() {
         .add_systems(
             Update,
             handle_available_card_hover.run_if(in_state(AppState::DeckEditorDetail)),
-        )
-        .add_systems(
-            Update,
-            handle_deck_card_hover.run_if(in_state(AppState::DeckEditorDetail)),
-        )
-        .add_systems(
-            Update,
-            update_deck_count.run_if(in_state(AppState::DeckEditorDetail)),
         )
         .add_systems(
             Update,
