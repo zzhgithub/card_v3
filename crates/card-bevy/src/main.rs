@@ -2,6 +2,7 @@ mod app_state;
 mod colors;
 mod deck_detail;
 mod deck_editor;
+mod game_board;
 mod local_game;
 mod local_game_setup;
 mod main_menu;
@@ -30,6 +31,7 @@ use crate::deck_editor::{
     handle_create_button, handle_deck_list_interaction, handle_delete_button,
     handle_ime_text_input, rebuild_deck_list, spawn_modal_on_demand, DeckListData,
 };
+use crate::game_board::GameBoardPlugin;
 use crate::local_game::{
     cleanup_local_game, enter_local_game, handle_action_button_click, update_local_game,
 };
@@ -48,6 +50,7 @@ use card_core::rules::GameRules;
 use card_script::loader::ScriptIndex;
 use card_server::GameServer;
 use std::net::SocketAddr;
+use std::path::{Path, PathBuf};
 use tokio::runtime::Runtime;
 
 fn main() {
@@ -74,9 +77,20 @@ fn main() {
         script_index,
     };
 
-    App::new()
-        .add_plugins((
-            DefaultPlugins.set(WindowPlugin {
+    build_app(server_info).run();
+}
+
+fn build_app(server_info: GameServerInfo) -> App {
+    let mut app = App::new();
+
+    #[cfg(not(test))]
+    app.add_plugins((
+            DefaultPlugins
+                .set(AssetPlugin {
+                    file_path: asset_root().display().to_string(),
+                    ..default()
+                })
+                .set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Card Game".to_string(),
                     mode: bevy::window::WindowMode::BorderlessFullscreen(
@@ -88,7 +102,13 @@ fn main() {
                 ..default()
             }),
             TextInputPlugin,
-        ))
+            GameBoardPlugin,
+        ));
+
+    #[cfg(test)]
+    app.add_plugins((MinimalPlugins, bevy::state::app::StatesPlugin, GameBoardPlugin));
+
+    app
         .init_state::<AppState>()
         .init_resource::<SelectedDeck>()
         .init_resource::<LocalGameSetupState>()
@@ -219,10 +239,41 @@ fn main() {
         .add_systems(
             Update,
             cleanup_create_deck_modal.run_if(in_state(AppState::DeckEditor)),
-        )
-        .run();
+        );
+
+    app
 }
 
 fn setup(mut commands: Commands) {
     commands.spawn(Camera2d);
+}
+
+fn asset_root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("assets")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game_board::BoardLayout;
+
+    #[test]
+    fn build_app_registers_board_layout_resource() {
+        let runtime = Runtime::new().expect("runtime");
+        let script_index = ScriptIndex::scan(Path::new("/definitely/missing/scripts")).expect("scan");
+        let server_info = GameServerInfo {
+            bind_addr: "127.0.0.1:0".parse().expect("addr"),
+            runtime,
+            script_index,
+        };
+
+        let app = build_app(server_info);
+
+        assert!(app.world().contains_resource::<BoardLayout>());
+    }
+
+    #[test]
+    fn asset_root_points_to_existing_directory() {
+        assert!(asset_root().exists());
+    }
 }
