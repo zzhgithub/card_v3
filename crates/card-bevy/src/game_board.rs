@@ -2,8 +2,6 @@ use bevy::prelude::*;
 use card_core::state::CardInstance;
 use card_core::types::{CardId, InstanceId, PlayerId};
 
-use crate::colors::FONT_PATH;
-
 pub struct GameBoardPlugin;
 
 const W: f32 = 1920.0;

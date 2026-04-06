@@ -46,9 +46,7 @@ use crate::splash::{enter_splash_screen, exit_splash_screen, update_splash_scree
 use crate::ui_components::cleanup_ui;
 use bevy::prelude::*;
 use bevy_simple_text_input::TextInputPlugin;
-use card_core::rules::GameRules;
 use card_script::loader::ScriptIndex;
-use card_server::GameServer;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use tokio::runtime::Runtime;

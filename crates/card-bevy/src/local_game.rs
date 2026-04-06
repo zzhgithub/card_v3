@@ -1,7 +1,5 @@
 use crate::colors::*;
-use crate::game_board::{
-    bw, cleanup_game_board, setup_game_board, spawn_card_sprite, BoardLayout, GameBoardEntity,
-};
+use crate::game_board::{bw, setup_game_board, BoardLayout, GameBoardEntity};
 use crate::local_game_setup::LocalGameSetupState;
 use bevy::prelude::*;
 use card_core::deck::DeckManager;
@@ -56,6 +54,16 @@ pub struct CardDisplayInfo {
     pub instance_id: InstanceId,
     pub definition_id: CardId,
     pub current_attack: Option<i32>,
+}
+
+impl From<&CardInstance> for CardDisplayInfo {
+    fn from(c: &CardInstance) -> Self {
+        Self {
+            instance_id: c.instance_id,
+            definition_id: c.definition_id.clone(),
+            current_attack: c.current_attack,
+        }
+    }
 }
 
 pub fn enter_local_game(
@@ -439,56 +447,18 @@ fn send_state_update(sender: &Sender<GameStateUpdate>, state: &GameState) {
 fn zones_to_display(zones: &PlayerZones) -> GamePlayerZones {
     GamePlayerZones {
         hp: zones.cost_zone.len() as u32,
-        deck: zones
-            .deck
-            .iter()
-            .map(|c| CardDisplayInfo {
-                instance_id: c.instance_id,
-                definition_id: c.definition_id.clone(),
-                current_attack: c.current_attack,
-            })
-            .collect(),
-        hand: zones
-            .hand
-            .iter()
-            .map(|c| CardDisplayInfo {
-                instance_id: c.instance_id,
-                definition_id: c.definition_id.clone(),
-                current_attack: c.current_attack,
-            })
-            .collect(),
-        front: zones.front.clone().map(|opt| {
-            opt.map(|c| CardDisplayInfo {
-                instance_id: c.instance_id,
-                definition_id: c.definition_id.clone(),
-                current_attack: c.current_attack,
-            })
-        }),
-        back: zones.back.clone().map(|opt| {
-            opt.map(|c| CardDisplayInfo {
-                instance_id: c.instance_id,
-                definition_id: c.definition_id.clone(),
-                current_attack: c.current_attack,
-            })
-        }),
-        cost_zone: zones
-            .cost_zone
-            .iter()
-            .map(|c| CardDisplayInfo {
-                instance_id: c.instance_id,
-                definition_id: c.definition_id.clone(),
-                current_attack: c.current_attack,
-            })
-            .collect(),
-        grave: zones
-            .grave
-            .iter()
-            .map(|c| CardDisplayInfo {
-                instance_id: c.instance_id,
-                definition_id: c.definition_id.clone(),
-                current_attack: c.current_attack,
-            })
-            .collect(),
+        deck: zones.deck.iter().map(CardDisplayInfo::from).collect(),
+        hand: zones.hand.iter().map(CardDisplayInfo::from).collect(),
+        front: zones
+            .front
+            .clone()
+            .map(|opt| opt.as_ref().map(CardDisplayInfo::from)),
+        back: zones
+            .back
+            .clone()
+            .map(|opt| opt.as_ref().map(CardDisplayInfo::from)),
+        cost_zone: zones.cost_zone.iter().map(CardDisplayInfo::from).collect(),
+        grave: zones.grave.iter().map(CardDisplayInfo::from).collect(),
     }
 }
 
