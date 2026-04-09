@@ -1,0 +1,21 @@
+{
+  "id": "S000-L-001",
+  "name": "传说数学家",
+  "card_type": "Legendary",
+  "property": "Rational",
+  "category": "Math",
+  "cost": 5,
+  "attack": 2000,
+  "tags": ["legendary"],
+  "effects": {
+    "e1": {
+      "trigger": "OnSummon",
+      "optional": false,
+      "activation_limit": "OncePerTurn",
+      "actions": [
+        { "type": "Draw", "player": "Self_", "count": 2 },
+        { "type": "Discard", "player": "Self_", "count": 1 }
+      ]
+    }
+  }
+}

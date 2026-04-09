@@ -1,0 +1,19 @@
+{
+  "id": "S000-I-002",
+  "name": "灵性护符",
+  "card_type": "Item",
+  "item_kind": "Persistent",
+  "property": "Spiritual",
+  "category": "Literature",
+  "cost": 2,
+  "tags": [],
+  "effects": {
+    "e1": {
+      "trigger": "OnSummon",
+      "optional": false,
+      "actions": [
+        { "type": "GainRealPoint", "player": "Self_", "amount": 1 }
+      ]
+    }
+  }
+}

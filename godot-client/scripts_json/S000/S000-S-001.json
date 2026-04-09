@@ -1,0 +1,19 @@
+{
+  "id": "S000-S-001",
+  "name": "逻辑打击",
+  "card_type": "Strategy",
+  "strategy_kind": "Normal",
+  "property": "Rational",
+  "category": "Math",
+  "cost": 2,
+  "tags": [],
+  "effects": {
+    "e1": {
+      "trigger": "OwnMainPhase",
+      "optional": false,
+      "actions": [
+        { "type": "Damage", "player": "Opponent", "amount": 1 }
+      ]
+    }
+  }
+}

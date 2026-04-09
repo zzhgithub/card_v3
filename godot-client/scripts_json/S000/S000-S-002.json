@@ -1,0 +1,19 @@
+{
+  "id": "S000-S-002",
+  "name": "灵感爆发",
+  "card_type": "Strategy",
+  "strategy_kind": "Instant",
+  "property": "Spiritual",
+  "category": "Philosophy",
+  "cost": 1,
+  "tags": [],
+  "effects": {
+    "e1": {
+      "trigger": "OwnMainPhase",
+      "optional": true,
+      "actions": [
+        { "type": "Draw", "player": "Self_", "count": 1 }
+      ]
+    }
+  }
+}

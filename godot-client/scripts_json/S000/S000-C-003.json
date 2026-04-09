@@ -1,0 +1,11 @@
+{
+  "id": "S000-C-003",
+  "name": "灵性导师",
+  "card_type": "Character",
+  "property": "Spiritual",
+  "category": "Literature",
+  "cost": 4,
+  "attack": 1200,
+  "tags": [],
+  "effects": {}
+}

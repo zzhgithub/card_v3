@@ -1,0 +1,25 @@
+{
+  "id": "S000-S-003",
+  "name": "神圣护盾",
+  "card_type": "Strategy",
+  "strategy_kind": "Trick",
+  "property": "Divine",
+  "category": "Mystery",
+  "cost": 3,
+  "tags": [],
+  "effects": {
+    "e1": {
+      "trigger": "OpponentMainPhase",
+      "optional": false,
+      "conditions": {
+        "type": "Compare",
+        "left": { "type": "RealPoint", "player": "Self_" },
+        "op": "Ge",
+        "right": { "type": "Literal", "value": 3 }
+      },
+      "actions": [
+        { "type": "HealHp", "player": "Self_", "amount": 1 }
+      ]
+    }
+  }
+}
