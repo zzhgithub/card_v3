@@ -1,0 +1,11 @@
+{
+  "id": "S000-C-002",
+  "name": "理性探索者",
+  "card_type": "Character",
+  "property": "Rational",
+  "category": "Science",
+  "cost": 2,
+  "attack": 800,
+  "tags": [],
+  "effects": {}
+}

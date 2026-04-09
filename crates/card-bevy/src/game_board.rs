@@ -64,47 +64,76 @@ pub struct BoardLayout {
 
 #[derive(Clone)]
 pub struct PlayerAreaLayout {
-    pub deck_pos: Vec2,
-    pub grave_pos: Vec2,
-    pub cost_start_pos: Vec2,
-    pub cost_spacing: f32,
-    pub back_field_start: Vec2,
-    pub front_field_start: Vec2,
-    pub field_slot_spacing: f32,
-    pub hand_y: f32,
-    pub hp_pos: Vec2,
+    // 费用区 - 竖条排列6个槽位，位于左侧
+    pub cost_zone_pos: Vec2,    // 费用区中心位置
+    pub cost_slot_spacing: f32, // 费用区槽位间距（纵向）
+    // 卡组和墓地 - 竖直排列，位于费用区右侧
+    pub deck_pos: Vec2,  // 卡组位置（第1行）
+    pub grave_pos: Vec2, // 墓地位置（第2行）
+    // 前场和后场 - 5个槽位横向排列
+    pub front_field_start: Vec2, // 前场起始位置
+    pub back_field_start: Vec2,  // 后场起始位置
+    pub field_slot_spacing: f32, // 场位间距（横向）
+    // 手卡
+    pub hand_y: f32,  // 手卡Y坐标
+    pub hp_pos: Vec2, // HP显示位置
 }
 
 impl Default for BoardLayout {
     fn default() -> Self {
         let cy = H / 2.0;
-        let fl = CX + 30.0;
-        let sw = 85.0;
-        let sg = 8.0;
-        let fsx = fl + 55.0;
+        let center_left = CX + 40.0; // 中央战场左边界偏移
+        let field_slot_width = 85.0; // 场位宽度
+        let field_slot_gap = 8.0; // 场位间距
+        let field_spacing = field_slot_width + field_slot_gap; // 场位总间距
 
+        // 费用区参数 - 竖条排列
+        let cost_zone_x = center_left + 30.0; // 费用区X位置
+        let cost_slot_height = 28.0; // 费用槽高度
+        let cost_slot_gap = 4.0; // 费用槽间距
+        let _cost_zone_height = cost_slot_height * 6.0 + cost_slot_gap * 5.0; // 费用区总高度
+
+        // 卡组和墓地位置 - 竖直排列在费用区右侧
+        let deck_grave_x = cost_zone_x + 60.0; // 卡组和墓地X位置
+
+        // 场地区域起始位置 - 在卡组/墓地右侧
+        let field_start_x = deck_grave_x + 80.0;
+
+        // 对手区域（上半部分）：后场在上，前场在下
+        // 己方区域（下半部分）：前场在上，后场在下（镜像）
+
+        // Player1 (己方，下半部分)
         let p1 = PlayerAreaLayout {
-            deck_pos: Vec2::new(fl + 22.0, cy - 110.0),
-            grave_pos: Vec2::new(fl + 22.0, cy - 240.0),
-            cost_start_pos: Vec2::new(fl + 22.0, cy - 350.0),
-            cost_spacing: -32.0,
-            back_field_start: Vec2::new(fsx, cy - 90.0),
-            front_field_start: Vec2::new(fsx, cy - 200.0),
-            field_slot_spacing: sw + sg,
+            // 费用区 - 竖条排列6个槽位
+            cost_zone_pos: Vec2::new(cost_zone_x, cy - 135.0), // 费用区中心
+            cost_slot_spacing: cost_slot_height + cost_slot_gap, // 纵向间距
+            // 卡组和墓地 - 竖直排列
+            deck_pos: Vec2::new(deck_grave_x, cy - 90.0), // 卡组在第1行
+            grave_pos: Vec2::new(deck_grave_x, cy - 180.0), // 墓地在第2行
+            // 前场和后场 - 己方前场在上(第1行)，后场在下(第2行)
+            front_field_start: Vec2::new(field_start_x, cy - 90.0),
+            back_field_start: Vec2::new(field_start_x, cy - 180.0),
+            field_slot_spacing: field_spacing,
+            // 手卡 - 底部
             hand_y: 65.0,
-            hp_pos: Vec2::new(fl + 22.0, cy - 30.0),
+            hp_pos: Vec2::new(deck_grave_x, cy - 30.0),
         };
 
+        // Player2 (对手，上半部分)
         let p2 = PlayerAreaLayout {
-            deck_pos: Vec2::new(fl + 22.0, H - (cy - 110.0)),
-            grave_pos: Vec2::new(fl + 22.0, H - (cy - 240.0)),
-            cost_start_pos: Vec2::new(fl + 22.0, H - (cy - 350.0)),
-            cost_spacing: 32.0,
-            back_field_start: Vec2::new(fsx, H - (cy - 90.0)),
-            front_field_start: Vec2::new(fsx, H - (cy - 200.0)),
-            field_slot_spacing: sw + sg,
+            // 费用区 - 竖条排列6个槽位
+            cost_zone_pos: Vec2::new(cost_zone_x, H - (cy - 135.0)),
+            cost_slot_spacing: -(cost_slot_height + cost_slot_gap), // 向上排列
+            // 卡组和墓地 - 竖直排列
+            deck_pos: Vec2::new(deck_grave_x, H - (cy - 90.0)), // 卡组在第1行（对手视角的上排）
+            grave_pos: Vec2::new(deck_grave_x, H - (cy - 180.0)), // 墓地在第2行
+            // 后场和前场 - 对手后场在上(第1行)，前场在下(第2行)
+            back_field_start: Vec2::new(field_start_x, H - (cy - 90.0)),
+            front_field_start: Vec2::new(field_start_x, H - (cy - 180.0)),
+            field_slot_spacing: field_spacing,
+            // 手卡 - 顶部
             hand_y: H - 65.0,
-            hp_pos: Vec2::new(fl + 22.0, H - (cy - 30.0)),
+            hp_pos: Vec2::new(deck_grave_x, H - (cy - 30.0)),
         };
 
         Self {
@@ -310,16 +339,17 @@ pub fn setup_game_board(commands: &mut Commands, layout: &BoardLayout, font: &Ha
             13.0,
         );
 
-        // 费用区
+        // 费用区 - 竖条排列6个槽位
         for i in 0..6 {
-            let p = a.cost_start_pos + Vec2::new(0.0, a.cost_spacing * i as f32);
+            let offset_y = a.cost_slot_spacing * (i as f32 - 2.5); // 中心对称排列
+            let p = Vec2::new(a.cost_zone_pos.x, a.cost_zone_pos.y + offset_y);
             zb(commands, p.x, p.y, 42.0, 28.0, ZoneType::CostZone, pid);
         }
         lbl(
             commands,
             font,
-            a.cost_start_pos.x,
-            a.cost_start_pos.y + a.cost_spacing * 2.5 - 22.0,
+            a.cost_zone_pos.x,
+            a.cost_zone_pos.y,
             "费用",
             11.0,
         );

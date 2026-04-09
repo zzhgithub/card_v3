@@ -26,3 +26,6 @@ chrono = { workspace = true }
 rand_chacha = { workspace = true }
 rand = { workspace = true }
 async-trait = { workspace = true }
+tokio-tungstenite = "0.26"
+futures = "0.3"
+uuid = { version = "1", features = ["v4"] }
