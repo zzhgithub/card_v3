@@ -1,103 +1,52 @@
 extends Control
 
-@onready var status_label: Label = $VBoxContainer/StatusLabel
-@onready var room_input: LineEdit = $VBoxContainer/RoomInput
-@onready var name_input: LineEdit = $VBoxContainer/NameInput
-@onready var connect_button: Button = $VBoxContainer/ConnectButton
-@onready var log_text: TextEdit = $VBoxContainer/LogText
-
-var is_in_room: bool = false
+@onready var version_label: Label = $VersionLabel
+@onready var status_bar: Label = $StatusBar
+@onready var button_container: VBoxContainer = $CenterContainer/ButtonContainer
 
 func _ready():
-	# Connect network signals
-	Network.connected.connect(_on_connected)
-	Network.disconnected.connect(_on_disconnected)
-	Network.error_occurred.connect(_on_error)
-	Network.player_joined.connect(_on_player_joined)
-	Network.opponent_joined.connect(_on_opponent_joined)
-	Network.game_started.connect(_on_game_started)
-	Network.state_update.connect(_on_state_update)
-	Network.action_requested.connect(_on_action_requested)
-	Network.game_over.connect(_on_game_over)
+	# 设置版本号
+	version_label.text = "v0.1.0"
 
-	# Default values
-	room_input.text = "room1"
-	name_input.text = "Player" + str(randi() % 1000)
+	# 设置状态栏
+	status_bar.text = "主菜单"
 
-	_log("[Main] Ready. Click 'Connect' to start.")
+	# 连接按钮信号
+	for button in button_container.get_children():
+		if button is Button:
+			button.pressed.connect(_on_button_pressed.bind(button))
+			button.mouse_entered.connect(_on_button_hovered.bind(button))
+			button.mouse_exited.connect(_on_button_exited.bind(button))
 
-func _on_connect_button_pressed():
-	if not is_in_room:
-		var url = Network.server_url
-		_log("[Main] Connecting to " + url)
-		connect_button.disabled = true
-		Network.connect_to_server()
+			# 设置退出按钮的特殊颜色
+			if button.name == "ExitButton":
+				button.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
+				button.add_theme_color_override("font_hover_color", Color(1.0, 0.4, 0.4))
+
+func _on_button_pressed(button: Button):
+	match button.name:
+		"LocalGameButton":
+			print("本地游戏 - 未实现")
+			# TODO: 切换到本地游戏场景
+		"OnlineGameButton":
+			print("联机游戏 - 未实现")
+			# TODO: 切换到联机游戏场景
+		"DeckEditorButton":
+			print("卡组编辑 - 未实现")
+			# TODO: 切换到卡组编辑场景
+		"SettingsButton":
+			print("设置 - 未实现")
+			# TODO: 切换到设置场景
+		"ExitButton":
+			get_tree().quit()
+
+func _on_button_hovered(button: Button):
+	# 悬停效果
+	if button.name == "ExitButton":
+		button.modulate = Color(1.2, 0.8, 0.8)
 	else:
-		_log("[Main] Disconnecting...")
-		Network.disconnect_from_server()
+		button.modulate = Color(1.1, 1.1, 1.1)
 
-func _on_connected():
-	_log("[Main] Connected! Joining room...")
-	var room_id = room_input.text
-	var player_name = name_input.text
-	Network.join_room(room_id, player_name)
-
-func _on_disconnected():
-	_log("[Main] Disconnected from server")
-	status_label.text = "Status: Disconnected"
-	connect_button.text = "Connect"
-	connect_button.disabled = false
-	is_in_room = false
-
-func _on_error(error_message: String):
-	_log("[Main] Error: " + error_message)
-	connect_button.disabled = false
-
-func _on_player_joined(player_name: String):
-	_log("[Main] Joined room as: " + player_name)
-	status_label.text = "Status: In Room (Waiting for opponent)"
-	is_in_room = true
-	connect_button.text = "Disconnect"
-
-func _on_opponent_joined(opponent_name: String):
-	_log("[Main] Opponent joined: " + opponent_name)
-	status_label.text = "Status: Opponent Joined"
-
-func _on_game_started(game_state: Dictionary):
-	_log("[Main] Game started!")
-	_log("[Main] Turn: " + str(game_state.get("turn_number")))
-	_log("[Main] Phase: " + game_state.get("current_phase", ""))
-
-	GameState.update_from_server(game_state)
-
-	status_label.text = "Status: Game Started"
-
-	# Submit deck if we haven't (demo deck)
-	if GameState.get_my_deck_count() == 0:
-		var demo_deck: Array[String] = ["S000-C-001", "S000-C-002", "S000-S-001"]
-		Network.submit_deck(demo_deck)
-		_log("[Main] Submitted demo deck")
-
-func _on_state_update(game_state: Dictionary):
-	_log("[Main] State update received")
-	GameState.update_from_server(game_state)
-
-func _on_action_requested(available_actions: Array, timeout_secs: int):
-	_log("[Main] Action requested! Timeout: " + str(timeout_secs) + "s")
-	_log("[Main] Available actions: " + str(available_actions))
-
-	# Auto pass for demo
-	await get_tree().create_timer(1.0).timeout
-	Network.send_action_pass()
-	_log("[Main] Sent Pass action")
-
-func _on_game_over(winner: String, reason: String):
-	_log("[Main] Game Over!")
-	_log("[Main] Winner: " + winner)
-	_log("[Main] Reason: " + reason)
-	status_label.text = "Status: Game Over"
-
-func _log(message: String):
-	print(message)
-	log_text.text += message + "\n"
-	log_text.scroll_vertical = INF
+func _on_button_exited(button: Button):
+	# 恢复正常
+	button.modulate = Color.WHITE
