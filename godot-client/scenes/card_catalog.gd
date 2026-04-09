@@ -11,7 +11,7 @@ const CARD_DISPLAY_SCENE = preload("res://scenes/card_display.tscn")
 @onready var grid_container: GridContainer = $VBoxContainer/ScrollContainer/GridContainer
 @onready var status_label: Label = $VBoxContainer/StatusLabel
 @onready var card_detail_panel: Panel = $CardDetailPanel
-@onready var card_detail_label: Label = $CardDetailPanel/CardDetailLabel
+@onready var card_detail_label: RichTextLabel = $CardDetailPanel/CardDetailLabel
 
 var card_data_list: Array = []
 var card_displays: Array = []
