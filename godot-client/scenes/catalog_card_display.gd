@@ -41,8 +41,6 @@ func setup(data: Dictionary, front_texture: Texture2D = null, back_texture: Text
 	card_button.ignore_texture_size = true
 	# 保持宽高比并居中缩放
 	card_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
-	# 启用扩展以支持缩放
-	card_button.expand = true
 
 	# 设置卡片图片
 	if front_texture != null:

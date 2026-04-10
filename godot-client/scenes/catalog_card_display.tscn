@@ -19,7 +19,6 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 ignore_texture_size = true
 stretch_mode = 5
-expand = true
 
 [node name="CardIdLabel" type="Label" parent="."]
 layout_mode = 1
