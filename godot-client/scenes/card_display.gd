@@ -15,12 +15,8 @@ var card_id: String = ""
 
 func _ready():
 	# 确保 TextureButton 可以接收鼠标事件
-	card_button.mouse_filter = Control.MOUSE_FILTER_STOP
-
-	# 连接信号
-	card_button.mouse_entered.connect(_on_mouse_entered)
-	card_button.mouse_exited.connect(_on_mouse_exited)
-	card_button.pressed.connect(_on_card_pressed)
+	if card_button != null:
+		_setup_card_button()
 
 
 ## 设置卡片显示
@@ -29,6 +25,16 @@ func _ready():
 func setup(data: Dictionary, front_texture: Texture2D = null) -> void:
 	card_data = data
 	card_id = data.get("id", "Unknown")
+
+	# 确保 card_button 已初始化（setup可能在_ready之前调用）
+	if card_button == null:
+		card_button = $CardButton
+
+	# 连接信号（在_ready之前调用时需要手动连接）
+	if not card_button.mouse_entered.is_connected(_on_mouse_entered):
+		card_button.mouse_entered.connect(_on_mouse_entered)
+		card_button.mouse_exited.connect(_on_mouse_exited)
+		card_button.pressed.connect(_on_card_pressed)
 
 	# 配置 TextureButton 缩放模式
 	card_button.ignore_texture_size = true
@@ -57,14 +63,26 @@ func _create_placeholder_texture() -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 
+## 初始化 CardButton 设置
+func _setup_card_button() -> void:
+	if card_button == null:
+		return
+	card_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	card_button.mouse_entered.connect(_on_mouse_entered)
+	card_button.mouse_exited.connect(_on_mouse_exited)
+	card_button.pressed.connect(_on_card_pressed)
+
+
 func _on_mouse_entered():
 	emit_signal("card_hovered", card_data)
-	card_button.modulate = Color(1.1, 1.1, 1.1)
+	if card_button != null:
+		card_button.modulate = Color(1.1, 1.1, 1.1)
 
 
 func _on_mouse_exited():
 	emit_signal("card_unhovered")
-	card_button.modulate = Color.WHITE
+	if card_button != null:
+		card_button.modulate = Color.WHITE
 
 
 func _on_card_pressed():
