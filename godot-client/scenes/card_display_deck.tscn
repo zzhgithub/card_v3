@@ -1,0 +1,64 @@
+[gd_scene format=3 uid="uid://f6qa5w0j5ooq"]
+
+[ext_resource type="Script" path="res://scenes/card_display_deck.gd" id="1_script"]
+
+[node name="CardDisplayDeck" type="Control"]
+custom_minimum_size = Vector2(100, 140)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_script")
+
+[node name="CardTexture" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="HoverOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="ButtonContainer" type="VBoxContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -35.0
+offset_top = -50.0
+offset_right = 35.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 5
+alignment = 1
+
+[node name="PreviewButton" type="Button" parent="ButtonContainer"]
+custom_minimum_size = Vector2(70, 25)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "预览"
+
+[node name="AddButton" type="Button" parent="ButtonContainer"]
+custom_minimum_size = Vector2(70, 25)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "+"
+
+[node name="RemoveButton" type="Button" parent="ButtonContainer"]
+custom_minimum_size = Vector2(70, 25)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "-"

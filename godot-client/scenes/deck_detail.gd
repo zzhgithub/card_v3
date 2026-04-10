@@ -1,30 +1,92 @@
-extends Control
-
 ## 卡组详情页
-## 编辑单个卡组的卡片内容
+## 左右结构：左侧卡组列表(70%)，右侧卡片查询(30%)
+
+extends Control
 
 signal back_requested(saved: bool)
 signal deck_renamed(old_name: String, new_name: String)
 
 const DECKS_DIR = "res://desks"
+const CARD_ASSET_DIR = "res://images/cards"
+const CARD_INFO_DIR = "res://scripts_json/S000"
+const CARD_PREVIEW_POPUP = preload("res://scenes/card_preview_popup.tscn")
+const CARD_DISPLAY_DECK = preload("res://scenes/card_display_deck.tscn")
+const CARD_DISPLAY_CATALOG = preload("res://scenes/card_display_catalog.tscn")
 
 @onready var title_label: Label = $VBoxContainer/TitleLabel
 @onready var card_count_label: Label = $VBoxContainer/CardCountLabel
 @onready var rename_button: Button = $VBoxContainer/RenameButton
 @onready var save_button: Button = $VBoxContainer/ButtonContainer/SaveButton
 @onready var back_button: Button = $VBoxContainer/ButtonContainer/BackButton
-@onready var card_list: VBoxContainer = $VBoxContainer/ScrollContainer/CardList
+@onready var deck_scroll: ScrollContainer = $VBoxContainer/MainHBox/DeckPanel/VBoxContainer/ScrollContainer
+@onready var deck_grid: GridContainer = $VBoxContainer/MainHBox/DeckPanel/VBoxContainer/ScrollContainer/DeckGrid
+@onready var catalog_scroll: ScrollContainer = $VBoxContainer/MainHBox/CatalogPanel/VBoxContainer/ScrollContainer
+@onready var catalog_grid: GridContainer = $VBoxContainer/MainHBox/CatalogPanel/VBoxContainer/ScrollContainer/CatalogGrid
 
 var deck_name: String = ""
 var original_data: Dictionary = {}
 var current_data: Dictionary = {}
 var has_unsaved_changes: bool = false
+var all_card_data: Dictionary = {}  # 缓存所有卡片数据
 
 func _ready():
-	# 连接信号
 	rename_button.pressed.connect(_on_rename_pressed)
 	save_button.pressed.connect(_on_save_pressed)
 	back_button.pressed.connect(_on_back_pressed)
+
+	# 预加载所有卡片数据
+	_preload_all_cards()
+
+
+## 预加载所有可用卡片
+func _preload_all_cards() -> void:
+	all_card_data.clear()
+	var dir = DirAccess.open(CARD_INFO_DIR)
+	if dir == null:
+		push_error("[DeckDetail] 无法打开卡片目录: %s" % CARD_INFO_DIR)
+		return
+
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+	while file_name != "":
+		if file_name.ends_with(".json"):
+			var card_id = file_name.get_basename()
+			var card_data = _load_card_info(card_id)
+			if not card_data.is_empty():
+				all_card_data[card_id] = card_data
+		file_name = dir.get_next()
+	dir.list_dir_end()
+
+	print("[DeckDetail] 预加载了 %d 张卡片" % all_card_data.size())
+
+
+## 从JSON加载卡片信息
+func _load_card_info(card_id: String) -> Dictionary:
+	var json_path = CARD_INFO_DIR + "/" + card_id + ".json"
+	if not FileAccess.file_exists(json_path):
+		return {}
+
+	var file = FileAccess.open(json_path, FileAccess.READ)
+	if file == null:
+		return {}
+
+	var json_string = file.get_as_text()
+	file.close()
+
+	var json = JSON.new()
+	var error = json.parse(json_string)
+	if error != OK:
+		return {}
+
+	return json.data
+
+
+## 加载卡片图片
+func _load_card_image(card_id: String) -> Texture2D:
+	var image_path = CARD_ASSET_DIR + "/" + card_id + ".png"
+	if ResourceLoader.exists(image_path):
+		return load(image_path) as Texture2D
+	return null
 
 
 ## 设置卡组数据
@@ -32,11 +94,9 @@ func setup(deck_name_param: String) -> void:
 	deck_name = deck_name_param
 	title_label.text = "卡组: %s" % deck_name
 
-	# 加载卡组数据
 	_load_deck_data()
-
-	# 显示卡片列表
-	_refresh_card_list()
+	_refresh_deck_grid()
+	_refresh_catalog_grid()
 
 
 ## 加载卡组数据
@@ -54,11 +114,9 @@ func _load_deck_data() -> void:
 			original_data = json.data.duplicate(true)
 			current_data = json.data.duplicate(true)
 		else:
-			push_error("[DeckDetail] 解析JSON失败: %s" % file_path)
 			original_data = {"name": deck_name, "cards": []}
 			current_data = {"name": deck_name, "cards": []}
 	else:
-		push_error("[DeckDetail] 无法读取文件: %s" % file_path)
 		original_data = {"name": deck_name, "cards": []}
 		current_data = {"name": deck_name, "cards": []}
 
@@ -93,61 +151,77 @@ func _check_unsaved_changes() -> bool:
 	return JSON.stringify(current_data) != JSON.stringify(original_data)
 
 
-## 刷新卡片列表显示
-func _refresh_card_list() -> void:
-	# 清除现有列表
-	for child in card_list.get_children():
+## 刷新左侧卡组网格
+func _refresh_deck_grid() -> void:
+	# 清除现有内容
+	for child in deck_grid.get_children():
 		child.queue_free()
 
 	var cards = current_data.get("cards", [])
-	var card_count = cards.size()
+	card_count_label.text = "卡组卡片: %d" % cards.size()
 
-	# 更新卡片数量
-	card_count_label.text = "卡片数量: %d" % card_count
+	# 创建卡组卡片显示
+	for card_id in cards:
+		var card_data = all_card_data.get(card_id, {"id": card_id, "name": card_id})
+		var card_display = CARD_DISPLAY_DECK.instantiate()
+		card_display.custom_minimum_size = Vector2(100, 140)
+		card_display.setup(card_data, _load_card_image(card_id))
 
-	# 显示每张卡片
-	for i in range(card_count):
-		var card_id = cards[i]
-		_create_card_item(i, card_id)
+		# 连接信号
+		card_display.preview_requested.connect(_on_preview_requested)
+		card_display.add_card.connect(_on_add_card_to_deck)
+		card_display.remove_card.connect(_on_remove_card_from_deck)
 
-	# TODO: 添加卡片的UI
-	var todo_label = Label.new()
-	todo_label.text = "TODO: 卡片编辑功能"
-	todo_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	todo_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.5))
-	card_list.add_child(todo_label)
-
-
-## 创建卡片列表项
-func _create_card_item(index: int, card_id: String) -> void:
-	var item = HBoxContainer.new()
-
-	var index_label = Label.new()
-	index_label.text = "%d." % (index + 1)
-	index_label.custom_minimum_size = Vector2(40, 0)
-	item.add_child(index_label)
-
-	var card_label = Label.new()
-	card_label.text = card_id
-	card_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	item.add_child(card_label)
-
-	var remove_button = Button.new()
-	remove_button.text = "移除"
-	remove_button.pressed.connect(_on_remove_card.bind(index))
-	item.add_child(remove_button)
-
-	card_list.add_child(item)
+		deck_grid.add_child(card_display)
 
 
-## 移除卡片
-func _on_remove_card(index: int) -> void:
+## 刷新右侧查询网格
+func _refresh_catalog_grid() -> void:
+	# 清除现有内容
+	for child in catalog_grid.get_children():
+		child.queue_free()
+
+	# 创建所有卡片显示
+	for card_id in all_card_data:
+		var card_data = all_card_data[card_id]
+		var card_display = CARD_DISPLAY_CATALOG.instantiate()
+		card_display.custom_minimum_size = Vector2(100, 140)
+		card_display.setup(card_data, _load_card_image(card_id))
+
+		# 连接信号
+		card_display.preview_requested.connect(_on_preview_requested)
+		card_display.add_to_deck.connect(_on_add_card_to_deck)
+
+		catalog_grid.add_child(card_display)
+
+
+## 预览请求
+func _on_preview_requested(card_data: Dictionary) -> void:
+	var popup = CARD_PREVIEW_POPUP.instantiate()
+	add_child(popup)
+	popup.setup(card_data)
+
+
+## 添加卡片到卡组
+func _on_add_card_to_deck(card_id: String) -> void:
 	var cards = current_data.get("cards", [])
-	if index >= 0 and index < cards.size():
+	cards.append(card_id)
+	has_unsaved_changes = true
+	_update_save_button()
+	_refresh_deck_grid()
+	print("[DeckDetail] 添加卡片: %s" % card_id)
+
+
+## 从卡组移除卡片
+func _on_remove_card_from_deck(card_id: String) -> void:
+	var cards = current_data.get("cards", [])
+	var index = cards.find(card_id)
+	if index >= 0:
 		cards.remove_at(index)
 		has_unsaved_changes = true
 		_update_save_button()
-		_refresh_card_list()
+		_refresh_deck_grid()
+		print("[DeckDetail] 移除卡片: %s" % card_id)
 
 
 ## 更新保存按钮状态
@@ -163,7 +237,7 @@ func _update_save_button() -> void:
 ## 保存按钮点击
 func _on_save_pressed() -> void:
 	if _save_deck_data():
-		card_count_label.text = "卡片数量: %d (已保存)" % current_data.get("cards", []).size()
+		card_count_label.text = "卡组卡片: %d (已保存)" % current_data.get("cards", []).size()
 
 
 ## 返回按钮点击
@@ -171,7 +245,6 @@ func _on_back_pressed() -> void:
 	has_unsaved_changes = _check_unsaved_changes()
 
 	if has_unsaved_changes:
-		# 显示未保存提示
 		var confirm_dialog = ConfirmationDialog.new()
 		confirm_dialog.title = "未保存的更改"
 		confirm_dialog.dialog_text = "卡组有未保存的更改，是否保存？"
@@ -280,15 +353,12 @@ func _rename_deck(new_name: String) -> void:
 	var old_file_path = DECKS_DIR + "/" + deck_name + ".json"
 	var new_file_path = DECKS_DIR + "/" + new_name + ".json"
 
-	# 检查新名称是否已存在
 	if FileAccess.file_exists(new_file_path):
 		push_error("[DeckDetail] 卡组 '%s' 已存在" % new_name)
 		return
 
-	# 更新数据中的名称
 	current_data["name"] = new_name
 
-	# 保存到新文件
 	var file = FileAccess.open(new_file_path, FileAccess.WRITE)
 	if file == null:
 		push_error("[DeckDetail] 无法创建新文件: %s" % new_file_path)
@@ -298,21 +368,15 @@ func _rename_deck(new_name: String) -> void:
 	file.store_string(json_string)
 	file.close()
 
-	# 删除旧文件
 	DirAccess.remove_absolute(old_file_path)
 
 	var old_name = deck_name
 	deck_name = new_name
-
-	# 更新标题
 	title_label.text = "卡组: %s" % deck_name
 
-	# 更新原始数据
 	original_data = current_data.duplicate(true)
 	has_unsaved_changes = false
 	_update_save_button()
 
 	print("[DeckDetail] 卡组已重命名: %s -> %s" % [old_name, deck_name])
-
-	# 发送重命名信号
 	emit_signal("deck_renamed", old_name, deck_name)

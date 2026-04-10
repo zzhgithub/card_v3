@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://deckdetail01"]
+[gd_scene load_steps=2 format=3 uid="uid://deckdetail01"]
 
 [ext_resource type="Script" path="res://scenes/deck_detail.gd" id="1_script"]
 
@@ -42,7 +42,7 @@ horizontal_alignment = 1
 [node name="CardCountLabel" type="Label" parent="VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "卡片数量: 0"
+text = "卡组卡片: 0"
 horizontal_alignment = 1
 
 [node name="RenameButton" type="Button" parent="VBoxContainer"]
@@ -52,14 +52,80 @@ size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 14
 text = "重命名"
 
-[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+[node name="MainHBox" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="DeckPanel" type="Panel" parent="VBoxContainer/MainHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 7.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/MainHBox/DeckPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="VBoxContainer/MainHBox/DeckPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "卡组卡片"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/MainHBox/DeckPanel/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="CardList" type="VBoxContainer" parent="VBoxContainer/ScrollContainer"]
+[node name="DeckGrid" type="GridContainer" parent="VBoxContainer/MainHBox/DeckPanel/VBoxContainer/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 5
+columns = 6
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+
+[node name="CatalogPanel" type="Panel" parent="VBoxContainer/MainHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/MainHBox/CatalogPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="VBoxContainer/MainHBox/CatalogPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "卡片查询"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/MainHBox/CatalogPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CatalogGrid" type="GridContainer" parent="VBoxContainer/MainHBox/CatalogPanel/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 2
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
 
 [node name="ButtonContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2
