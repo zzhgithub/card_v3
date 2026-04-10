@@ -37,47 +37,21 @@ func _ready() -> void:
 	temp_instance.queue_free()
 
 
-## 为图鉴创建卡片显示
-## 注意：这里覆写了 CardFactory 的 create_card 方法，但 target 参数在图鉴中作为父节点使用
-func create_card(card_name: String, target: Node = null) -> CatalogCardDisplay:
-	"""
-	创建图鉴卡片显示
-	@param card_name: 卡片ID（如 "S000-C-001"）
-	@param target: 父节点（通常是 GridContainer 或其他容器）
-	"""
-	if card_display_scene == null:
-		push_error("[CatalogCardFactory] Cannot create card: scene not assigned")
-		return null
-
-	# 加载卡片数据
-	var card_data = _load_card_info(card_name)
-	if card_data.is_empty():
-		push_error("[CatalogCardFactory] Card data not found: %s" % card_name)
-		return null
-
-	_current_card_data = card_data
-
-	# 创建卡片显示
-	var display = card_display_scene.instantiate() as CatalogCardDisplay
-	if display == null:
-		push_error("[CatalogCardFactory] Failed to instantiate card display")
-		return null
-
-	# 添加到目标容器
-	if target != null:
-		target.add_child(display)
-
-	# 配置卡片显示
-	var front_image = _load_card_image(card_name)
-	if front_image == null:
-		front_image = placeholder_texture
-
-	display.setup(card_data, front_image, back_image)
-
-	return display
+## 覆写 CardFactory.create_card 以符合 API 签名
+## 注意：图鉴不使用可拖动 Card，所以返回 null
+## 请使用 create_card_display() 方法创建图鉴显示
+func create_card(card_name: String, target: CardContainer) -> Card:
+	# 图鉴不需要创建可拖动 Card，返回 null
+	# 使用 create_card_display() 替代
+	push_warning("[CatalogCardFactory] create_card() returns null. Use create_card_display() for catalog.")
+	return null
 
 
-## 创建并配置卡片显示（带完整数据）
+## 创建并配置卡片显示（图鉴专用方法）
+## @param card_id: 卡片ID
+## @param card_data: 卡片数据字典
+## @param parent: 父节点
+## @return: CatalogCardDisplay 实例
 func create_card_display(card_id: String, card_data: Dictionary, parent: Node = null) -> CatalogCardDisplay:
 	"""
 	直接使用已有的卡片数据创建显示

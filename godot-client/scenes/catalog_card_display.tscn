@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://catalogcard01"]
+[gd_scene format=3 uid="uid://catalogcard01"]
 
 [ext_resource type="Script" path="res://scenes/catalog_card_display.gd" id="1_script"]
 
