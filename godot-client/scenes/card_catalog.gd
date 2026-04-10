@@ -1,9 +1,11 @@
 extends Control
 
 ## 卡片图鉴场景
-## 显示所有可用卡片，支持滚动浏览和悬停查看详情
+## 显示所有可用卡片，支持预览和预留功能
 
 const CARD_DISPLAY_SCENE = preload("res://scenes/card_display.tscn")
+const CARD_PREVIEW_POPUP = preload("res://scenes/card_preview_popup.tscn")
+const CARD_RESERVE_POPUP = preload("res://scenes/card_reserve_popup.tscn")
 
 @onready var title_label: Label = $VBoxContainer/TitleLabel
 @onready var back_button: Button = $VBoxContainer/BackButton
@@ -11,9 +13,10 @@ const CARD_DISPLAY_SCENE = preload("res://scenes/card_display.tscn")
 @onready var grid_container: GridContainer = $VBoxContainer/ScrollContainer/GridContainer
 @onready var status_label: Label = $VBoxContainer/StatusLabel
 
-## CardFactory 实例（遵循 CardFactory API）
+## CardFactory 实例
 var card_factory: CatalogCardFactory
 var card_items: Array = []
+var current_preview_popup: Node = null
 
 func _ready():
 	# 连接信号
@@ -47,7 +50,7 @@ func _load_and_display_cards() -> void:
 	# 使用 CardFactory 获取所有卡片ID
 	var card_ids = card_factory.get_available_card_ids()
 
-	# 创建每个卡片项（包含ID标签和卡片显示）
+	# 创建每个卡片项
 	for card_id in card_ids:
 		var card_data = card_factory.load_card_full_data(card_id)
 		if card_data.is_empty():
@@ -61,7 +64,7 @@ func _load_and_display_cards() -> void:
 	print("[CardCatalog] Displayed %d cards" % card_items.size())
 
 
-## 创建单个卡片项（包含ID标签和卡片显示）
+## 创建单个卡片项
 func _create_card_item(card_data: Dictionary) -> void:
 	var card_id = card_data.get("id", "Unknown")
 
@@ -78,10 +81,8 @@ func _create_card_item(card_data: Dictionary) -> void:
 	card_display.custom_minimum_size = Vector2(150, 190)
 	card_display.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
-	# 连接卡片信号
-	card_display.card_hovered.connect(_on_card_hovered.bind(card_display))
-	card_display.card_unhovered.connect(_on_card_unhovered.bind(card_display))
-	card_display.card_clicked.connect(_on_card_clicked.bind(card_data))
+	# 连接预览信号
+	card_display.preview_requested.connect(_on_preview_requested)
 
 	# 创建ID标签
 	var id_label = Label.new()
@@ -89,25 +90,15 @@ func _create_card_item(card_data: Dictionary) -> void:
 	id_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	id_label.add_theme_font_size_override("font_size", 12)
 
-	# 创建预留按钮（默认隐藏，hover时显示）
-	var reserve_button = Button.new()
-	reserve_button.text = "预留"
-	reserve_button.visible = false
-	reserve_button.custom_minimum_size = Vector2(60, 30)
-	reserve_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	reserve_button.pressed.connect(_on_reserve_button_pressed.bind(card_data))
-
 	# 将组件添加到容器
 	item_container.add_child(card_display)
 	item_container.add_child(id_label)
-	item_container.add_child(reserve_button)
 
 	# 存储引用
 	card_items.append({
 		"container": item_container,
 		"display": card_display,
 		"id_label": id_label,
-		"reserve_button": reserve_button,
 		"data": card_data
 	})
 
@@ -127,150 +118,39 @@ func _clear_displayed_cards() -> void:
 		child.queue_free()
 
 
-## 卡片悬停处理
-func _on_card_hovered(card_data: Dictionary, card_display: CardDisplay) -> void:
-	# 找到对应的项并显示预留按钮
-	for item in card_items:
-		if item.display == card_display:
-			item.reserve_button.visible = true
-			break
+## 预览请求处理
+func _on_preview_requested(card_data: Dictionary) -> void:
+	# 关闭已存在的预览弹窗
+	if current_preview_popup != null and is_instance_valid(current_preview_popup):
+		current_preview_popup.queue_free()
+
+	# 创建新的预览弹窗
+	current_preview_popup = CARD_PREVIEW_POPUP.instantiate()
+	add_child(current_preview_popup)
+	current_preview_popup.setup(card_data)
+
+	# 连接预留信号
+	current_preview_popup.reserve_requested.connect(_on_reserve_requested)
+	current_preview_popup.closed.connect(func(): current_preview_popup = null)
 
 
-## 卡片取消悬停处理
-func _on_card_unhovered(card_display: CardDisplay) -> void:
-	# 隐藏预留按钮
-	for item in card_items:
-		if item.display == card_display:
-			item.reserve_button.visible = false
-			break
+## 预留请求处理
+func _on_reserve_requested(card_data: Dictionary) -> void:
+	# 创建预留确认弹窗
+	var reserve_popup = CARD_RESERVE_POPUP.instantiate()
+	add_child(reserve_popup)
+	reserve_popup.setup(card_data)
+
+	# 连接确认信号
+	reserve_popup.confirmed.connect(_on_reserve_confirmed)
 
 
-## 卡片点击处理 - 显示大图预览
-func _on_card_clicked(card_data: Dictionary) -> void:
-	_show_large_card_preview(card_data)
-
-
-## 预留按钮点击处理
-func _on_reserve_button_pressed(card_data: Dictionary) -> void:
-	print("[CardCatalog] Reserved card: %s" % card_data.get("id", "Unknown"))
-	# TODO: 实现预留逻辑
-
-
-## 显示大图预览
-func _show_large_card_preview(card_data: Dictionary) -> void:
+## 预留确认处理
+func _on_reserve_confirmed(card_data: Dictionary) -> void:
 	var card_id = card_data.get("id", "Unknown")
-
-	# 创建预览弹窗
-	var preview_popup = Control.new()
-	preview_popup.name = "CardPreviewPopup"
-	preview_popup.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(preview_popup)
-
-	# 背景遮罩
-	var overlay = ColorRect.new()
-	overlay.color = Color(0, 0, 0, 0.8)
-	overlay.set_anchors_preset(Control.PRESET_FULL_RECT)
-	preview_popup.add_child(overlay)
-
-	# 点击背景关闭
-	overlay.gui_input.connect(func(event):
-		if event is InputEventMouseButton and event.pressed:
-			preview_popup.queue_free()
-	)
-
-	# 内容容器（居中）
-	var content = CenterContainer.new()
-	content.set_anchors_preset(Control.PRESET_FULL_RECT)
-	preview_popup.add_child(content)
-
-	# 卡片容器
-	var card_container = VBoxContainer.new()
-	card_container.alignment = BoxContainer.ALIGNMENT_CENTER
-	content.add_child(card_container)
-
-	# 创建大图卡片显示
-	var large_display = CARD_DISPLAY_SCENE.instantiate()
-	large_display.custom_minimum_size = Vector2(300, 420)
-
-	var front_image = _load_card_image(card_id)
-	large_display.setup(card_data, front_image)
-	card_container.add_child(large_display)
-
-	# 卡片名称
-	var name_label = Label.new()
-	name_label.text = card_data.get("name", card_id)
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.add_theme_font_size_override("font_size", 24)
-	name_label.add_theme_color_override("font_color", Color.WHITE)
-	card_container.add_child(name_label)
-
-	# 详细属性（预留时显示）
-	var detail_text = _format_card_detail(card_data)
-	var detail_label = RichTextLabel.new()
-	detail_label.bbcode_enabled = true
-	detail_label.text = detail_text
-	detail_label.custom_minimum_size = Vector2(300, 150)
-	detail_label.fit_content = true
-	detail_label.add_theme_color_override("default_color", Color.WHITE)
-	card_container.add_child(detail_label)
-
-	# 关闭按钮
-	var close_button = Button.new()
-	close_button.text = "×"
-	close_button.add_theme_font_size_override("font_size", 32)
-	close_button.custom_minimum_size = Vector2(50, 50)
-	close_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	close_button.position = Vector2(20, 20)
-	close_button.pressed.connect(func(): preview_popup.queue_free())
-	preview_popup.add_child(close_button)
-
-
-## 加载卡片图片
-func _load_card_image(card_id: String) -> Texture2D:
-	var image_path = "res://images/cards/%s.png" % card_id
-	if ResourceLoader.exists(image_path):
-		return load(image_path) as Texture2D
-	return null
-
-
-## 格式化卡片详情文本
-func _format_card_detail(card_data: Dictionary) -> String:
-	var result = ""
-
-	result += "[b]编号:[/b] %s\n" % card_data.get("id", "Unknown")
-	result += "[b]类型:[/b] %s\n" % card_data.get("card_type", "Unknown")
-
-	# 根据卡片类型显示不同信息
-	match card_data.get("card_type"):
-		"Character":
-			result += "[b]属性:[/b] %s\n" % card_data.get("property", "-")
-			result += "[b]领域:[/b] %s\n" % card_data.get("category", "-")
-			result += "[b]费用:[/b] %d\n" % card_data.get("cost", 0)
-			result += "[b]攻击力:[/b] %d\n" % card_data.get("attack", 0)
-		"Item":
-			result += "[b]种类:[/b] %s\n" % card_data.get("item_kind", "-")
-			result += "[b]属性:[/b] %s\n" % card_data.get("property", "-")
-			result += "[b]领域:[/b] %s\n" % card_data.get("category", "-")
-			result += "[b]费用:[/b] %d\n" % card_data.get("cost", 0)
-		"Strategy":
-			result += "[b]种类:[/b] %s\n" % card_data.get("strategy_kind", "-")
-			result += "[b]属性:[/b] %s\n" % card_data.get("property", "-")
-			result += "[b]领域:[/b] %s\n" % card_data.get("category", "-")
-			result += "[b]费用:[/b] %d\n" % card_data.get("cost", 0)
-		"Legend":
-			result += "[b]属性:[/b] %s\n" % card_data.get("property", "-")
-			result += "[b]费用:[/b] %d\n" % card_data.get("cost", 0)
-
-	# 显示效果
-	var effects = card_data.get("effects", {})
-	if not effects.is_empty():
-		result += "\n[b]效果:[/b]"
-		for effect_id in effects:
-			var effect = effects[effect_id]
-			var trigger = effect.get("trigger", "")
-			result += "\n• %s" % trigger
-
-	return result
+	var card_name = card_data.get("name", "Unknown")
+	print("[CardCatalog] Card reserved: %s (%s)" % [card_id, card_name])
+	# TODO: 实现实际的预留逻辑（发送到服务器或保存到本地）
 
 
 ## 更新状态显示
@@ -280,6 +160,10 @@ func _update_status(count: int) -> void:
 
 ## 返回主菜单
 func _on_back_pressed() -> void:
+	# 关闭预览弹窗
+	if current_preview_popup != null and is_instance_valid(current_preview_popup):
+		current_preview_popup.queue_free()
+
 	# 清理 CardFactory
 	if card_factory != null:
 		card_factory.queue_free()

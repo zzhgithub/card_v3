@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://carddisplay01"]
+[gd_scene load_steps=2 format=3 uid="uid://carddisplay01"]
 
 [ext_resource type="Script" path="res://scenes/card_display.gd" id="1_script"]
 
@@ -8,15 +8,38 @@ layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_script")
 
-[node name="CardButton" type="TextureButton" parent="."]
-custom_minimum_size = Vector2(150, 190)
+[node name="CardTexture" type="TextureRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-ignore_texture_size = true
+expand_mode = 1
 stretch_mode = 5
+
+[node name="HoverOverlay" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="PreviewButton" type="Button" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -40.0
+offset_top = -20.0
+offset_right = 40.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "预览"
