@@ -87,7 +87,7 @@ func _create_card_item(card_data: Dictionary) -> void:
 	var id_label = Label.new()
 	id_label.text = card_id
 	id_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	id_label.theme_override_font_sizes.font_size = 12
+	id_label.add_theme_font_size_override("font_size", 12)
 
 	# 创建预留按钮（默认隐藏，hover时显示）
 	var reserve_button = Button.new()
@@ -200,7 +200,7 @@ func _show_large_card_preview(card_data: Dictionary) -> void:
 	var name_label = Label.new()
 	name_label.text = card_data.get("name", card_id)
 	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.theme_override_font_sizes.font_size = 24
+	name_label.add_theme_font_size_override("font_size", 24)
 	name_label.add_theme_color_override("font_color", Color.WHITE)
 	card_container.add_child(name_label)
 
@@ -217,7 +217,7 @@ func _show_large_card_preview(card_data: Dictionary) -> void:
 	# 关闭按钮
 	var close_button = Button.new()
 	close_button.text = "×"
-	close_button.theme_override_font_sizes.font_size = 32
+	close_button.add_theme_font_size_override("font_size", 32)
 	close_button.custom_minimum_size = Vector2(50, 50)
 	close_button.set_anchors_preset(Control.PRESET_TOP_RIGHT)
 	close_button.position = Vector2(20, 20)
