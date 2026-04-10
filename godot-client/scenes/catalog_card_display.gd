@@ -14,9 +14,16 @@ var card_id: String = ""
 @onready var card_id_label: Label = $CardIdLabel
 
 func _ready():
+	# 确保 TextureButton 可以接收鼠标事件
+	card_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	card_button.ignore_texture_size = false
+
+	# 连接信号
 	card_button.mouse_entered.connect(_on_mouse_entered)
 	card_button.mouse_exited.connect(_on_mouse_exited)
 	card_button.pressed.connect(_on_card_pressed)
+
+	print("[CatalogCardDisplay] Ready: %s" % card_id)
 
 
 ## 设置卡片显示
@@ -40,29 +47,24 @@ func setup(data: Dictionary, front_texture: Texture2D = null, back_texture: Text
 
 ## 创建占位纹理（当没有图片时）
 func _create_placeholder_texture() -> Texture2D:
-	var viewport = SubViewport.new()
-	viewport.size = Vector2(150, 210)
-	viewport.transparent_bg = true
+	# 创建占位图片
+	var image = Image.create(150, 210, false, Image.FORMAT_RGBA8)
+	image.fill(Color(0.2, 0.2, 0.25, 1.0))
 
-	var bg = ColorRect.new()
-	bg.color = Color(0.2, 0.2, 0.25, 1.0)
-	bg.size = viewport.size
-	viewport.add_child(bg)
+	# 添加边框
+	for x in range(150):
+		image.set_pixel(x, 0, Color(0.5, 0.5, 0.5))
+		image.set_pixel(x, 209, Color(0.5, 0.5, 0.5))
+	for y in range(210):
+		image.set_pixel(0, y, Color(0.5, 0.5, 0.5))
+		image.set_pixel(149, y, Color(0.5, 0.5, 0.5))
 
-	var label = Label.new()
-	label.text = card_data.get("name", card_id)
-	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	label.size = viewport.size
-	label.autowrap_mode = TextServer.AUTOWRAP_WORD
-	viewport.add_child(label)
-
-	# 注意：实际项目中应该使用预加载的占位图
-	# 这里简化处理，返回 null 让调用者处理
-	return null
+	var texture = ImageTexture.create_from_image(image)
+	return texture
 
 
 func _on_mouse_entered():
+	print("[CatalogCardDisplay] Mouse entered: %s" % card_id)
 	emit_signal("card_hovered", card_data)
 	# 悬停视觉效果
 	card_button.modulate = Color(1.1, 1.1, 1.1)
