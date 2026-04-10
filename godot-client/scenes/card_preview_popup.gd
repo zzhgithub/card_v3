@@ -1,18 +1,17 @@
 ## 卡片大图预览弹窗
-## 居中显示卡片大图和详细信息
+## 左右结构：左侧大图(90%屏幕高度)，右侧详情
 
 class_name CardPreviewPopup
 extends Control
 
-signal reserve_requested(card_data: Dictionary)
 signal closed
 
-const CARD_DISPLAY_SCENE = preload("res://scenes/card_display.tscn")
+const PREVIEW_CARD_SCENE = preload("res://scenes/preview_card_display.tscn")
 
 var card_data: Dictionary = {}
 
 @onready var overlay: ColorRect = $Overlay
-@onready var content: CenterContainer = $Content
+@onready var content: HBoxContainer = $Content
 @onready var close_button: Button = $CloseButton
 
 func _ready():
@@ -36,47 +35,71 @@ func setup(data: Dictionary) -> void:
 	card_data = data
 	var card_id = data.get("id", "Unknown")
 
-	# 获取内容容器中的卡片容器
-	var card_container = content.get_node("CardContainer")
-
-	# 清除旧内容（如果存在）
-	for child in card_container.get_children():
+	# 清除旧内容
+	for child in content.get_children():
 		child.queue_free()
 
-	# 创建大图卡片显示
-	var large_display = CARD_DISPLAY_SCENE.instantiate()
-	large_display.custom_minimum_size = Vector2(300, 420)
-	large_display.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	# 创建左侧卡片显示区域（占90%屏幕高度）
+	var left_container = CenterContainer.new()
+	left_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	left_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(left_container)
+
+	# 使用专门的预览卡片显示（无悬停效果）
+	var preview_display = PREVIEW_CARD_SCENE.instantiate()
+	# 计算高度为屏幕高度的90%
+	var screen_height = get_viewport_rect().size.y
+	var card_height = screen_height * 0.9
+	var card_width = card_height * 150.0 / 210.0  # 保持卡片比例
+	preview_display.custom_minimum_size = Vector2(card_width, card_height)
+	preview_display.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	preview_display.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 	var front_image = _load_card_image(card_id)
-	large_display.setup(data, front_image)
-	card_container.add_child(large_display)
+	preview_display.setup(data, front_image)
+	left_container.add_child(preview_display)
+
+	# 创建右侧详情面板
+	var right_panel = Panel.new()
+	right_panel.custom_minimum_size = Vector2(400, 0)
+	right_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(right_panel)
+
+	# 右侧内容容器
+	var right_container = VBoxContainer.new()
+	right_container.offset_left = 20
+	right_container.offset_top = 20
+	right_container.offset_right = -20
+	right_container.offset_bottom = -20
+	right_container.anchors_preset = Control.PRESET_FULL_RECT
+	right_container.add_theme_constant_override("separation", 15)
+	right_panel.add_child(right_container)
 
 	# 卡片名称
 	var name_label = Label.new()
 	name_label.text = data.get("name", card_id)
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.add_theme_font_size_override("font_size", 24)
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	name_label.add_theme_font_size_override("font_size", 28)
 	name_label.add_theme_color_override("font_color", Color.WHITE)
-	card_container.add_child(name_label)
+	right_container.add_child(name_label)
+
+	# 分隔线
+	var separator = ColorRect.new()
+	separator.custom_minimum_size = Vector2(0, 2)
+	separator.color = Color(0.5, 0.5, 0.5, 0.5)
+	right_container.add_child(separator)
 
 	# 详细属性
 	var detail_text = _format_card_detail(data)
 	var detail_label = RichTextLabel.new()
 	detail_label.bbcode_enabled = true
 	detail_label.text = detail_text
-	detail_label.custom_minimum_size = Vector2(350, 200)
+	detail_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detail_label.fit_content = true
 	detail_label.add_theme_color_override("default_color", Color.WHITE)
-	card_container.add_child(detail_label)
-
-	# 预留按钮
-	var reserve_button = Button.new()
-	reserve_button.text = "预留此卡"
-	reserve_button.custom_minimum_size = Vector2(120, 40)
-	reserve_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	reserve_button.pressed.connect(_on_reserve_pressed)
-	card_container.add_child(reserve_button)
+	detail_label.add_theme_font_size_override("normal_font_size", 16)
+	right_container.add_child(detail_label)
 
 
 ## 加载卡片图片
@@ -140,12 +163,6 @@ func _on_close_pressed() -> void:
 		emit_signal("closed")
 		queue_free()
 	)
-
-
-## 预留按钮点击
-func _on_reserve_pressed() -> void:
-	emit_signal("reserve_requested", card_data)
-	_on_close_pressed()
 
 
 ## 静态方法：便捷创建并显示预览弹窗

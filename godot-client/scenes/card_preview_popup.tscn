@@ -18,20 +18,20 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.8)
+color = Color(0, 0, 0, 0.85)
 
-[node name="Content" type="CenterContainer" parent="."]
+[node name="Content" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 40.0
+offset_right = -40.0
+offset_bottom = -40.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="CardContainer" type="VBoxContainer" parent="Content"]
-layout_mode = 2
-theme_override_constants/separation = 15
-alignment = 1
+theme_override_constants/separation = 40
 
 [node name="CloseButton" type="Button" parent="."]
 layout_mode = 1

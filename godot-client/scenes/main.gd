@@ -31,9 +31,12 @@ func _on_button_pressed(button: Button):
 		"OnlineGameButton":
 			print("联机游戏 - 未实现")
 			# TODO: 切换到联机游戏场景
-		"DeckEditorButton":
+		"CardCatalogButton":
 			print("卡片图鉴")
 			get_tree().change_scene_to_file("res://scenes/card_catalog.tscn")
+		"DeckEditorButton":
+			print("卡组编辑")
+			get_tree().change_scene_to_file("res://scenes/deck_editor.tscn")
 		"SettingsButton":
 			print("设置 - 未实现")
 			# TODO: 切换到设置场景

@@ -5,7 +5,6 @@ extends Control
 
 const CARD_DISPLAY_SCENE = preload("res://scenes/card_display.tscn")
 const CARD_PREVIEW_POPUP = preload("res://scenes/card_preview_popup.tscn")
-const CARD_RESERVE_POPUP = preload("res://scenes/card_reserve_popup.tscn")
 
 @onready var title_label: Label = $VBoxContainer/TitleLabel
 @onready var back_button: Button = $VBoxContainer/BackButton
@@ -129,28 +128,8 @@ func _on_preview_requested(card_data: Dictionary) -> void:
 	add_child(current_preview_popup)
 	current_preview_popup.setup(card_data)
 
-	# 连接预留信号
-	current_preview_popup.reserve_requested.connect(_on_reserve_requested)
+	# 连接关闭信号
 	current_preview_popup.closed.connect(func(): current_preview_popup = null)
-
-
-## 预留请求处理
-func _on_reserve_requested(card_data: Dictionary) -> void:
-	# 创建预留确认弹窗
-	var reserve_popup = CARD_RESERVE_POPUP.instantiate()
-	add_child(reserve_popup)
-	reserve_popup.setup(card_data)
-
-	# 连接确认信号
-	reserve_popup.confirmed.connect(_on_reserve_confirmed)
-
-
-## 预留确认处理
-func _on_reserve_confirmed(card_data: Dictionary) -> void:
-	var card_id = card_data.get("id", "Unknown")
-	var card_name = card_data.get("name", "Unknown")
-	print("[CardCatalog] Card reserved: %s (%s)" % [card_id, card_name])
-	# TODO: 实现实际的预留逻辑（发送到服务器或保存到本地）
 
 
 ## 更新状态显示

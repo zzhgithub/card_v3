@@ -10,6 +10,7 @@ signal card_unhovered
 
 var card_data: Dictionary = {}
 var card_id: String = ""
+var _is_hovered: bool = false
 
 @onready var card_texture: TextureRect = $CardTexture
 @onready var hover_overlay: ColorRect = $HoverOverlay
@@ -17,16 +18,28 @@ var card_id: String = ""
 
 func _ready():
 	# 初始化状态
-	hover_overlay.visible = false
-	preview_button.visible = false
+	_update_hover_state(false)
 
-	# 连接信号
-	mouse_entered.connect(_on_mouse_entered)
-	mouse_exited.connect(_on_mouse_exited)
+	# 连接预览按钮信号
 	preview_button.pressed.connect(_on_preview_pressed)
 
-	# 确保鼠标事件能接收
+	# 设置鼠标过滤器
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	preview_button.mouse_filter = Control.MOUSE_FILTER_STOP
+
+
+func _process(_delta):
+	# 检查鼠标是否在控件内（更可靠的悬停检测）
+	var mouse_pos = get_global_mouse_position()
+	var rect = get_global_rect()
+	var is_mouse_inside = rect.has_point(mouse_pos)
+
+	if is_mouse_inside != _is_hovered:
+		_is_hovered = is_mouse_inside
+		if _is_hovered:
+			_on_mouse_entered()
+		else:
+			_on_mouse_exited()
 
 
 ## 设置卡片显示
@@ -71,36 +84,33 @@ func _create_placeholder_texture() -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 
+## 更新悬停状态显示
+func _update_hover_state(hovered: bool) -> void:
+	if hover_overlay != null:
+		hover_overlay.visible = hovered
+	if preview_button != null:
+		preview_button.visible = hovered
+
+	if card_texture != null:
+		if hovered:
+			card_texture.modulate = Color(1.1, 1.1, 1.1)
+		else:
+			card_texture.modulate = Color.WHITE
+
+
 ## 鼠标进入
 func _on_mouse_entered() -> void:
 	emit_signal("card_hovered", card_data)
-
-	# 显示蒙层和预览按钮
-	if hover_overlay != null:
-		hover_overlay.visible = true
-	if preview_button != null:
-		preview_button.visible = true
-
-	# 轻微放大效果
-	if card_texture != null:
-		card_texture.modulate = Color(1.1, 1.1, 1.1)
+	_update_hover_state(true)
 
 
 ## 鼠标离开
 func _on_mouse_exited() -> void:
 	emit_signal("card_unhovered", card_data)
-
-	# 隐藏蒙层和预览按钮
-	if hover_overlay != null:
-		hover_overlay.visible = false
-	if preview_button != null:
-		preview_button.visible = false
-
-	# 恢复效果
-	if card_texture != null:
-		card_texture.modulate = Color.WHITE
+	_update_hover_state(false)
 
 
 ## 预览按钮点击
 func _on_preview_pressed() -> void:
+	print("[CardDisplay] Preview button clicked: %s" % card_id)
 	emit_signal("preview_requested", card_data)

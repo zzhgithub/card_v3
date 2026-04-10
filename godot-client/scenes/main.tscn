@@ -56,6 +56,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "联机游戏"
 
+[node name="CardCatalogButton" type="Button" parent="CenterContainer/ButtonContainer"]
+custom_minimum_size = Vector2(200, 50)
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "卡片图鉴"
+
 [node name="DeckEditorButton" type="Button" parent="CenterContainer/ButtonContainer"]
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
