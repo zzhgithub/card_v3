@@ -31,8 +31,8 @@ func _ready() -> void:
 
 	# 验证场景类型
 	var temp_instance = card_display_scene.instantiate()
-	if not (temp_instance is CatalogCardDisplay):
-		push_error("[CatalogCardFactory] card_display_scene must be a CatalogCardDisplay!")
+	if not (temp_instance is CardDisplay):
+		push_error("[CatalogCardFactory] card_display_scene must be a CardDisplay!")
 		card_display_scene = null
 	temp_instance.queue_free()
 
@@ -51,15 +51,15 @@ func create_card(card_name: String, target: CardContainer) -> Card:
 ## @param card_id: 卡片ID
 ## @param card_data: 卡片数据字典
 ## @param parent: 父节点
-## @return: CatalogCardDisplay 实例
-func create_card_display(card_id: String, card_data: Dictionary, parent: Node = null) -> CatalogCardDisplay:
+## @return: CardDisplay 实例
+func create_card_display(card_id: String, card_data: Dictionary, parent: Node = null) -> CardDisplay:
 	"""
 	直接使用已有的卡片数据创建显示
 	"""
 	if card_display_scene == null:
 		return null
 
-	var display = card_display_scene.instantiate() as CatalogCardDisplay
+	var display = card_display_scene.instantiate() as CardDisplay
 	if display == null:
 		return null
 
@@ -70,7 +70,7 @@ func create_card_display(card_id: String, card_data: Dictionary, parent: Node = 
 	if front_image == null:
 		front_image = placeholder_texture
 
-	display.setup(card_data, front_image, back_image)
+	display.setup(card_data, front_image)
 
 	return display
 
