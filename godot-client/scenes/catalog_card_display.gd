@@ -16,7 +16,6 @@ var card_id: String = ""
 func _ready():
 	# 确保 TextureButton 可以接收鼠标事件
 	card_button.mouse_filter = Control.MOUSE_FILTER_STOP
-	card_button.ignore_texture_size = false
 
 	# 连接信号
 	card_button.mouse_entered.connect(_on_mouse_entered)
@@ -36,6 +35,14 @@ func setup(data: Dictionary, front_texture: Texture2D = null, back_texture: Text
 
 	# 设置卡片编号显示
 	card_id_label.text = card_id
+
+	# 配置 TextureButton 缩放模式
+	# 忽略纹理原始大小，使用按钮设定的大小
+	card_button.ignore_texture_size = true
+	# 保持宽高比并居中缩放
+	card_button.stretch_mode = TextureButton.STRETCH_KEEP_ASPECT_CENTERED
+	# 启用扩展以支持缩放
+	card_button.expand = true
 
 	# 设置卡片图片
 	if front_texture != null:
