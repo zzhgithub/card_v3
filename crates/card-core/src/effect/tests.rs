@@ -224,9 +224,9 @@ fn spec_example_7_heal_on_summon() {
 fn condition_ast_composition() {
     let condition = Condition::And(vec![
         Condition::Compare {
-            left: ValueExpr::HandCount(PlayerRef::Opponent),
+            left: ValueExpr::HandCount { player: PlayerRef::Opponent },
             op: CompareOp::Gt,
-            right: ValueExpr::HandCount(PlayerRef::Self_),
+            right: ValueExpr::HandCount { player: PlayerRef::Self_ },
         },
         Condition::Compare {
             left: ValueExpr::CostZonePropertyCount {
@@ -234,7 +234,7 @@ fn condition_ast_composition() {
                 property: Property::Rational,
             },
             op: CompareOp::Gt,
-            right: ValueExpr::Literal(3),
+            right: ValueExpr::Literal { value: 3 },
         },
     ]);
 
@@ -279,4 +279,83 @@ fn choice_with_card_filter() {
     let deserialized: Choice = serde_json::from_str(&json).unwrap();
     let json2 = serde_json::to_string(&deserialized).unwrap();
     assert_eq!(json, json2);
+}
+
+#[test]
+fn test_value_expr_literal_with_float() {
+    // Test that ValueExpr::Literal can be deserialized from a float using internal tagging
+    let json = r#"{"type":"Literal","value":3.0}"#;
+    let result: Result<ValueExpr, _> = serde_json::from_str(json);
+    println!("Deserializing {}: {:?}", json, result);
+    assert!(result.is_ok(), "Failed to deserialize float literal: {:?}", result.err());
+    assert_eq!(result.unwrap(), ValueExpr::Literal { value: 3 });
+}
+
+#[test]
+fn test_value_expr_literal_with_int() {
+    // Test that ValueExpr::Literal can be deserialized from an int using internal tagging
+    let json = r#"{"type":"Literal","value":3}"#;
+    let result: Result<ValueExpr, _> = serde_json::from_str(json);
+    println!("Deserializing {}: {:?}", json, result);
+    assert!(result.is_ok(), "Failed to deserialize int literal: {:?}", result.err());
+    assert_eq!(result.unwrap(), ValueExpr::Literal { value: 3 });
+}
+
+#[test]
+fn test_condition_with_literal() {
+    // Test condition that has a Literal value - using internal tagging for ValueExpr and PlayerRef
+    let json = r#"{"Compare":{"left":{"type":"RealPoint","player":{"type":"Self_"}},"op":"Ge","right":{"type":"Literal","value":3}}}"#;
+    let result: Result<Condition, _> = serde_json::from_str(json);
+    println!("Deserializing condition: {:?}", result);
+    assert!(result.is_ok(), "Failed to deserialize condition: {:?}", result.err());
+}
+
+#[test]
+fn test_godot_json_format_with_floats() {
+    // This is the JSON format Godot produces with "type" tags on all enums
+    // Both Action and ValueExpr now use internally tagged format
+    let godot_json = r#"{"actions":[{"amount":1,"player":{"type":"Self_"},"type":"HealHp"}],"conditions":{"Compare":{"left":{"type":"RealPoint","player":{"type":"Self_"}},"op":"Ge","right":{"type":"Literal","value":3}}},"optional":false,"trigger":"OpponentMainPhase"}"#;
+
+    let result: Result<Effect, _> = serde_json::from_str(godot_json);
+    println!("Godot JSON result: {:?}", result);
+    assert!(result.is_ok(), "Failed to deserialize Godot JSON: {:?}", result.err());
+}
+
+#[test]
+fn test_godot_json_with_float_literal() {
+    // Same test but with float value in Literal
+    let godot_json = r#"{"actions":[{"amount":1,"player":{"type":"Self_"},"type":"HealHp"}],"conditions":{"Compare":{"left":{"type":"RealPoint","player":{"type":"Self_"}},"op":"Ge","right":{"type":"Literal","value":3.0}}},"optional":false,"trigger":"OpponentMainPhase"}"#;
+
+    let result: Result<Effect, _> = serde_json::from_str(godot_json);
+    println!("Godot JSON with float result: {:?}", result);
+    assert!(result.is_ok(), "Failed to deserialize Godot JSON with float: {:?}", result.err());
+}
+
+#[test]
+fn debug_serialize_condition() {
+    // Let's see what JSON format Rust produces for conditions
+    let condition = Condition::Compare {
+        left: ValueExpr::RealPoint { player: PlayerRef::Self_ },
+        op: CompareOp::Ge,
+        right: ValueExpr::Literal { value: 3 },
+    };
+
+    let json = serde_json::to_string(&condition).unwrap();
+    println!("Serialized condition: {}", json);
+
+    // Verify roundtrip
+    let deserialized: Condition = serde_json::from_str(&json).unwrap();
+    assert_eq!(condition, deserialized);
+}
+
+#[test]
+fn debug_serialize_value_expr() {
+    // Let's see what JSON format Rust produces for ValueExpr
+    let expr = ValueExpr::Literal { value: 3 };
+    let json = serde_json::to_string(&expr).unwrap();
+    println!("Serialized ValueExpr::Literal: {}", json);
+
+    let expr2 = ValueExpr::RealPoint { player: PlayerRef::Self_ };
+    let json2 = serde_json::to_string(&expr2).unwrap();
+    println!("Serialized ValueExpr::RealPoint: {}", json2);
 }

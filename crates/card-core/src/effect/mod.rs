@@ -4,11 +4,68 @@
 //! No execution logic — Lua scripts define effects using these types,
 //! and the Rust engine interprets and executes them.
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 
 use crate::types::{
     CardFilter, CardId, CardRef, CardType, EffectKey, InstanceId, PlayerRef, Property, Zone,
 };
+
+// Custom deserializers to handle Godot's float numbers
+fn deserialize_f64_as_u8<'de, D>(deserializer: D) -> Result<u8, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value: f64 = Deserialize::deserialize(deserializer)?;
+    Ok(value as u8)
+}
+
+fn deserialize_f64_as_i16<'de, D>(deserializer: D) -> Result<i16, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let value: f64 = Deserialize::deserialize(deserializer)?;
+    Ok(value as i16)
+}
+
+fn deserialize_literal_value<'de, D>(deserializer: D) -> Result<i32, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    struct LiteralVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for LiteralVisitor {
+        type Value = i32;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("an integer or float number")
+        }
+
+        fn visit_i64<E>(self, value: i64) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(value as i32)
+        }
+
+        fn visit_u64<E>(self, value: u64) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(value as i32)
+        }
+
+        fn visit_f64<E>(self, value: f64) -> Result<Self::Value, E>
+        where
+            E: serde::de::Error,
+        {
+            Ok(value as i32)
+        }
+    }
+
+    deserializer.deserialize_any(LiteralVisitor)
+}
+
+mod condition_de;
 
 #[cfg(test)]
 mod tests;
@@ -117,7 +174,7 @@ pub enum ActivationLimit {
 ///
 /// Supports `And`/`Or`/`Not` composition, enabling Lua scripts to define
 /// arbitrarily complex conditions that are parsed into this AST.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq)]
 pub enum Condition {
     /// All sub-conditions must be true.
     And(Vec<Condition>),
@@ -156,30 +213,34 @@ pub enum CompareOp {
 ///
 /// Used in [`Condition::Compare`] and other numeric contexts.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(tag = "type")]
 pub enum ValueExpr {
     /// A constant integer value.
-    Literal(i32),
+    Literal {
+        #[serde(deserialize_with = "deserialize_literal_value")]
+        value: i32,
+    },
     /// Number of cards in a player's hand.
-    HandCount(PlayerRef),
+    HandCount { player: PlayerRef },
     /// Number of cards in a player's cost zone.
-    CostZoneCount(PlayerRef),
+    CostZoneCount { player: PlayerRef },
     /// Number of cards with a specific property in a player's cost zone.
     CostZonePropertyCount {
         player: PlayerRef,
         property: Property,
     },
     /// Number of cards in a player's front field.
-    FrontFieldCount(PlayerRef),
+    FrontFieldCount { player: PlayerRef },
     /// Number of cards in a player's back field.
-    BackFieldCount(PlayerRef),
+    BackFieldCount { player: PlayerRef },
     /// A player's current RealPoint value.
-    RealPoint(PlayerRef),
+    RealPoint { player: PlayerRef },
     /// A player's current HP.
-    Hp(PlayerRef),
+    Hp { player: PlayerRef },
     /// The highest cost among cards on a player's field.
-    HighestCostOnField(PlayerRef),
+    HighestCostOnField { player: PlayerRef },
     /// A specific card's current attack power.
-    AttackPower(CardRef),
+    AttackPower { card: CardRef },
 }
 
 // ─── Actions ─────────────────────────────────────────────────────────────────
@@ -192,9 +253,9 @@ pub enum ValueExpr {
 #[serde(tag = "type")]
 pub enum Action {
     /// A player draws cards from their deck.
-    Draw { player: PlayerRef, count: u8 },
+    Draw { player: PlayerRef, #[serde(deserialize_with = "deserialize_f64_as_u8")] count: u8 },
     /// Deal damage to a player's HP.
-    Damage { player: PlayerRef, amount: u8 },
+    Damage { player: PlayerRef, #[serde(deserialize_with = "deserialize_f64_as_u8")] amount: u8 },
     /// Destroy a card and send it to the graveyard.
     Destroy { target: CardRef },
     /// Summon a specific card from designated zones without (optionally) paying its cost.
@@ -209,13 +270,13 @@ pub enum Action {
     /// Send a card to its owner's graveyard (without "destroying" it).
     SendToGrave { target: CardRef },
     /// Modify a card's attack power by a signed amount.
-    ModifyAttack { target: CardRef, amount: i16 },
+    ModifyAttack { target: CardRef, #[serde(deserialize_with = "deserialize_f64_as_i16")] amount: i16 },
     /// A player gains RealPoint.
-    GainRealPoint { player: PlayerRef, amount: u8 },
+    GainRealPoint { player: PlayerRef, #[serde(deserialize_with = "deserialize_f64_as_u8")] amount: u8 },
     /// A player recovers HP.
-    HealHp { player: PlayerRef, amount: u8 },
+    HealHp { player: PlayerRef, #[serde(deserialize_with = "deserialize_f64_as_u8")] amount: u8 },
     /// A player discards cards from their hand (player chooses which).
-    Discard { player: PlayerRef, count: u8 },
+    Discard { player: PlayerRef, #[serde(deserialize_with = "deserialize_f64_as_u8")] count: u8 },
     /// Apply a persistent modifier to a card.
     ApplyModifier {
         target: CardRef,

@@ -39,34 +39,34 @@ pub fn resolve_value(
     source: &CardInstance,
 ) -> i32 {
     match expr {
-        ValueExpr::Literal(n) => *n,
-        ValueExpr::HandCount(player_ref) => {
+        ValueExpr::Literal { value } => *value,
+        ValueExpr::HandCount { player: player_ref } => {
             let player_id = resolve_player(player_ref, perspective);
             state.player(player_id).zones.hand.len() as i32
         }
-        ValueExpr::CostZoneCount(player_ref) => {
+        ValueExpr::CostZoneCount { player: player_ref } => {
             let player_id = resolve_player(player_ref, perspective);
             state.player(player_id).zones.cost_zone.len() as i32
         }
-        ValueExpr::CostZonePropertyCount { .. } => 0,
-        ValueExpr::FrontFieldCount(player_ref) => {
+        ValueExpr::CostZonePropertyCount {  .. } => 0,
+        ValueExpr::FrontFieldCount { player: player_ref } => {
             let player_id = resolve_player(player_ref, perspective);
             state.player(player_id).zones.front.iter().flatten().count() as i32
         }
-        ValueExpr::BackFieldCount(player_ref) => {
+        ValueExpr::BackFieldCount { player: player_ref } => {
             let player_id = resolve_player(player_ref, perspective);
             state.player(player_id).zones.back.iter().flatten().count() as i32
         }
-        ValueExpr::RealPoint(player_ref) => {
+        ValueExpr::RealPoint { player: player_ref } => {
             let player_id = resolve_player(player_ref, perspective);
             state.player(player_id).real_point as i32
         }
-        ValueExpr::Hp(player_ref) => {
+        ValueExpr::Hp { player: player_ref } => {
             let player_id = resolve_player(player_ref, perspective);
             state.player(player_id).hp as i32
         }
-        ValueExpr::HighestCostOnField(_) => 0,
-        ValueExpr::AttackPower(card_ref) => {
+        ValueExpr::HighestCostOnField { .. } => 0,
+        ValueExpr::AttackPower { card: card_ref } => {
             resolve_card_attack(card_ref, state, perspective, source)
         }
     }
@@ -151,9 +151,9 @@ mod tests {
     fn test_literal_compare_true() {
         let state = make_state();
         let cond = Condition::Compare {
-            left: ValueExpr::Literal(5),
+            left: ValueExpr::Literal { value: 5 },
             op: CompareOp::Gt,
-            right: ValueExpr::Literal(3),
+            right: ValueExpr::Literal { value: 3 },
         };
         assert!(evaluate_condition(
             &cond,
@@ -168,20 +168,20 @@ mod tests {
         let state = make_state();
         let cond = Condition::And(vec![
             Condition::Not(Box::new(Condition::Compare {
-                left: ValueExpr::Literal(1),
+                left: ValueExpr::Literal { value: 1 },
                 op: CompareOp::Gt,
-                right: ValueExpr::Literal(5),
+                right: ValueExpr::Literal { value: 5 },
             })),
             Condition::Or(vec![
                 Condition::Compare {
-                    left: ValueExpr::Literal(3),
+                    left: ValueExpr::Literal { value: 3 },
                     op: CompareOp::Eq,
-                    right: ValueExpr::Literal(7),
+                    right: ValueExpr::Literal { value: 7 },
                 },
                 Condition::Compare {
-                    left: ValueExpr::Literal(9),
+                    left: ValueExpr::Literal { value: 9 },
                     op: CompareOp::Eq,
-                    right: ValueExpr::Literal(9),
+                    right: ValueExpr::Literal { value: 9 },
                 },
             ]),
         ]);
@@ -200,34 +200,34 @@ mod tests {
         let source = source_card();
 
         let gt = Condition::Compare {
-            left: ValueExpr::Literal(2),
+            left: ValueExpr::Literal { value: 2 },
             op: CompareOp::Gt,
-            right: ValueExpr::Literal(1),
+            right: ValueExpr::Literal { value: 1 },
         };
         let lt = Condition::Compare {
-            left: ValueExpr::Literal(1),
+            left: ValueExpr::Literal { value: 1 },
             op: CompareOp::Lt,
-            right: ValueExpr::Literal(2),
+            right: ValueExpr::Literal { value: 2 },
         };
         let ge = Condition::Compare {
-            left: ValueExpr::Literal(2),
+            left: ValueExpr::Literal { value: 2 },
             op: CompareOp::Ge,
-            right: ValueExpr::Literal(2),
+            right: ValueExpr::Literal { value: 2 },
         };
         let le = Condition::Compare {
-            left: ValueExpr::Literal(2),
+            left: ValueExpr::Literal { value: 2 },
             op: CompareOp::Le,
-            right: ValueExpr::Literal(2),
+            right: ValueExpr::Literal { value: 2 },
         };
         let eq = Condition::Compare {
-            left: ValueExpr::Literal(2),
+            left: ValueExpr::Literal { value: 2 },
             op: CompareOp::Eq,
-            right: ValueExpr::Literal(2),
+            right: ValueExpr::Literal { value: 2 },
         };
         let ne = Condition::Compare {
-            left: ValueExpr::Literal(2),
+            left: ValueExpr::Literal { value: 2 },
             op: CompareOp::Ne,
-            right: ValueExpr::Literal(1),
+            right: ValueExpr::Literal { value: 1 },
         };
 
         assert!(evaluate_condition(&gt, &state, PlayerId::Player1, &source));
@@ -263,9 +263,9 @@ mod tests {
         ));
 
         let cond = Condition::Compare {
-            left: ValueExpr::HandCount(PlayerRef::Self_),
+            left: ValueExpr::HandCount { player: PlayerRef::Self_ },
             op: CompareOp::Gt,
-            right: ValueExpr::HandCount(PlayerRef::Opponent),
+            right: ValueExpr::HandCount { player: PlayerRef::Opponent },
         };
         assert!(evaluate_condition(
             &cond,
@@ -276,7 +276,7 @@ mod tests {
 
         assert_eq!(
             resolve_value(
-                &ValueExpr::CostZoneCount(PlayerRef::Self_),
+                &ValueExpr::CostZoneCount { player: PlayerRef::Self_ },
                 &state,
                 PlayerId::Player1,
                 &source_card()
@@ -308,7 +308,7 @@ mod tests {
 
         assert_eq!(
             resolve_value(
-                &ValueExpr::FrontFieldCount(PlayerRef::Self_),
+                &ValueExpr::FrontFieldCount { player: PlayerRef::Self_ },
                 &state,
                 PlayerId::Player1,
                 &source_card()
@@ -317,7 +317,7 @@ mod tests {
         );
         assert_eq!(
             resolve_value(
-                &ValueExpr::BackFieldCount(PlayerRef::Self_),
+                &ValueExpr::BackFieldCount { player: PlayerRef::Self_ },
                 &state,
                 PlayerId::Player1,
                 &source_card()
@@ -326,7 +326,7 @@ mod tests {
         );
         assert_eq!(
             resolve_value(
-                &ValueExpr::Hp(PlayerRef::Self_),
+                &ValueExpr::Hp { player: PlayerRef::Self_ },
                 &state,
                 PlayerId::Player1,
                 &source_card()
@@ -335,7 +335,7 @@ mod tests {
         );
         assert_eq!(
             resolve_value(
-                &ValueExpr::RealPoint(PlayerRef::Self_),
+                &ValueExpr::RealPoint { player: PlayerRef::Self_ },
                 &state,
                 PlayerId::Player1,
                 &source_card()
@@ -388,7 +388,7 @@ mod tests {
         ));
 
         let value = resolve_value(
-            &ValueExpr::AttackPower(CardRef::BySlot(Zone::Front(0), 1)),
+            &ValueExpr::AttackPower { card: CardRef::BySlot(Zone::Front(0), 1) },
             &state,
             PlayerId::Player1,
             &source_card(),
@@ -403,7 +403,7 @@ mod tests {
 
         assert_eq!(
             resolve_value(
-                &ValueExpr::CostZonePropertyCount {
+                &ValueExpr::CostZonePropertyCount { 
                     player: PlayerRef::Self_,
                     property: crate::types::Property::Rational,
                 },
@@ -415,7 +415,7 @@ mod tests {
         );
         assert_eq!(
             resolve_value(
-                &ValueExpr::HighestCostOnField(PlayerRef::Self_),
+                &ValueExpr::HighestCostOnField { player: PlayerRef::Self_ },
                 &state,
                 PlayerId::Player1,
                 &source

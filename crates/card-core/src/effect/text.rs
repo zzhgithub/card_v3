@@ -270,22 +270,22 @@ fn compare_op_text(op: CompareOp) -> &'static str {
 
 fn value_expr_text(expr: &ValueExpr) -> String {
     match expr {
-        ValueExpr::Literal(value) => value.to_string(),
-        ValueExpr::HandCount(player) => format!("{}手牌数量", player_ref_text(*player)),
-        ValueExpr::CostZoneCount(player) => format!("{}费用区数量", player_ref_text(*player)),
+        ValueExpr::Literal { value } => value.to_string(),
+        ValueExpr::HandCount { player } => format!("{}手牌数量", player_ref_text(*player)),
+        ValueExpr::CostZoneCount { player } => format!("{}费用区数量", player_ref_text(*player)),
         ValueExpr::CostZonePropertyCount { player, property } => format!(
             "{}费用区{}属性卡数量",
             player_ref_text(*player),
             property_text(*property)
         ),
-        ValueExpr::FrontFieldCount(player) => format!("{}前场数量", player_ref_text(*player)),
-        ValueExpr::BackFieldCount(player) => format!("{}后场数量", player_ref_text(*player)),
-        ValueExpr::RealPoint(player) => format!("{}的RealPoint", player_possessive_text(*player)),
-        ValueExpr::Hp(player) => format!("{}的生命值", player_possessive_text(*player)),
-        ValueExpr::HighestCostOnField(player) => {
+        ValueExpr::FrontFieldCount { player } => format!("{}前场数量", player_ref_text(*player)),
+        ValueExpr::BackFieldCount { player } => format!("{}后场数量", player_ref_text(*player)),
+        ValueExpr::RealPoint { player } => format!("{}的RealPoint", player_possessive_text(*player)),
+        ValueExpr::Hp { player } => format!("{}的生命值", player_possessive_text(*player)),
+        ValueExpr::HighestCostOnField { player } => {
             format!("{}场上最高费用", player_ref_text(*player))
         }
-        ValueExpr::AttackPower(card) => format!("{}的攻击力", card_ref_text(card)),
+        ValueExpr::AttackPower { card } => format!("{}的攻击力", card_ref_text(card)),
     }
 }
 
@@ -596,14 +596,14 @@ mod tests {
             },
             Condition::Or(vec![
                 Condition::Compare {
-                    left: ValueExpr::HandCount(PlayerRef::Opponent),
+                    left: ValueExpr::HandCount { player: PlayerRef::Opponent },
                     op: CompareOp::Gt,
-                    right: ValueExpr::HandCount(PlayerRef::Self_),
+                    right: ValueExpr::HandCount { player: PlayerRef::Self_ },
                 },
                 Condition::Not(Box::new(Condition::Compare {
-                    left: ValueExpr::RealPoint(PlayerRef::Self_),
+                    left: ValueExpr::RealPoint { player: PlayerRef::Self_ },
                     op: CompareOp::Le,
-                    right: ValueExpr::Literal(1),
+                    right: ValueExpr::Literal { value: 1 },
                 })),
             ]),
         ]);

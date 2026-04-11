@@ -241,6 +241,7 @@ func _get_effects_text(effects: Dictionary) -> Array[String]:
 
 	# 将效果字典转换为 JSON
 	var json_string = JSON.stringify(effects)
+	print("[CardPreviewPopup] Effects JSON input: " + json_string)
 
 	# 写入临时文件
 	var temp_path = OS.get_user_data_dir() + "/temp_effects.json"
@@ -256,6 +257,8 @@ func _get_effects_text(effects: Dictionary) -> Array[String]:
 	var output = []
 	var exit_code = OS.execute(tool_path, [temp_path], output, true, true)
 
+	print("[CardPreviewPopup] Tool exit code: " + str(exit_code))
+
 	if exit_code != 0:
 		push_error("[CardPreviewPopup] Effect tool failed with exit code: " + str(exit_code))
 		# 返回简单的效果描述作为 fallback
@@ -266,8 +269,10 @@ func _get_effects_text(effects: Dictionary) -> Array[String]:
 		return result
 
 	# 解析输出
+	print("[CardPreviewPopup] Tool output size: " + str(output.size()))
 	if output.size() > 0:
 		var output_text = output[0]
+		print("[CardPreviewPopup] Tool output: " + output_text)
 		# 按行分割
 		var lines = output_text.split("\n", false)
 		for line in lines:
