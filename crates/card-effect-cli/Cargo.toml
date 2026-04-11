@@ -1,0 +1,14 @@
+[package]
+name = "card-effect-cli"
+edition.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "card-effect-tool"
+path = "src/main.rs"
+
+[dependencies]
+card-core = { path = "../card-core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }

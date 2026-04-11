@@ -1905,6 +1905,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "card-effect-cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "card-core",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "card-matchmaker"
 version = "0.1.0"
 dependencies = [

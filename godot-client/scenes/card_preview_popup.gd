@@ -61,18 +61,21 @@ func setup(data: Dictionary) -> void:
 
 	# 创建右侧详情面板
 	var right_panel = Panel.new()
-	right_panel.custom_minimum_size = Vector2(400, 0)
+	right_panel.custom_minimum_size = Vector2(450, 0)
 	right_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(right_panel)
 
 	# 右侧内容容器
 	var right_container = VBoxContainer.new()
+	right_container.layout_mode = 1
+	right_container.anchors_preset = Control.PRESET_FULL_RECT
 	right_container.offset_left = 20
 	right_container.offset_top = 20
 	right_container.offset_right = -20
 	right_container.offset_bottom = -20
-	right_container.anchors_preset = Control.PRESET_FULL_RECT
+	right_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	right_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	right_container.add_theme_constant_override("separation", 15)
 	right_panel.add_child(right_container)
 
@@ -95,8 +98,10 @@ func setup(data: Dictionary) -> void:
 	var detail_label = RichTextLabel.new()
 	detail_label.bbcode_enabled = true
 	detail_label.text = detail_text
+	detail_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detail_label.fit_content = true
+	detail_label.scroll_active = false
 	detail_label.add_theme_color_override("default_color", Color.WHITE)
 	detail_label.add_theme_font_size_override("normal_font_size", 16)
 	right_container.add_child(detail_label)
@@ -119,31 +124,31 @@ func _format_card_detail(data: Dictionary) -> String:
 
 	match data.get("card_type"):
 		"Character":
-			result += "[b]属性 (Property):[/b] %s\n" % data.get("property", "-")
-			result += "[b]领域 (Category):[/b] %s\n" % data.get("category", "-")
+			result += "[b]属性 (Property):[/b] %s\n" % _get_property_name(data.get("property", "-"))
+			result += "[b]领域 (Category):[/b] %s\n" % _get_category_name(data.get("category", "-"))
 			result += "[b]费用 (Cost):[/b] %d\n" % data.get("cost", 0)
 			result += "[b]攻击力 (Attack):[/b] %d\n" % data.get("attack", 0)
 		"Item":
-			result += "[b]种类 (Kind):[/b] %s\n" % data.get("item_kind", "-")
-			result += "[b]属性 (Property):[/b] %s\n" % data.get("property", "-")
-			result += "[b]领域 (Category):[/b] %s\n" % data.get("category", "-")
+			result += "[b]种类 (Kind):[/b] %s\n" % _get_item_kind_name(data.get("item_kind", "-"))
+			result += "[b]属性 (Property):[/b] %s\n" % _get_property_name(data.get("property", "-"))
+			result += "[b]领域 (Category):[/b] %s\n" % _get_category_name(data.get("category", "-"))
 			result += "[b]费用 (Cost):[/b] %d\n" % data.get("cost", 0)
 		"Strategy":
-			result += "[b]种类 (Kind):[/b] %s\n" % data.get("strategy_kind", "-")
-			result += "[b]属性 (Property):[/b] %s\n" % data.get("property", "-")
-			result += "[b]领域 (Category):[/b] %s\n" % data.get("category", "-")
+			result += "[b]种类 (Kind):[/b] %s\n" % _get_strategy_kind_name(data.get("strategy_kind", "-"))
+			result += "[b]属性 (Property):[/b] %s\n" % _get_property_name(data.get("property", "-"))
+			result += "[b]领域 (Category):[/b] %s\n" % _get_category_name(data.get("category", "-"))
 			result += "[b]费用 (Cost):[/b] %d\n" % data.get("cost", 0)
 		"Legend":
-			result += "[b]属性 (Property):[/b] %s\n" % data.get("property", "-")
+			result += "[b]属性 (Property):[/b] %s\n" % _get_property_name(data.get("property", "-"))
 			result += "[b]费用 (Cost):[/b] %d\n" % data.get("cost", 0)
 
 	var effects = data.get("effects", {})
 	if not effects.is_empty():
 		result += "\n[b]效果 (Effects):[/b]"
-		for effect_id in effects:
-			var effect = effects[effect_id]
-			var trigger = effect.get("trigger", "")
-			result += "\n• %s" % trigger
+		# 调用外部工具转换效果为中文
+		var effect_texts = _get_effects_text(effects)
+		for text in effect_texts:
+			result += "\n• %s" % text
 
 	return result
 
@@ -161,6 +166,116 @@ func _get_card_type_name(type: String) -> String:
 			return "传说 (Legend)"
 		_:
 			return type
+
+
+## 获取属性中文名称
+func _get_property_name(property: String) -> String:
+	match property:
+		"Rational":
+			return "理性 (Rational)"
+		"Divine":
+			return "神圣 (Divine)"
+		"Spiritual":
+			return "灵性 (Spiritual)"
+		_:
+			return property
+
+
+## 获取领域中文名称
+func _get_category_name(category: String) -> String:
+	match category:
+		"Math":
+			return "数学 (Math)"
+		"Science":
+			return "科学 (Science)"
+		"Literature":
+			return "文学 (Literature)"
+		"Philosophy":
+			return "哲学 (Philosophy)"
+		"Mystery":
+			return "神秘 (Mystery)"
+		_:
+			return category
+
+
+## 获取策略种类中文名称
+func _get_strategy_kind_name(kind: String) -> String:
+	match kind:
+		"Normal":
+			return "普通 (Normal)"
+		"Trick":
+			return "计谋 (Trick)"
+		"Instant":
+			return "瞬间 (Instant)"
+		_:
+			return kind
+
+
+## 获取道具种类中文名称
+func _get_item_kind_name(kind: String) -> String:
+	match kind:
+		"Normal":
+			return "普通 (Normal)"
+		"Persistent":
+			return "持续 (Persistent)"
+		_:
+			return kind
+
+
+## 调用外部工具获取效果文本
+func _get_effects_text(effects: Dictionary) -> Array[String]:
+	var result: Array[String] = []
+
+	# 获取工具路径
+	var tool_path = ProjectSettings.globalize_path("res://tools/card-effect-tool")
+
+	# 检查工具是否存在
+	if not FileAccess.file_exists("res://tools/card-effect-tool"):
+		push_error("[CardPreviewPopup] Effect tool not found: " + tool_path)
+		# 返回简单的效果描述作为 fallback
+		for effect_id in effects:
+			var effect = effects[effect_id]
+			var trigger = effect.get("trigger", "未知")
+			result.append(trigger)
+		return result
+
+	# 将效果字典转换为 JSON
+	var json_string = JSON.stringify(effects)
+
+	# 写入临时文件
+	var temp_path = OS.get_user_data_dir() + "/temp_effects.json"
+	var file = FileAccess.open(temp_path, FileAccess.WRITE)
+	if file:
+		file.store_string(json_string)
+		file.close()
+	else:
+		push_error("[CardPreviewPopup] Failed to write temp file")
+		return result
+
+	# 执行外部工具，从文件读取
+	var output = []
+	var exit_code = OS.execute(tool_path, [temp_path], output, true, true)
+
+	if exit_code != 0:
+		push_error("[CardPreviewPopup] Effect tool failed with exit code: " + str(exit_code))
+		# 返回简单的效果描述作为 fallback
+		for effect_id in effects:
+			var effect = effects[effect_id]
+			var trigger = effect.get("trigger", "未知")
+			result.append(trigger)
+		return result
+
+	# 解析输出
+	if output.size() > 0:
+		var output_text = output[0]
+		# 按行分割
+		var lines = output_text.split("\n", false)
+		for line in lines:
+			line = line.strip_edges()
+			if not line.is_empty():
+				result.append(line)
+
+	return result
 
 
 ## 点击背景关闭

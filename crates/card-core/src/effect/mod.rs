@@ -35,6 +35,7 @@ pub struct Effect {
     /// Conditions that must hold for the effect to be activatable.
     pub conditions: Option<Condition>,
     /// Targets the player must choose before resolution.
+    #[serde(default)]
     pub choices: Vec<Choice>,
     /// Actions performed when the effect resolves (executed in order).
     pub actions: Vec<Action>,

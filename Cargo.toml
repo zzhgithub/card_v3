@@ -8,6 +8,7 @@ members = [
     "crates/card-tui",
     "crates/card-matchmaker",
     "crates/card-bevy",
+    "crates/card-effect-cli",
 ]
 resolver = "2"
 
