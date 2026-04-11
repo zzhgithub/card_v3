@@ -114,38 +114,53 @@ func _load_card_image(card_id: String) -> Texture2D:
 func _format_card_detail(data: Dictionary) -> String:
 	var result = ""
 
-	result += "[b]编号:[/b] %s\n" % data.get("id", "Unknown")
-	result += "[b]类型:[/b] %s\n" % data.get("card_type", "Unknown")
+	result += "[b]编号 (ID):[/b] %s\n" % data.get("id", "Unknown")
+	result += "[b]类型 (Type):[/b] %s\n" % _get_card_type_name(data.get("card_type", "Unknown"))
 
 	match data.get("card_type"):
 		"Character":
-			result += "[b]属性:[/b] %s\n" % data.get("property", "-")
-			result += "[b]领域:[/b] %s\n" % data.get("category", "-")
-			result += "[b]费用:[/b] %d\n" % data.get("cost", 0)
-			result += "[b]攻击力:[/b] %d\n" % data.get("attack", 0)
+			result += "[b]属性 (Property):[/b] %s\n" % data.get("property", "-")
+			result += "[b]领域 (Category):[/b] %s\n" % data.get("category", "-")
+			result += "[b]费用 (Cost):[/b] %d\n" % data.get("cost", 0)
+			result += "[b]攻击力 (Attack):[/b] %d\n" % data.get("attack", 0)
 		"Item":
-			result += "[b]种类:[/b] %s\n" % data.get("item_kind", "-")
-			result += "[b]属性:[/b] %s\n" % data.get("property", "-")
-			result += "[b]领域:[/b] %s\n" % data.get("category", "-")
-			result += "[b]费用:[/b] %d\n" % data.get("cost", 0)
+			result += "[b]种类 (Kind):[/b] %s\n" % data.get("item_kind", "-")
+			result += "[b]属性 (Property):[/b] %s\n" % data.get("property", "-")
+			result += "[b]领域 (Category):[/b] %s\n" % data.get("category", "-")
+			result += "[b]费用 (Cost):[/b] %d\n" % data.get("cost", 0)
 		"Strategy":
-			result += "[b]种类:[/b] %s\n" % data.get("strategy_kind", "-")
-			result += "[b]属性:[/b] %s\n" % data.get("property", "-")
-			result += "[b]领域:[/b] %s\n" % data.get("category", "-")
-			result += "[b]费用:[/b] %d\n" % data.get("cost", 0)
+			result += "[b]种类 (Kind):[/b] %s\n" % data.get("strategy_kind", "-")
+			result += "[b]属性 (Property):[/b] %s\n" % data.get("property", "-")
+			result += "[b]领域 (Category):[/b] %s\n" % data.get("category", "-")
+			result += "[b]费用 (Cost):[/b] %d\n" % data.get("cost", 0)
 		"Legend":
-			result += "[b]属性:[/b] %s\n" % data.get("property", "-")
-			result += "[b]费用:[/b] %d\n" % data.get("cost", 0)
+			result += "[b]属性 (Property):[/b] %s\n" % data.get("property", "-")
+			result += "[b]费用 (Cost):[/b] %d\n" % data.get("cost", 0)
 
 	var effects = data.get("effects", {})
 	if not effects.is_empty():
-		result += "\n[b]效果:[/b]"
+		result += "\n[b]效果 (Effects):[/b]"
 		for effect_id in effects:
 			var effect = effects[effect_id]
 			var trigger = effect.get("trigger", "")
 			result += "\n• %s" % trigger
 
 	return result
+
+
+## 获取卡片类型中文名称
+func _get_card_type_name(type: String) -> String:
+	match type:
+		"Character":
+			return "角色 (Character)"
+		"Item":
+			return "道具 (Item)"
+		"Strategy":
+			return "策略 (Strategy)"
+		"Legend":
+			return "传说 (Legend)"
+		_:
+			return type
 
 
 ## 点击背景关闭
