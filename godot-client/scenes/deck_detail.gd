@@ -185,11 +185,10 @@ func _refresh_catalog_grid() -> void:
 		var card_data = all_card_data[card_id]
 		var card_display = CARD_DISPLAY_SCENE.instantiate()
 		card_display.custom_minimum_size = Vector2(100, 140)
-		card_display.setup(card_data, null, true, false, CardDisplay.InteractionMode.ADD_MODE)
+		card_display.setup(card_data, null, true, false, CardDisplay.InteractionMode.PREVIEW_ONLY)
 
-		# 连接信号
+		# 连接信号（搜索列表只显示预览按钮）
 		card_display.preview_requested.connect(_on_preview_requested)
-		card_display.add_to_deck.connect(_on_add_card_to_deck)
 
 		catalog_grid.add_child(card_display)
 

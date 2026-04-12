@@ -476,13 +476,51 @@ func _update_hover_state(hovered: bool) -> void:
 	if hover_overlay != null:
 		hover_overlay.visible = hovered
 
-	# 根据交互模式显示对应的按钮
-	if preview_button != null:
-		preview_button.visible = hovered and (interaction_mode == InteractionMode.PREVIEW_ONLY or interaction_mode == InteractionMode.DECK_MODE)
-	if add_button != null:
-		add_button.visible = hovered and (interaction_mode == InteractionMode.ADD_MODE or interaction_mode == InteractionMode.DECK_MODE)
-	if remove_button != null:
-		remove_button.visible = hovered and (interaction_mode == InteractionMode.REMOVE_MODE or interaction_mode == InteractionMode.DECK_MODE)
+	# 根据交互模式显示对应的按钮并设置位置
+	match interaction_mode:
+		InteractionMode.PREVIEW_ONLY:
+			# 只显示预览按钮（居中）
+			if preview_button != null:
+				preview_button.visible = hovered
+				preview_button.position = Vector2(size.x / 2 - 40, size.y / 2 - 20)
+			if add_button != null:
+				add_button.visible = false
+			if remove_button != null:
+				remove_button.visible = false
+
+		InteractionMode.ADD_MODE:
+			# 搜索列表：预览和+按钮（竖直排列）
+			if preview_button != null:
+				preview_button.visible = hovered
+				preview_button.position = Vector2(size.x / 2 - 40, size.y / 2 - 40)
+			if add_button != null:
+				add_button.visible = hovered
+				add_button.position = Vector2(size.x / 2 - 30, size.y / 2 + 10)
+			if remove_button != null:
+				remove_button.visible = false
+
+		InteractionMode.REMOVE_MODE:
+			# 预览和-按钮（竖直排列）
+			if preview_button != null:
+				preview_button.visible = hovered
+				preview_button.position = Vector2(size.x / 2 - 40, size.y / 2 - 40)
+			if add_button != null:
+				add_button.visible = false
+			if remove_button != null:
+				remove_button.visible = hovered
+				remove_button.position = Vector2(size.x / 2 - 30, size.y / 2 + 10)
+
+		InteractionMode.DECK_MODE:
+			# 卡组列表：预览、+、- 三个按钮（竖直排列）
+			if preview_button != null:
+				preview_button.visible = hovered
+				preview_button.position = Vector2(size.x / 2 - 40, size.y / 2 - 60)
+			if add_button != null:
+				add_button.visible = hovered
+				add_button.position = Vector2(size.x / 2 - 30, size.y / 2)
+			if remove_button != null:
+				remove_button.visible = hovered
+				remove_button.position = Vector2(size.x / 2 - 30, size.y / 2 + 40)
 
 	if artwork_layer != null:
 		if hovered:
