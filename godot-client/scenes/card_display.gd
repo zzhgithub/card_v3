@@ -220,11 +220,15 @@ func _render_image_mode(front_texture: Texture2D):
 	else:
 		artwork_layer.texture = _create_placeholder_texture()
 
-## 加载卡图
+## 加载卡图（优先png，其次jpg）
 func _load_artwork():
-	var image_path = "res://images/cards/%s.png" % card_id
-	if ResourceLoader.exists(image_path):
-		artwork_layer.texture = load(image_path)
+	var png_path = "res://images/cards/%s.png" % card_id
+	var jpg_path = "res://images/cards/%s.jpg" % card_id
+
+	if ResourceLoader.exists(png_path):
+		artwork_layer.texture = load(png_path)
+	elif ResourceLoader.exists(jpg_path):
+		artwork_layer.texture = load(jpg_path)
 	else:
 		artwork_layer.texture = _create_placeholder_texture()
 
@@ -252,8 +256,8 @@ func _render_title():
 	title_label.text = name
 	title_label.add_theme_font_size_override("font_size", int(80 * scale_factor))
 
-	# 设置位置和尺寸
-	title_label.position = Vector2(125 * scale_factor, 90 * scale_factor)
+	# 设置位置和尺寸（向上移动修正偏低问题）
+	title_label.position = Vector2(125 * scale_factor, 60 * scale_factor)
 	title_label.size = Vector2(1250 * scale_factor, 80 * scale_factor)
 
 ## 渲染属性（费用+图标）

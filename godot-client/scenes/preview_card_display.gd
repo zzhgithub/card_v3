@@ -115,9 +115,13 @@ func _render_template():
 	_render_card_id()
 
 func _load_artwork():
-	var image_path = "res://images/cards/%s.png" % card_id
-	if ResourceLoader.exists(image_path):
-		artwork_layer.texture = load(image_path)
+	var png_path = "res://images/cards/%s.png" % card_id
+	var jpg_path = "res://images/cards/%s.jpg" % card_id
+
+	if ResourceLoader.exists(png_path):
+		artwork_layer.texture = load(png_path)
+	elif ResourceLoader.exists(jpg_path):
+		artwork_layer.texture = load(jpg_path)
 	else:
 		artwork_layer.texture = _create_placeholder_texture()
 
@@ -147,8 +151,8 @@ func _render_title():
 	title_label.text = name
 	title_label.add_theme_font_size_override("font_size", int(_s(80)))
 
-	# 设置位置和尺寸（根据缩放比例）
-	title_label.position = Vector2(_s(125), _s(90))
+	# 设置位置和尺寸（根据缩放比例，向上移动修正偏低问题）
+	title_label.position = Vector2(_s(125), _s(60))
 	title_label.size = Vector2(_s(1250), _s(80))
 
 func _render_attributes():
