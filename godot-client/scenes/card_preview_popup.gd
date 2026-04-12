@@ -59,11 +59,12 @@ func setup(data: Dictionary) -> void:
 	preview_display.setup(data)
 	left_container.add_child(preview_display)
 
-	# 创建右侧详情面板（透明背景）
-	var right_panel = Control.new()
+	# 创建右侧详情面板（半透明背景）
+	var right_panel = ColorRect.new()
 	right_panel.custom_minimum_size = Vector2(450, 0)
 	right_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	right_panel.color = Color(0.1, 0.1, 0.15, 0.85)
 	content.add_child(right_panel)
 
 	# 右侧内容容器
@@ -71,7 +72,7 @@ func setup(data: Dictionary) -> void:
 	right_container.layout_mode = 1
 	right_container.anchors_preset = Control.PRESET_FULL_RECT
 	right_container.offset_left = 20
-	right_container.offset_top = 20
+	right_container.offset_top = 18
 	right_container.offset_right = -20
 	right_container.offset_bottom = -20
 	right_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
