@@ -152,7 +152,7 @@ func _render_title():
 	title_label.add_theme_font_size_override("font_size", int(_s(80)))
 
 	# 设置位置和尺寸（根据缩放比例，向上移动修正偏低问题）
-	title_label.position = Vector2(_s(125), _s(60))
+	title_label.position = Vector2(_s(125), _s(90))
 	title_label.size = Vector2(_s(1250), _s(80))
 
 func _render_attributes():

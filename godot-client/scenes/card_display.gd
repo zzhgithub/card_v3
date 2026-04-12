@@ -22,7 +22,8 @@ enum DisplayMode {
 enum InteractionMode {
 	PREVIEW_ONLY,   ## 仅预览按钮
 	ADD_MODE,       ## 添加按钮（+）
-	REMOVE_MODE     ## 移除按钮（-）
+	REMOVE_MODE,    ## 移除按钮（-）
+	DECK_MODE       ## 卡组模式（预览、+、- 三个按钮）
 }
 
 ## 设计稿基准尺寸
@@ -477,11 +478,11 @@ func _update_hover_state(hovered: bool) -> void:
 
 	# 根据交互模式显示对应的按钮
 	if preview_button != null:
-		preview_button.visible = hovered and interaction_mode == InteractionMode.PREVIEW_ONLY
+		preview_button.visible = hovered and (interaction_mode == InteractionMode.PREVIEW_ONLY or interaction_mode == InteractionMode.DECK_MODE)
 	if add_button != null:
-		add_button.visible = hovered and interaction_mode == InteractionMode.ADD_MODE
+		add_button.visible = hovered and (interaction_mode == InteractionMode.ADD_MODE or interaction_mode == InteractionMode.DECK_MODE)
 	if remove_button != null:
-		remove_button.visible = hovered and interaction_mode == InteractionMode.REMOVE_MODE
+		remove_button.visible = hovered and (interaction_mode == InteractionMode.REMOVE_MODE or interaction_mode == InteractionMode.DECK_MODE)
 
 	if artwork_layer != null:
 		if hovered:
