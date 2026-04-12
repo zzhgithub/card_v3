@@ -69,7 +69,7 @@ func _create_card_item(card_data: Dictionary) -> void:
 
 	# 创建容器
 	var item_container = VBoxContainer.new()
-	item_container.custom_minimum_size = Vector2(150, 240)
+	item_container.custom_minimum_size = Vector2(150, 260)
 	item_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	# 创建卡片显示
@@ -77,7 +77,7 @@ func _create_card_item(card_data: Dictionary) -> void:
 	if card_display == null:
 		return
 
-	card_display.custom_minimum_size = Vector2(150, 190)
+	card_display.custom_minimum_size = Vector2(150, 210)
 	card_display.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	# 连接预览信号
