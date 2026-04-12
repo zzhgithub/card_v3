@@ -78,6 +78,10 @@ func _ready():
 	preview_button.mouse_filter = Control.MOUSE_FILTER_STOP
 
 func _process(_delta):
+	# 确保尺寸一致（防止GridContainer拉伸导致蒙层不匹配）
+	if size != custom_minimum_size:
+		size = custom_minimum_size
+
 	var mouse_pos = get_global_mouse_position()
 	var rect = get_global_rect()
 	var is_mouse_inside = rect.has_point(mouse_pos)
@@ -109,9 +113,12 @@ func setup(data: Dictionary, front_texture: Texture2D = null, use_template: bool
 	# 计算缩放比例
 	scale_factor = target_width / DESIGN_WIDTH
 
-	# 设置控件尺寸
+	# 设置控件尺寸（确保size和custom_minimum_size一致）
 	custom_minimum_size = Vector2(target_width, target_height)
 	size = Vector2(target_width, target_height)
+
+	# 强制立即更新布局以确保子节点正确填充
+	queue_redraw()
 
 	# 初始化节点引用
 	_ensure_nodes_initialized()

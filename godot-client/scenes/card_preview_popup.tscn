@@ -3,12 +3,14 @@
 [ext_resource type="Script" path="res://scenes/card_preview_popup.gd" id="1_script"]
 
 [node name="CardPreviewPopup" type="Control"]
+z_index = 100
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 0
 script = ExtResource("1_script")
 
 [node name="Overlay" type="ColorRect" parent="."]

@@ -43,6 +43,7 @@ func setup(data: Dictionary) -> void:
 	var left_container = CenterContainer.new()
 	left_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	left_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left_container.mouse_filter = Control.MOUSE_FILTER_STOP
 	content.add_child(left_container)
 
 	# 使用专门的预览卡片显示（无悬停效果，大图模板模式）
@@ -65,6 +66,7 @@ func setup(data: Dictionary) -> void:
 	right_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	right_panel.color = Color(0.1, 0.1, 0.15, 0.85)
+	right_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	content.add_child(right_panel)
 
 	# 右侧内容容器
