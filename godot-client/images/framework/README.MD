@@ -10,8 +10,9 @@
 	- 策略卡：res://images/framework/frame-s.png
 	- 物品卡：res://images/framework/frame-i.png
 - 费用图片：res://images/framework/costs/{费用值}.svg 
-- 神性标识：res://images/framework/attribute/god.png
-- 理性标识：res://images/framework/attribute/lx.png
+- 神性标识：res://images/framework/attribute/god.jpg
+- 理性标识：res://images/framework/attribute/lx.jpg
+- 灵性标识：res://images/framework/attribute/ling.jpg
 
 区域位置和说明
 

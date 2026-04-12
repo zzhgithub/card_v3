@@ -1,15 +1,14 @@
-[gd_scene load_steps=2 format=3 uid="uid://carddisplay01"]
+[gd_scene format=3 uid="uid://carddisplay01"]
 
-[ext_resource type="Script" path="res://scenes/card_display.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://4kignj04xenj" path="res://scenes/card_display.gd" id="1_script"]
 
-[node name="CardDisplay" type="Control"]
+[node name="CardDisplay" type="Control" unique_id=1090434119]
 custom_minimum_size = Vector2(150, 210)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_script")
 
-[node name="ArtworkLayer" type="TextureRect" parent="."]
-z_index = 0
+[node name="ArtworkLayer" type="TextureRect" parent="." unique_id=1737645384]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,7 +18,7 @@ grow_vertical = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="FrameworkLayer" type="TextureRect" parent="."]
+[node name="FrameworkLayer" type="TextureRect" parent="." unique_id=1257792274]
 z_index = 1
 layout_mode = 1
 anchors_preset = 15
@@ -30,7 +29,7 @@ grow_vertical = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ContentLayer" type="Control" parent="."]
+[node name="ContentLayer" type="Control" parent="." unique_id=1453249579]
 z_index = 2
 layout_mode = 1
 anchors_preset = 15
@@ -39,80 +38,53 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TitleLabel" type="Label" parent="ContentLayer"]
+[node name="TitleLabel" type="Label" parent="ContentLayer" unique_id=172350205]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 8
-horizontal_alignment = 0
 vertical_alignment = 1
 
-[node name="AttributeContainer" type="HBoxContainer" parent="ContentLayer"]
+[node name="AttributeContainer" type="HBoxContainer" parent="ContentLayer" unique_id=1995997247]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
 alignment = 2
 
-[node name="CostIcon" type="TextureRect" parent="ContentLayer/AttributeContainer"]
+[node name="CostIcon" type="TextureRect" parent="ContentLayer/AttributeContainer" unique_id=993376369]
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Spacing" type="Control" parent="ContentLayer/AttributeContainer"]
+[node name="Spacing" type="Control" parent="ContentLayer/AttributeContainer" unique_id=1302839693]
 custom_minimum_size = Vector2(5, 0)
 layout_mode = 2
 
-[node name="PropertyIcon" type="TextureRect" parent="ContentLayer/AttributeContainer"]
+[node name="PropertyIcon" type="TextureRect" parent="ContentLayer/AttributeContainer" unique_id=923479222]
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="CategoryLabel" type="Label" parent="ContentLayer"]
+[node name="CategoryLabel" type="Label" parent="ContentLayer" unique_id=830016369]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 6
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="EffectContainer" type="VBoxContainer" parent="ContentLayer"]
+[node name="EffectContainer" type="VBoxContainer" parent="ContentLayer" unique_id=1074560793]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
 
-[node name="SpecialAttrLabel" type="Label" parent="ContentLayer"]
+[node name="SpecialAttrLabel" type="Label" parent="ContentLayer" unique_id=522638204]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 6
-horizontal_alignment = 0
 vertical_alignment = 1
 
-[node name="CardIdLabel" type="Label" parent="ContentLayer"]
+[node name="CardIdLabel" type="Label" parent="ContentLayer" unique_id=386095267]
 layout_mode = 0
-offset_left = 0.0
-offset_top = 0.0
-offset_right = 0.0
-offset_bottom = 0.0
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 3
-horizontal_alignment = 0
 vertical_alignment = 1
 
-[node name="HoverOverlay" type="ColorRect" parent="."]
+[node name="HoverOverlay" type="ColorRect" parent="." unique_id=559393315]
 visible = false
 z_index = 3
 layout_mode = 1
@@ -123,7 +95,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.5)
 
-[node name="PreviewButton" type="Button" parent="."]
+[node name="PreviewButton" type="Button" parent="." unique_id=1079753188]
 visible = false
 z_index = 4
 layout_mode = 1
@@ -140,7 +112,7 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "预览"
 
-[node name="AddButton" type="Button" parent="."]
+[node name="AddButton" type="Button" parent="." unique_id=1189977930]
 visible = false
 z_index = 4
 layout_mode = 1
@@ -157,7 +129,7 @@ grow_horizontal = 2
 grow_vertical = 0
 text = "+"
 
-[node name="RemoveButton" type="Button" parent="."]
+[node name="RemoveButton" type="Button" parent="." unique_id=1233458621]
 visible = false
 z_index = 4
 layout_mode = 1
@@ -174,7 +146,7 @@ grow_horizontal = 2
 grow_vertical = 0
 text = "-"
 
-[node name="ClickOverlay" type="Control" parent="."]
+[node name="ClickOverlay" type="Control" parent="." unique_id=599303389]
 visible = false
 z_index = 5
 layout_mode = 1
@@ -183,4 +155,3 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 0

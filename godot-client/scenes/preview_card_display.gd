@@ -164,9 +164,11 @@ func _render_attributes():
 	var prop_path: String
 	match property:
 		"Divine":
-			prop_path = "res://images/framework/attribute/god.png"
+			prop_path = "res://images/framework/attribute/god.jpg"
 		"Rational":
-			prop_path = "res://images/framework/attribute/lx.png"
+			prop_path = "res://images/framework/attribute/lx.jpg"
+		"Spiritual":
+			prop_path = "res://images/framework/attribute/ling.jpg"
 		_:
 			prop_path = ""
 
