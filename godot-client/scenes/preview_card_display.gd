@@ -1,5 +1,5 @@
 ## 预览专用卡片显示
-## 使用模板化渲染（大图模式 1500x2100）
+## 使用模板化渲染，支持动态缩放
 
 class_name PreviewCardDisplay
 extends Control
@@ -10,6 +10,7 @@ const DESIGN_HEIGHT := 2100.0
 
 var card_data: Dictionary = {}
 var card_id: String = ""
+var _scale_factor: float = 1.0
 
 ## 中文翻译映射
 const CATEGORY_NAMES := {
@@ -45,7 +46,14 @@ const ITEM_KIND_NAMES := {
 @onready var card_id_label: Label = $ContentLayer/CardIdLabel
 
 func _ready():
-	pass
+	resized.connect(_on_resized)
+
+func _on_resized():
+	# 尺寸变化时重新渲染
+	if card_data.is_empty():
+		return
+	# 延迟一帧确保尺寸已更新
+	call_deferred("_render_template")
 
 ## 设置卡片显示（大图模板模式）
 ## @param data: 卡片数据字典
@@ -89,8 +97,14 @@ func _ensure_nodes_initialized():
 	if card_id_label == null:
 		card_id_label = $ContentLayer/CardIdLabel
 
-## 模板渲染（大图模式，使用设计稿原始坐标）
+## 模板渲染（根据实际尺寸动态缩放）
 func _render_template():
+	if size.x <= 0 or size.y <= 0:
+		return
+
+	# 计算缩放比例（保持宽高比）
+	_scale_factor = min(size.x / DESIGN_WIDTH, size.y / DESIGN_HEIGHT)
+
 	_load_artwork()
 	_load_framework()
 	_render_title()
@@ -124,10 +138,18 @@ func _load_framework():
 	if ResourceLoader.exists(frame_path):
 		framework_layer.texture = load(frame_path)
 
+## 缩放坐标和尺寸
+func _s(val: float) -> float:
+	return val * _scale_factor
+
 func _render_title():
 	var name = card_data.get("name", "未知")
 	title_label.text = name
-	title_label.add_theme_font_size_override("font_size", 80)
+	title_label.add_theme_font_size_override("font_size", int(_s(80)))
+
+	# 设置位置和尺寸（根据缩放比例）
+	title_label.position = Vector2(_s(125), _s(90))
+	title_label.size = Vector2(_s(1250), _s(80))
 
 func _render_attributes():
 	var cost = card_data.get("cost", 0)
@@ -151,14 +173,22 @@ func _render_attributes():
 	if prop_path != "" and ResourceLoader.exists(prop_path):
 		property_icon.texture = load(prop_path)
 
-	# 设置图标尺寸（原始尺寸 80px）
-	cost_icon.custom_minimum_size = Vector2(80, 80)
-	property_icon.custom_minimum_size = Vector2(80, 80)
+	# 设置容器位置和尺寸
+	attribute_container.position = Vector2(_s(125), _s(90))
+	attribute_container.size = Vector2(_s(1250), _s(80))
+
+	# 设置图标尺寸（根据缩放比例）
+	var icon_size = int(_s(80))
+	cost_icon.custom_minimum_size = Vector2(icon_size, icon_size)
+	property_icon.custom_minimum_size = Vector2(icon_size, icon_size)
 
 func _render_category():
 	var category = card_data.get("category", "")
 	category_label.text = CATEGORY_NAMES.get(category, category)
-	category_label.add_theme_font_size_override("font_size", 60)
+	category_label.add_theme_font_size_override("font_size", int(_s(60)))
+
+	category_label.position = Vector2(_s(125), _s(1887))
+	category_label.size = Vector2(_s(1250), _s(70))
 
 func _render_effect_area():
 	# 清除旧内容
@@ -187,13 +217,13 @@ func _render_effect_area():
 		var fields_label = Label.new()
 		fields_label.text = fields_text
 		fields_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		fields_label.add_theme_font_size_override("font_size", 60)
+		fields_label.add_theme_font_size_override("font_size", int(_s(60)))
 		fields_label.add_theme_color_override("font_color", Color.WHITE)
 		effect_container.add_child(fields_label)
 
 		# 添加分隔线
 		var line = ColorRect.new()
-		line.custom_minimum_size = Vector2(1180, 2)
+		line.custom_minimum_size = Vector2(_s(1180), _s(2))
 		line.color = Color(1, 1, 1, 0.5)
 		effect_container.add_child(line)
 
@@ -205,13 +235,17 @@ func _render_effect_area():
 			var effect_label = Label.new()
 			effect_label.text = "• " + text
 			effect_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-			effect_label.add_theme_font_size_override("font_size", 60)
+			effect_label.add_theme_font_size_override("font_size", int(_s(60)))
 			effect_label.add_theme_color_override("font_color", Color.WHITE)
 			effect_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			effect_container.add_child(effect_label)
 
+	# 设置容器位置和尺寸
+	effect_container.position = Vector2(_s(160), _s(1300))
+	effect_container.size = Vector2(_s(1180), _s(500))
+
 	# 智能排版：如果内容超出，缩小字体
-	_auto_scale_container_fonts(effect_container, 500)
+	_auto_scale_container_fonts(effect_container, _s(500))
 
 func _render_special_attr():
 	var card_type = card_data.get("card_type", "")
@@ -229,17 +263,23 @@ func _render_special_attr():
 			text = ITEM_KIND_NAMES.get(kind, kind)
 
 	special_attr_label.text = text
-	special_attr_label.add_theme_font_size_override("font_size", 60)
+	special_attr_label.add_theme_font_size_override("font_size", int(_s(60)))
+
+	special_attr_label.position = Vector2(_s(115), _s(1885))
+	special_attr_label.size = Vector2(_s(165), _s(70))
 
 func _render_card_id():
 	card_id_label.text = card_id
-	card_id_label.add_theme_font_size_override("font_size", 32)
+	card_id_label.add_theme_font_size_override("font_size", int(_s(32)))
+
+	card_id_label.position = Vector2(_s(110), _s(2010))
+	card_id_label.size = Vector2(_s(640), _s(80))
 
 func _auto_scale_container_fonts(container: VBoxContainer, max_height: float):
 	var total_height = 0.0
 	for child in container.get_children():
 		if child is Label:
-			total_height += child.get_theme_font_size("font_size") + 5
+			total_height += child.get_theme_font_size("font_size") + _s(5)
 
 	if total_height > max_height:
 		var scale_ratio = max_height / total_height
@@ -288,14 +328,16 @@ func _get_effects_text(effects: Dictionary) -> Array[String]:
 	return result
 
 func _create_placeholder_texture() -> Texture2D:
-	var image = Image.create(1500, 2100, false, Image.FORMAT_RGBA8)
+	var img_width = int(size.x) if size.x > 0 else int(DESIGN_WIDTH)
+	var img_height = int(size.y) if size.y > 0 else int(DESIGN_HEIGHT)
+	var image = Image.create(img_width, img_height, false, Image.FORMAT_RGBA8)
 	image.fill(Color(0.2, 0.2, 0.25, 1.0))
 
-	for x in range(1500):
+	for x in range(img_width):
 		image.set_pixel(x, 0, Color(0.5, 0.5, 0.5))
-		image.set_pixel(x, 2099, Color(0.5, 0.5, 0.5))
-	for y in range(2100):
+		image.set_pixel(x, img_height - 1, Color(0.5, 0.5, 0.5))
+	for y in range(img_height):
 		image.set_pixel(0, y, Color(0.5, 0.5, 0.5))
-		image.set_pixel(1499, y, Color(0.5, 0.5, 0.5))
+		image.set_pixel(img_width - 1, y, Color(0.5, 0.5, 0.5))
 
 	return ImageTexture.create_from_image(image)

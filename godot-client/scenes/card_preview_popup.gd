@@ -59,8 +59,8 @@ func setup(data: Dictionary) -> void:
 	preview_display.setup(data)
 	left_container.add_child(preview_display)
 
-	# 创建右侧详情面板
-	var right_panel = Panel.new()
+	# 创建右侧详情面板（透明背景）
+	var right_panel = Control.new()
 	right_panel.custom_minimum_size = Vector2(450, 0)
 	right_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
