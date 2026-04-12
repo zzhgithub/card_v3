@@ -10,8 +10,7 @@ const DECKS_DIR = "res://desks"
 const CARD_ASSET_DIR = "res://images/cards"
 const CARD_INFO_DIR = "res://scripts_json/S000"
 const CARD_PREVIEW_POPUP = preload("res://scenes/card_preview_popup.tscn")
-const CARD_DISPLAY_DECK = preload("res://scenes/card_display_deck.tscn")
-const CARD_DISPLAY_CATALOG = preload("res://scenes/card_display_catalog.tscn")
+const CARD_DISPLAY_SCENE = preload("res://scenes/card_display.tscn")
 
 @onready var title_label: Label = $VBoxContainer/TitleLabel
 @onready var card_count_label: Label = $VBoxContainer/CardCountLabel
@@ -163,13 +162,12 @@ func _refresh_deck_grid() -> void:
 	# 创建卡组卡片显示
 	for card_id in cards:
 		var card_data = all_card_data.get(card_id, {"id": card_id, "name": card_id})
-		var card_display = CARD_DISPLAY_DECK.instantiate()
+		var card_display = CARD_DISPLAY_SCENE.instantiate()
 		card_display.custom_minimum_size = Vector2(100, 140)
-		card_display.setup(card_data, _load_card_image(card_id))
+		card_display.setup(card_data, null, true, false, CardDisplay.InteractionMode.REMOVE_MODE)
 
 		# 连接信号
 		card_display.preview_requested.connect(_on_preview_requested)
-		card_display.add_card.connect(_on_add_card_to_deck)
 		card_display.remove_card.connect(_on_remove_card_from_deck)
 
 		deck_grid.add_child(card_display)
@@ -184,9 +182,9 @@ func _refresh_catalog_grid() -> void:
 	# 创建所有卡片显示
 	for card_id in all_card_data:
 		var card_data = all_card_data[card_id]
-		var card_display = CARD_DISPLAY_CATALOG.instantiate()
+		var card_display = CARD_DISPLAY_SCENE.instantiate()
 		card_display.custom_minimum_size = Vector2(100, 140)
-		card_display.setup(card_data, _load_card_image(card_id))
+		card_display.setup(card_data, null, true, false, CardDisplay.InteractionMode.ADD_MODE)
 
 		# 连接信号
 		card_display.preview_requested.connect(_on_preview_requested)

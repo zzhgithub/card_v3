@@ -8,11 +8,21 @@ extends Control
 signal preview_requested(card_data: Dictionary)
 signal card_hovered(card_data: Dictionary)
 signal card_unhovered
+signal add_card(card_id: String)
+signal remove_card(card_id: String)
+signal add_to_deck(card_id: String)
 
 ## 显示模式
 enum DisplayMode {
 	TEMPLATE,  ## 模板化渲染（框架+文本）
 	IMAGE      ## 图片模式（使用现成图片）
+}
+
+## 交互模式
+enum InteractionMode {
+	PREVIEW_ONLY,   ## 仅预览按钮
+	ADD_MODE,       ## 添加按钮（+）
+	REMOVE_MODE     ## 移除按钮（-）
 }
 
 ## 设计稿基准尺寸
@@ -27,6 +37,7 @@ var card_data: Dictionary = {}
 var card_id: String = ""
 var _is_hovered: bool = false
 var display_mode: DisplayMode = DisplayMode.TEMPLATE
+var interaction_mode: InteractionMode = InteractionMode.PREVIEW_ONLY
 
 ## 渲染目标尺寸（动态设置）
 var target_width: float = SMALL_WIDTH
@@ -70,12 +81,19 @@ const ITEM_KIND_NAMES := {
 
 @onready var hover_overlay: ColorRect = $HoverOverlay
 @onready var preview_button: Button = $PreviewButton
+@onready var add_button: Button = $AddButton
+@onready var remove_button: Button = $RemoveButton
+@onready var click_overlay: Control = $ClickOverlay
 
 func _ready():
 	_update_hover_state(false)
 	preview_button.pressed.connect(_on_preview_pressed)
+	add_button.pressed.connect(_on_add_pressed)
+	remove_button.pressed.connect(_on_remove_pressed)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	preview_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	remove_button.mouse_filter = Control.MOUSE_FILTER_STOP
 
 func _process(_delta):
 	# 确保尺寸一致（防止GridContainer拉伸导致蒙层不匹配）
@@ -98,9 +116,11 @@ func _process(_delta):
 ## @param front_texture: 卡片正面纹理（图片模式使用）
 ## @param use_template: 是否使用模板渲染
 ## @param large_mode: 是否使用大图模式（预览用）
-func setup(data: Dictionary, front_texture: Texture2D = null, use_template: bool = true, large_mode: bool = false) -> void:
+## @param mode: 交互模式（决定显示哪些按钮）
+func setup(data: Dictionary, front_texture: Texture2D = null, use_template: bool = true, large_mode: bool = false, mode: InteractionMode = InteractionMode.PREVIEW_ONLY) -> void:
 	card_data = data
 	card_id = data.get("id", "Unknown")
+	interaction_mode = mode
 
 	# 设置尺寸模式
 	if large_mode:
@@ -158,6 +178,12 @@ func _ensure_nodes_initialized():
 		hover_overlay = $HoverOverlay
 	if preview_button == null:
 		preview_button = $PreviewButton
+	if add_button == null:
+		add_button = $AddButton
+	if remove_button == null:
+		remove_button = $RemoveButton
+	if click_overlay == null:
+		click_overlay = $ClickOverlay
 
 ## 模板渲染模式
 func _render_template_mode():
@@ -442,8 +468,14 @@ func _create_placeholder_texture() -> Texture2D:
 func _update_hover_state(hovered: bool) -> void:
 	if hover_overlay != null:
 		hover_overlay.visible = hovered
+
+	# 根据交互模式显示对应的按钮
 	if preview_button != null:
-		preview_button.visible = hovered
+		preview_button.visible = hovered and interaction_mode == InteractionMode.PREVIEW_ONLY
+	if add_button != null:
+		add_button.visible = hovered and interaction_mode == InteractionMode.ADD_MODE
+	if remove_button != null:
+		remove_button.visible = hovered and interaction_mode == InteractionMode.REMOVE_MODE
 
 	if artwork_layer != null:
 		if hovered:
@@ -463,3 +495,12 @@ func _on_mouse_exited() -> void:
 func _on_preview_pressed() -> void:
 	print("[CardDisplay] Preview button clicked: %s" % card_id)
 	emit_signal("preview_requested", card_data)
+
+func _on_add_pressed() -> void:
+	print("[CardDisplay] Add button clicked: %s" % card_id)
+	emit_signal("add_card", card_id)
+	emit_signal("add_to_deck", card_id)
+
+func _on_remove_pressed() -> void:
+	print("[CardDisplay] Remove button clicked: %s" % card_id)
+	emit_signal("remove_card", card_id)
