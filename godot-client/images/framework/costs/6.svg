@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="320" height="320" viewBox="0 0 320 320" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g id="numbered">
+        <g transform="matrix(0.533333,0,0,0.533333,0,0)">
+            <circle cx="300" cy="300" r="300" style="fill:rgb(204,204,204);"/>
+        </g>
+        <g id="_36pt-single--30pt-double" serif:id="36pt single, 30pt double" transform="matrix(1,0,0,1,-79.65,95.4)">
+            <path d="M163.9,127.6C169.3,150.1 204.7,161.2 239.8,161.2C275.2,161.2 310.3,150.1 316,127.9C318.1,119.2 319.3,111.7 319.3,104.2C319.3,96.7 318.1,89.2 316,80.5C310.6,59.2 274.9,45.4 239.8,45.4C223.9,45.4 208.3,47.8 195.1,52.3L195.1,34.9C195.1,25 196,15.4 197.2,7.3C200.2,-10.1 220.3,-19.4 240.1,-19.4C261.4,-19.4 283,-14 293.8,-3.2L307.3,-12.8C293.5,-25.7 267.1,-32 240.4,-32C205,-32 169.6,-20.9 163.9,0.7C161.2,10.9 160,23.2 160,35.2L160,93.4C160,105.4 161.2,117.4 163.9,127.6ZM195.1,67.6C206.8,61.3 223.3,58.3 239.8,58.3L239.8,58L240.1,58.3C259.9,58.3 279.7,67.3 282.7,84.7C283.9,91.6 284.5,97.3 284.5,103.3C284.5,109 283.9,114.7 282.7,121.6C279.4,139.6 259.9,148.6 240.1,148.6C220,148.6 200.5,139.3 197.2,121C195.7,112.9 195.1,103.3 195.1,93.4L195.1,67.6Z" style="fill-rule:nonzero;"/>
+        </g>
+    </g>
+</svg>

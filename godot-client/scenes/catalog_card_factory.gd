@@ -66,11 +66,8 @@ func create_card_display(card_id: String, card_data: Dictionary, parent: Node = 
 	if parent != null:
 		parent.add_child(display)
 
-	var front_image = _load_card_image(card_id)
-	if front_image == null:
-		front_image = placeholder_texture
-
-	display.setup(card_data, front_image)
+	# 使用模板渲染模式（小图）
+	display.setup(card_data, null, true, false)
 
 	return display
 

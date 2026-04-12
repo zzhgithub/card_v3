@@ -45,18 +45,18 @@ func setup(data: Dictionary) -> void:
 	left_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(left_container)
 
-	# 使用专门的预览卡片显示（无悬停效果）
+	# 使用专门的预览卡片显示（无悬停效果，大图模板模式）
 	var preview_display = PREVIEW_CARD_SCENE.instantiate()
 	# 计算高度为屏幕高度的90%
 	var screen_height = get_viewport_rect().size.y
 	var card_height = screen_height * 0.9
-	var card_width = card_height * 150.0 / 210.0  # 保持卡片比例
+	var card_width = card_height * 1500.0 / 2100.0  # 保持卡片比例（基于大图尺寸）
 	preview_display.custom_minimum_size = Vector2(card_width, card_height)
 	preview_display.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	preview_display.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
-	var front_image = _load_card_image(card_id)
-	preview_display.setup(data, front_image)
+	# 使用模板渲染（不传入图片）
+	preview_display.setup(data)
 	left_container.add_child(preview_display)
 
 	# 创建右侧详情面板

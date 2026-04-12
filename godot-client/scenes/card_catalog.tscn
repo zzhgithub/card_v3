@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://cardcatalog01"]
+[gd_scene format=3 uid="uid://cardcatalog01"]
 
-[ext_resource type="Script" path="res://scenes/card_catalog.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://bi1qx6eusr7me" path="res://scenes/card_catalog.gd" id="1_script"]
 
-[node name="CardCatalog" type="Control"]
+[node name="CardCatalog" type="Control" unique_id=1348620834]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,16 +11,16 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_script")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=414459388]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.1, 0.1, 0.12, 1.0)
+color = Color(0.1, 0.1, 0.12, 1)
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=964139677]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -33,31 +33,31 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 
-[node name="TitleLabel" type="Label" parent="VBoxContainer"]
+[node name="TitleLabel" type="Label" parent="VBoxContainer" unique_id=360314463]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "卡片图鉴"
 horizontal_alignment = 1
 
-[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+[node name="StatusLabel" type="Label" parent="VBoxContainer" unique_id=98499081]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "加载中..."
 horizontal_alignment = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer" unique_id=1797733594]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="GridContainer" type="GridContainer" parent="VBoxContainer/ScrollContainer"]
+[node name="GridContainer" type="GridContainer" parent="VBoxContainer/ScrollContainer" unique_id=290514695]
 layout_mode = 2
 size_flags_horizontal = 3
-columns = 6
 theme_override_constants/h_separation = 20
 theme_override_constants/v_separation = 20
+columns = 6
 
-[node name="BackButton" type="Button" parent="VBoxContainer"]
+[node name="BackButton" type="Button" parent="VBoxContainer" unique_id=296495040]
 custom_minimum_size = Vector2(150, 40)
 layout_mode = 2
 size_flags_horizontal = 4

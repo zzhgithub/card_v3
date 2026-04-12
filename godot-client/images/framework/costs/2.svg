@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="320" height="320" viewBox="0 0 320 320" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linejoin:round;stroke-miterlimit:2;">
+    <g id="numbered">
+        <g transform="matrix(0.533333,0,0,0.533333,0,0)">
+            <circle cx="300" cy="300" r="300" style="fill:rgb(204,204,204);"/>
+        </g>
+        <g id="_36pt-single--30pt-double" serif:id="36pt single, 30pt double" transform="matrix(1,0,0,1,-75.6,95.4)">
+            <path d="M266.8,42.4C241.9,77.8 160,64.9 160,139.3C160,146.2 160.3,153.1 160.3,160L307.6,160L307.6,146.8L196.6,146.8L196.6,141.7C196.6,94.6 252.7,102.7 288.7,70C304,56.2 311.2,40.3 311.2,25.3C311.2,-4.7 282.7,-30.8 230.2,-30.8C203.5,-30.8 177.1,-24.5 163.3,-11.6L176.8,-2C187.6,-13.1 209.2,-18.2 230.5,-18.2C257.8,-18.2 274.3,-0.2 274.3,19.9C274.3,27.4 271.9,35.2 266.8,42.4Z" style="fill-rule:nonzero;"/>
+        </g>
+    </g>
+</svg>
