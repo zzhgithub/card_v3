@@ -63,6 +63,7 @@ alignment = 2
 [node name="CostIcon" type="TextureRect" parent="ContentLayer/AttributeContainer"]
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
+expand_mode = 1
 stretch_mode = 5
 
 [node name="Spacing" type="Control" parent="ContentLayer/AttributeContainer"]
@@ -72,6 +73,7 @@ layout_mode = 2
 [node name="PropertyIcon" type="TextureRect" parent="ContentLayer/AttributeContainer"]
 custom_minimum_size = Vector2(80, 80)
 layout_mode = 2
+expand_mode = 1
 stretch_mode = 5
 
 [node name="CategoryLabel" type="Label" parent="ContentLayer"]

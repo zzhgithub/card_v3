@@ -183,14 +183,11 @@ func _render_attributes():
 	attribute_container.position = Vector2(_s(125), _s(90))
 	attribute_container.size = Vector2(_s(1250), _s(80))
 
-	# 设置图标尺寸（保持比例缩放，但使用最近邻过滤保持清晰度）
-	var icon_size = int(_s(80))
+	# 设置图标尺寸（使用固定最小尺寸保持清晰度）
+	var icon_size = max(16, int(_s(80)))
 	cost_icon.custom_minimum_size = Vector2(icon_size, icon_size)
 	property_icon.custom_minimum_size = Vector2(icon_size, icon_size)
-
-	# 设置拉伸模式和纹理过滤
-	cost_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	property_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	# 使用整数缩放保持清晰度
 	cost_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	property_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
