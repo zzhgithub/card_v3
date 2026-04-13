@@ -13,8 +13,8 @@ godot-client/
 │   ├── network.gd        # WebSocket网络管理
 │   └── game_state.gd     # 游戏状态管理
 └── scenes/               # 场景目录
-    ├── main.tscn         # 主场景
-    └── main.gd           # 主场景脚本
+	├── main.tscn         # 主场景
+	└── main.gd           # 主场景脚本
 ```
 
 ## 快速开始
@@ -93,7 +93,7 @@ Network.send_action_declare_attack(attacker_id, "direct")
 ```gdscript
 # 检查是否轮到自己
 if GameState.is_my_turn():
-    # 执行行动
+	# 执行行动
 
 # 获取状态信息
 var my_hp = GameState.get_my_hp()

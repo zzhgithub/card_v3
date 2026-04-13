@@ -97,6 +97,9 @@ func _ready():
 	add_button.mouse_filter = Control.MOUSE_FILTER_STOP
 	remove_button.mouse_filter = Control.MOUSE_FILTER_STOP
 
+	# 连接尺寸变化信号，实现动态缩放
+	resized.connect(_on_resized)
+
 func _process(_delta):
 	# 确保尺寸一致（防止GridContainer拉伸导致蒙层不匹配）
 	if size != custom_minimum_size:
@@ -112,6 +115,13 @@ func _process(_delta):
 			_on_mouse_entered()
 		else:
 			_on_mouse_exited()
+
+func _on_resized():
+	# 尺寸变化时重新渲染模板
+	if card_data.is_empty():
+		return
+	if display_mode == DisplayMode.TEMPLATE:
+		call_deferred("_render_template_mode")
 
 ## 设置卡片显示
 ## @param data: 卡片数据字典
@@ -189,6 +199,11 @@ func _ensure_nodes_initialized():
 
 ## 模板渲染模式
 func _render_template_mode():
+	# 根据当前实际尺寸重新计算缩放比例
+	# 使用宽度比例，保持与设计稿的宽高比一致
+	if size.x > 0 and size.y > 0:
+		scale_factor = size.x / DESIGN_WIDTH
+
 	# 加载并显示卡图（底层）
 	_load_artwork()
 

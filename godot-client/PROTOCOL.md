@@ -26,7 +26,7 @@ WebSocket服务器地址: `ws://host:port`
 {
   "type": "action",
   "action": {
-    "action_type": "pass"
+	"action_type": "pass"
   }
 }
 ```
@@ -35,7 +35,7 @@ WebSocket服务器地址: `ws://host:port`
 {
   "type": "action",
   "action": {
-    "action_type": "surrender"
+	"action_type": "surrender"
   }
 }
 ```
@@ -44,12 +44,12 @@ WebSocket服务器地址: `ws://host:port`
 {
   "type": "action",
   "action": {
-    "action_type": "play_card",
-    "instance_id": 123,
-    "target_zone": {
-      "zone_type": "front",
-      "slot": 0
-    }
+	"action_type": "play_card",
+	"instance_id": 123,
+	"target_zone": {
+	  "zone_type": "front",
+	  "slot": 0
+	}
   }
 }
 ```
@@ -58,11 +58,11 @@ WebSocket服务器地址: `ws://host:port`
 {
   "type": "action",
   "action": {
-    "action_type": "declare_attack",
-    "attacker_id": 123,
-    "target": {
-      "target_type": "direct"
-    }
+	"action_type": "declare_attack",
+	"attacker_id": 123,
+	"target": {
+	  "target_type": "direct"
+	}
   }
 }
 ```
@@ -71,12 +71,12 @@ WebSocket服务器地址: `ws://host:port`
 {
   "type": "action",
   "action": {
-    "action_type": "declare_attack",
-    "attacker_id": 123,
-    "target": {
-      "target_type": "slot",
-      "slot_index": 2
-    }
+	"action_type": "declare_attack",
+	"attacker_id": 123,
+	"target": {
+	  "target_type": "slot",
+	  "slot_index": 2
+	}
   }
 }
 ```
@@ -120,29 +120,29 @@ WebSocket服务器地址: `ws://host:port`
 {
   "type": "game_started",
   "state": {
-    "turn_number": 1,
-    "current_phase": "TurnStart",
-    "current_player": "Player1",
-    "your_state": {
-      "hp": 5,
-      "real_point": 0,
-      "deck_count": 3,
-      "hand": [],
-      "front": [null, null, null, null, null],
-      "back": [null, null, null, null, null],
-      "cost_zone": [],
-      "grave": []
-    },
-    "opponent_state": {
-      "hp": 5,
-      "real_point": 0,
-      "deck_count": 3,
-      "hand_count": 0,
-      "front": [null, null, null, null, null],
-      "back": [null, null, null, null, null],
-      "cost_zone": [],
-      "grave": []
-    }
+	"turn_number": 1,
+	"current_phase": "TurnStart",
+	"current_player": "Player1",
+	"your_state": {
+	  "hp": 5,
+	  "real_point": 0,
+	  "deck_count": 3,
+	  "hand": [],
+	  "front": [null, null, null, null, null],
+	  "back": [null, null, null, null, null],
+	  "cost_zone": [],
+	  "grave": []
+	},
+	"opponent_state": {
+	  "hp": 5,
+	  "real_point": 0,
+	  "deck_count": 3,
+	  "hand_count": 0,
+	  "front": [null, null, null, null, null],
+	  "back": [null, null, null, null, null],
+	  "cost_zone": [],
+	  "grave": []
+	}
   }
 }
 ```
