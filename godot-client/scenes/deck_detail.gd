@@ -150,6 +150,15 @@ func _check_unsaved_changes() -> bool:
 	return JSON.stringify(current_data) != JSON.stringify(original_data)
 
 
+## 获取卡组中每张卡片的数量
+func _get_card_counts() -> Dictionary:
+	var counts = {}
+	var cards = current_data.get("cards", [])
+	for card_id in cards:
+		counts[card_id] = counts.get(card_id, 0) + 1
+	return counts
+
+
 ## 刷新左侧卡组网格
 func _refresh_deck_grid() -> void:
 	# 清除现有内容
@@ -159,12 +168,19 @@ func _refresh_deck_grid() -> void:
 	var cards = current_data.get("cards", [])
 	card_count_label.text = "卡组卡片: %d" % cards.size()
 
+	# 计算每张卡片的数量
+	var card_counts = _get_card_counts()
+
 	# 创建卡组卡片显示（卡组列表：预览、+、- 三个按钮）
 	for card_id in cards:
 		var card_data = all_card_data.get(card_id, {"id": card_id, "name": card_id})
 		var card_display = CARD_DISPLAY_SCENE.instantiate()
 		card_display.custom_minimum_size = Vector2(100, 140)
 		card_display.setup(card_data, null, true, false, CardDisplay.InteractionMode.DECK_MODE)
+
+		# 如果该卡片已经有3张或以上，禁用+按钮
+		if card_counts.get(card_id, 0) >= 3:
+			card_display.set_add_disabled(true)
 
 		# 连接信号（卡组列表需要预览、添加、移除三个功能）
 		card_display.preview_requested.connect(_on_preview_requested)
@@ -180,12 +196,19 @@ func _refresh_catalog_grid() -> void:
 	for child in catalog_grid.get_children():
 		child.queue_free()
 
+	# 计算每张卡片的数量（用于限制规则）
+	var card_counts = _get_card_counts()
+
 	# 创建所有卡片显示
 	for card_id in all_card_data:
 		var card_data = all_card_data[card_id]
 		var card_display = CARD_DISPLAY_SCENE.instantiate()
 		card_display.custom_minimum_size = Vector2(100, 140)
 		card_display.setup(card_data, null, true, false, CardDisplay.InteractionMode.ADD_MODE)
+
+		# 如果该卡片已经有3张或以上，禁用+按钮
+		if card_counts.get(card_id, 0) >= 3:
+			card_display.set_add_disabled(true)
 
 		# 连接信号（搜索列表：预览和+按钮）
 		card_display.preview_requested.connect(_on_preview_requested)

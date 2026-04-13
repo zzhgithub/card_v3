@@ -39,6 +39,7 @@ var card_id: String = ""
 var _is_hovered: bool = false
 var display_mode: DisplayMode = DisplayMode.TEMPLATE
 var interaction_mode: InteractionMode = InteractionMode.PREVIEW_ONLY
+var _add_disabled: bool = false  ## +按钮是否被禁用（用于卡组数量限制）
 
 ## 渲染目标尺寸（动态设置）
 var target_width: float = SMALL_WIDTH
@@ -492,10 +493,10 @@ func _update_hover_state(hovered: bool) -> void:
 			# 搜索列表：预览和+按钮（竖直排列）
 			if preview_button != null:
 				preview_button.visible = hovered
-				preview_button.position = Vector2(size.x / 2 - 40, size.y / 2 - 40)
+				preview_button.position = Vector2(size.x / 2 - 40, size.y / 2 - 20)
 			if add_button != null:
-				add_button.visible = hovered
-				add_button.position = Vector2(size.x / 2 - 30, size.y / 2 + 10)
+				add_button.visible = hovered and not _add_disabled
+				add_button.position = Vector2(size.x / 2 - 30, size.y / 2 + 30)
 			if remove_button != null:
 				remove_button.visible = false
 
@@ -516,7 +517,7 @@ func _update_hover_state(hovered: bool) -> void:
 				preview_button.visible = hovered
 				preview_button.position = Vector2(size.x / 2 - 40, size.y / 2 - 60)
 			if add_button != null:
-				add_button.visible = hovered
+				add_button.visible = hovered and not _add_disabled
 				add_button.position = Vector2(size.x / 2 - 30, size.y / 2)
 			if remove_button != null:
 				remove_button.visible = hovered
@@ -549,3 +550,7 @@ func _on_add_pressed() -> void:
 func _on_remove_pressed() -> void:
 	print("[CardDisplay] Remove button clicked: %s" % card_id)
 	emit_signal("remove_card", card_id)
+
+## 设置+按钮是否禁用（用于卡组数量限制）
+func set_add_disabled(disabled: bool) -> void:
+	_add_disabled = disabled
