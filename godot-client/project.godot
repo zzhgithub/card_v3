@@ -29,7 +29,6 @@ GameState="*res://scripts/game_state.gd"
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/size/mode=fullscreen
 window/stretch/mode="canvas_items"
 
 [input]

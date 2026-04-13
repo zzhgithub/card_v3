@@ -53,17 +53,3 @@ func _on_button_hovered(button: Button):
 func _on_button_exited(button: Button):
 	# 恢复正常
 	button.modulate = Color.WHITE
-
-func _input(event):
-	# F11 切换全屏
-	if event is InputEventKey and event.pressed and event.keycode == KEY_F11:
-		var current_mode = DisplayServer.window_get_mode()
-		if current_mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
-		else:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
-	# ESC 退出全屏
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		var current_mode = DisplayServer.window_get_mode()
-		if current_mode == DisplayServer.WINDOW_MODE_FULLSCREEN:
-			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
