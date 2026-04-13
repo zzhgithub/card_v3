@@ -183,10 +183,16 @@ func _render_attributes():
 	attribute_container.position = Vector2(_s(125), _s(90))
 	attribute_container.size = Vector2(_s(1250), _s(80))
 
-	# 设置图标尺寸（属性图标放大，中心保持不变）
-	var icon_size = int(_s(110))
+	# 设置图标尺寸（保持清晰度，使用最近邻缩放）
+	var icon_size = int(_s(80))
 	cost_icon.custom_minimum_size = Vector2(icon_size, icon_size)
 	property_icon.custom_minimum_size = Vector2(icon_size, icon_size)
+
+	# 设置纹理过滤为最近邻以保持清晰度
+	if cost_icon.texture:
+		cost_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	if property_icon.texture:
+		property_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 func _render_category():
 	var category = card_data.get("category", "")

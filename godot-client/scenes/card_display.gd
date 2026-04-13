@@ -291,10 +291,14 @@ func _render_attributes():
 	attribute_container.position = Vector2(125 * scale_factor, 90 * scale_factor)
 	attribute_container.size = Vector2(1250 * scale_factor, 80 * scale_factor)
 
-	# 设置图标尺寸（属性图标放大，中心保持不变）
-	var icon_size = int(110 * scale_factor)
+	# 设置图标尺寸（使用固定大小保持清晰度）
+	var icon_size = 16
 	cost_icon.custom_minimum_size = Vector2(icon_size, icon_size)
 	property_icon.custom_minimum_size = Vector2(icon_size, icon_size)
+
+	# 设置纹理过滤为最近邻以保持清晰度
+	cost_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	property_icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 ## 渲染范畴
 func _render_category():
