@@ -78,6 +78,13 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 6
 vertical_alignment = 1
 
+[node name="TypeLabel" type="Label" parent="ContentLayer" unique_id=522638205]
+layout_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 6
+horizontal_alignment = 2
+vertical_alignment = 1
+
 [node name="CardIdLabel" type="Label" parent="ContentLayer" unique_id=386095267]
 layout_mode = 0
 theme_override_colors/font_color = Color(1, 1, 1, 1)

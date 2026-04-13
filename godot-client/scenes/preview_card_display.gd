@@ -32,6 +32,12 @@ const ITEM_KIND_NAMES := {
 	"Persistent": "存留"
 }
 
+const CARD_TYPE_NAMES := {
+	"Character": "人物",
+	"Item": "物品",
+	"Strategy": "策略"
+}
+
 @onready var artwork_layer: TextureRect = $ArtworkLayer
 @onready var framework_layer: TextureRect = $FrameworkLayer
 @onready var content_layer: Control = $ContentLayer
@@ -43,6 +49,7 @@ const ITEM_KIND_NAMES := {
 @onready var category_label: Label = $ContentLayer/CategoryLabel
 @onready var effect_container: VBoxContainer = $ContentLayer/EffectContainer
 @onready var special_attr_label: Label = $ContentLayer/SpecialAttrLabel
+@onready var type_label: Label = $ContentLayer/TypeLabel
 @onready var card_id_label: Label = $ContentLayer/CardIdLabel
 
 func _ready():
@@ -94,6 +101,8 @@ func _ensure_nodes_initialized():
 		effect_container = $ContentLayer/EffectContainer
 	if special_attr_label == null:
 		special_attr_label = $ContentLayer/SpecialAttrLabel
+	if type_label == null:
+		type_label = $ContentLayer/TypeLabel
 	if card_id_label == null:
 		card_id_label = $ContentLayer/CardIdLabel
 
@@ -112,6 +121,7 @@ func _render_template():
 	_render_category()
 	_render_effect_area()
 	_render_special_attr()
+	_render_card_type()
 	_render_card_id()
 
 func _load_artwork():
@@ -273,6 +283,17 @@ func _render_special_attr():
 
 	special_attr_label.position = Vector2(_s(115), _s(1885))
 	special_attr_label.size = Vector2(_s(165), _s(70))
+
+func _render_card_type():
+	var card_type = card_data.get("card_type", "")
+	var type_cn = CARD_TYPE_NAMES.get(card_type, card_type)
+
+	type_label.text = type_cn
+	type_label.add_theme_font_size_override("font_size", int(_s(60)))
+
+	# 右侧对称位置：设计稿宽度1500 - 左侧偏移115 - 宽度165 = 1220
+	type_label.position = Vector2(_s(1220), _s(1885))
+	type_label.size = Vector2(_s(165), _s(70))
 
 func _render_card_id():
 	card_id_label.text = card_id

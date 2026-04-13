@@ -68,6 +68,12 @@ const ITEM_KIND_NAMES := {
 	"Persistent": "存留"
 }
 
+const CARD_TYPE_NAMES := {
+	"Character": "人物",
+	"Item": "物品",
+	"Strategy": "策略"
+}
+
 @onready var artwork_layer: TextureRect = $ArtworkLayer
 @onready var framework_layer: TextureRect = $FrameworkLayer
 @onready var content_layer: Control = $ContentLayer
@@ -79,6 +85,7 @@ const ITEM_KIND_NAMES := {
 @onready var category_label: Label = $ContentLayer/CategoryLabel
 @onready var effect_container: VBoxContainer = $ContentLayer/EffectContainer
 @onready var special_attr_label: Label = $ContentLayer/SpecialAttrLabel
+@onready var type_label: Label = $ContentLayer/TypeLabel
 @onready var card_id_label: Label = $ContentLayer/CardIdLabel
 
 @onready var hover_overlay: ColorRect = $HoverOverlay
@@ -184,6 +191,8 @@ func _ensure_nodes_initialized():
 		effect_container = $ContentLayer/EffectContainer
 	if special_attr_label == null:
 		special_attr_label = $ContentLayer/SpecialAttrLabel
+	if type_label == null:
+		type_label = $ContentLayer/TypeLabel
 	if card_id_label == null:
 		card_id_label = $ContentLayer/CardIdLabel
 	if hover_overlay == null:
@@ -216,6 +225,7 @@ func _render_template_mode():
 	_render_category()
 	_render_effect_area()
 	_render_special_attr()
+	_render_card_type()
 	_render_card_id()
 
 	# 显示模板层，隐藏图片层
@@ -401,6 +411,18 @@ func _render_special_attr():
 
 	special_attr_label.position = Vector2(115 * scale_factor, 1885 * scale_factor)
 	special_attr_label.size = Vector2(165 * scale_factor, 70 * scale_factor)
+
+## 渲染卡片类型（右侧，与特殊属性对称）
+func _render_card_type():
+	var card_type = card_data.get("card_type", "")
+	var type_cn = CARD_TYPE_NAMES.get(card_type, card_type)
+
+	type_label.text = type_cn
+	type_label.add_theme_font_size_override("font_size", int(60 * scale_factor))
+
+	# 右侧对称位置：设计稿宽度1500 - 左侧偏移115 - 宽度165 = 1220
+	type_label.position = Vector2(1220 * scale_factor, 1885 * scale_factor)
+	type_label.size = Vector2(165 * scale_factor, 70 * scale_factor)
 
 ## 渲染卡片编号
 func _render_card_id():

@@ -104,6 +104,17 @@ theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 60
 vertical_alignment = 1
 
+[node name="TypeLabel" type="Label" parent="ContentLayer"]
+layout_mode = 0
+offset_left = 1220.0
+offset_top = 1885.0
+offset_right = 1385.0
+offset_bottom = 1955.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 60
+horizontal_alignment = 2
+vertical_alignment = 1
+
 [node name="CardIdLabel" type="Label" parent="ContentLayer"]
 layout_mode = 0
 offset_left = 110.0
