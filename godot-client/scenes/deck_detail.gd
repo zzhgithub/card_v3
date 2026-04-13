@@ -231,6 +231,7 @@ func _on_add_card_to_deck(card_id: String) -> void:
 	has_unsaved_changes = true
 	_update_save_button()
 	_refresh_deck_grid()
+	_refresh_catalog_grid()  # 刷新搜索列表以更新+按钮状态
 	print("[DeckDetail] 添加卡片: %s" % card_id)
 
 
@@ -243,6 +244,7 @@ func _on_remove_card_from_deck(card_id: String) -> void:
 		has_unsaved_changes = true
 		_update_save_button()
 		_refresh_deck_grid()
+		_refresh_catalog_grid()  # 刷新搜索列表以更新+按钮状态
 		print("[DeckDetail] 移除卡片: %s" % card_id)
 
 
