@@ -14,6 +14,7 @@ var room_id: String = ""
 var players: Array = []
 var is_ready: bool = false
 var current_player_name: String = ""
+var deck_cards: Dictionary = {}  ## 缓存卡组名称到卡片列表的映射
 
 var network_manager: Node
 var scene_manager: Node
@@ -29,7 +30,7 @@ func _ready() -> void:
 
 	# 将自己添加到玩家列表
 	if current_player_name and not players.any(func(p): return p.get("name", "") == current_player_name):
-		players.append({"name": current_player_name, "is_ready": false})
+		players.append({"name": current_player_name, "is_ready": false, "deck_id": ""})
 
 	# 连接信号
 	ready_btn.pressed.connect(_on_ready_pressed)
@@ -39,14 +40,17 @@ func _ready() -> void:
 	if network_manager:
 		network_manager.player_joined.connect(_on_player_joined)
 		network_manager.player_left.connect(_on_player_left)
-		network_manager.player_ready_changed.connect(_on_player_ready_changed)
+		network_manager.player_ready.connect(_on_player_ready)
+		network_manager.player_unready.connect(_on_player_unready)
+		network_manager.room_state_updated.connect(_on_room_state_updated)
+		network_manager.game_starting.connect(_on_game_starting)
 		network_manager.game_started.connect(_on_game_started)
 		network_manager.disconnected.connect(_on_disconnected)
 
 	# 初始化UI
 	_update_room_id()
-	_refresh_player_list()
 	_load_deck_list()
+	_refresh_player_list()
 
 func _update_room_id() -> void:
 	room_id_label.text = "房间ID: %s" % room_id
@@ -67,9 +71,15 @@ func _refresh_player_list() -> void:
 		name_label.text = player.get("name", "未知")
 		name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
+		var is_player_ready = player.get("is_ready", false)
+		var deck_id = player.get("deck_id", "")
+		var status_text = "已准备" if is_player_ready else "未准备"
+		if is_player_ready and deck_id != "":
+			status_text += " (%s)" % deck_id
+
 		var status_label = Label.new()
-		status_label.text = "已准备" if player.get("is_ready", false) else "未准备"
-		status_label.add_theme_color_override("font_color", Color(0, 1, 0) if player.get("is_ready", false) else Color(1, 1, 1))
+		status_label.text = status_text
+		status_label.add_theme_color_override("font_color", Color(0, 1, 0) if is_player_ready else Color(1, 1, 1))
 
 		hbox.add_child(name_label)
 		hbox.add_child(status_label)
@@ -91,6 +101,8 @@ func _load_deck_list() -> void:
 				# 去掉 .json 后缀显示
 				var deck_name = file_name.get_basename()
 				deck_dropdown.add_item(deck_name)
+				# 加载卡组卡片
+				_load_deck_cards(deck_name)
 			file_name = desks_dir.get_next()
 		desks_dir.list_dir_end()
 
@@ -98,14 +110,44 @@ func _load_deck_list() -> void:
 	if deck_dropdown.item_count <= 1:
 		deck_dropdown.add_item("默认卡组")
 
+func _load_deck_cards(deck_name: String) -> void:
+	var file_path = "res://desks/%s.json" % deck_name
+	if FileAccess.file_exists(file_path):
+		var file = FileAccess.open(file_path, FileAccess.READ)
+		if file:
+			var content = file.get_as_text()
+			file.close()
+			var json = JSON.new()
+			var err = json.parse(content)
+			if err == OK:
+				var data = json.get_data()
+				if data is Dictionary and data.has("cards"):
+					deck_cards[deck_name] = data["cards"]
+					_print("Loaded deck '%s' with %d cards" % [deck_name, data["cards"].size()])
+
 func _on_ready_pressed() -> void:
-	is_ready = not is_ready
-	ready_btn.text = "取消准备" if is_ready else "准备"
+	if is_ready:
+		# 取消准备
+		is_ready = false
+		ready_btn.text = "准备"
+		if network_manager:
+			network_manager.set_unready()
+	else:
+		# 准备
+		var deck_id = deck_dropdown.get_item_text(deck_dropdown.selected) if deck_dropdown.selected > 0 else ""
+		if deck_id == "" or deck_id == "选择卡组":
+			_print("Please select a deck first")
+			return
 
-	var deck_id = deck_dropdown.get_item_text(deck_dropdown.selected) if deck_dropdown.selected > 0 else ""
+		var cards = deck_cards.get(deck_id, [])
+		if cards.is_empty():
+			_print("Deck '%s' is empty or not loaded" % deck_id)
+			return
 
-	if network_manager:
-		network_manager.set_ready(is_ready, deck_id)
+		is_ready = true
+		ready_btn.text = "取消准备"
+		if network_manager:
+			network_manager.submit_deck(deck_id, cards)
 
 func _on_leave_pressed() -> void:
 	if network_manager:
@@ -117,12 +159,12 @@ func _on_leave_pressed() -> void:
 
 func _on_deck_selected(index: int) -> void:
 	if index > 0:
-		# 加载卡组预览
-		_print("Selected deck: %s" % deck_dropdown.get_item_text(index))
+		var deck_name = deck_dropdown.get_item_text(index)
+		_print("Selected deck: %s" % deck_name)
 
 func _on_player_joined(player_name: String) -> void:
 	_print("Player joined: %s" % player_name)
-	players.append({"name": player_name, "is_ready": false})
+	players.append({"name": player_name, "is_ready": false, "deck_id": ""})
 	_refresh_player_list()
 
 func _on_player_left(player_name: String) -> void:
@@ -130,13 +172,42 @@ func _on_player_left(player_name: String) -> void:
 	players = players.filter(func(p): return p.get("name", "") != player_name)
 	_refresh_player_list()
 
-func _on_player_ready_changed(player_name: String, is_player_ready: bool) -> void:
-	_print("Player %s ready: %s" % [player_name, is_player_ready])
+func _on_player_ready(player_name: String, deck_id: String) -> void:
+	_print("Player %s is ready with deck %s" % [player_name, deck_id])
 	for player in players:
 		if player.get("name", "") == player_name:
-			player["is_ready"] = is_player_ready
+			player["is_ready"] = true
+			player["deck_id"] = deck_id
 			break
 	_refresh_player_list()
+
+func _on_player_unready(player_name: String) -> void:
+	_print("Player %s is unready" % player_name)
+	for player in players:
+		if player.get("name", "") == player_name:
+			player["is_ready"] = false
+			player["deck_id"] = ""
+			break
+	_refresh_player_list()
+
+func _on_room_state_updated(players_info: Array, all_ready: bool) -> void:
+	_print("Room state updated, all_ready: %s" % all_ready)
+	# 更新玩家列表
+	for player_info in players_info:
+		if player_info is Dictionary:
+			var player_name = player_info.get("name", "")
+			var is_player_ready = player_info.get("is_ready", false)
+			var deck_id = player_info.get("deck_id", "")
+
+			for player in players:
+				if player.get("name", "") == player_name:
+					player["is_ready"] = is_player_ready
+					player["deck_id"] = deck_id if deck_id else ""
+					break
+	_refresh_player_list()
+
+func _on_game_starting() -> void:
+	_print("Game is starting...")
 
 func _on_game_started(game_data: Dictionary) -> void:
 	_print("Game started!")

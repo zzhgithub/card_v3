@@ -10,11 +10,15 @@ signal message_received(type: String, data: Dictionary)
 signal room_joined(room_id: String, players: Array)
 signal player_joined(player_name: String)
 signal player_left(player_name: String)
-signal player_ready_changed(player_name: String, is_ready: bool)
+signal player_ready(player_name: String, deck_id: String)
+signal player_unready(player_name: String)
+signal room_state_updated(players: Array, all_ready: bool)
+signal game_starting
 signal game_started(game_data: Dictionary)
 
 const DEFAULT_SERVER_URL = "ws://localhost:8080/ws"
 const CONNECTION_TIMEOUT = 30.0
+const ROOM_STATE_POLL_INTERVAL = 2.0  ## 轮询房间状态间隔（秒）
 
 var websocket: WebSocketPeer
 var server_url: String = DEFAULT_SERVER_URL
@@ -22,10 +26,12 @@ var current_room_id: String = ""
 var current_username: String = ""
 var is_connected: bool = false
 var connection_timer: Timer
+var room_state_timer: Timer  ## 房间状态轮询定时器
 
 func _ready() -> void:
 	websocket = WebSocketPeer.new()
 	_create_connection_timer()
+	_create_room_state_timer()
 
 func _create_connection_timer() -> void:
 	connection_timer = Timer.new()
@@ -33,6 +39,12 @@ func _create_connection_timer() -> void:
 	connection_timer.wait_time = CONNECTION_TIMEOUT
 	connection_timer.timeout.connect(_on_connection_timeout)
 	add_child(connection_timer)
+
+func _create_room_state_timer() -> void:
+	room_state_timer = Timer.new()
+	room_state_timer.wait_time = ROOM_STATE_POLL_INTERVAL
+	room_state_timer.timeout.connect(_on_room_state_poll)
+	add_child(room_state_timer)
 
 func _process(_delta: float) -> void:
 	if not is_connected:
@@ -53,6 +65,7 @@ func _process(_delta: float) -> void:
 			var reason = websocket.get_close_reason()
 			_print("WebSocket closed: %d - %s" % [code, reason])
 			is_connected = false
+			room_state_timer.stop()
 			disconnected.emit()
 
 ## 连接到服务器
@@ -92,9 +105,14 @@ func connect_to_server(url: String = "") -> bool:
 
 ## 断开连接
 func disconnect_from_server() -> void:
+	# 先发送离开房间消息
+	if is_connected and current_room_id != "":
+		leave_room()
+
 	if is_connected:
 		websocket.close(1000, "Client disconnect")
 		is_connected = false
+		room_state_timer.stop()
 		_print("Disconnected from server")
 
 ## 发送消息 (直接展开 data 字段以匹配服务器格式)
@@ -145,12 +163,16 @@ func _handle_message(message: String) -> void:
 func _route_message(type: String, data: Dictionary) -> void:
 	match type:
 		"joined":
-			# 服务器返回 joined 消息，player_id 是字符串
 			_print("Joined room, player_id: %s" % data.get("player_id", ""))
-			# joined 消息没有 room_id，使用 current_room_id
-			# 将自己添加到玩家列表
 			player_joined.emit(current_username)
 			room_joined.emit(current_room_id, [])
+			# 开始轮询房间状态
+			room_state_timer.start()
+
+		"left":
+			_print("Left room")
+			room_state_timer.stop()
+			current_room_id = ""
 
 		"opponent_joined":
 			player_joined.emit(data.get("player_name", ""))
@@ -158,10 +180,27 @@ func _route_message(type: String, data: Dictionary) -> void:
 		"player_disconnected":
 			player_left.emit(data.get("player_name", ""))
 
+		"player_ready":
+			player_ready.emit(data.get("player_name", ""), data.get("deck_id", ""))
+
+		"player_unready":
+			player_unready.emit(data.get("player_name", ""))
+
+		"room_state":
+			var players = data.get("players", [])
+			var all_ready = data.get("all_ready", false)
+			room_state_updated.emit(players, all_ready)
+
 		"waiting_for_deck":
 			_print("Waiting for deck submission")
 
+		"game_starting":
+			_print("Game is starting...")
+			game_starting.emit()
+
 		"game_started":
+			_print("Game started!")
+			room_state_timer.stop()
 			game_started.emit(data)
 
 		"state_update":
@@ -185,6 +224,11 @@ func _on_connection_timeout() -> void:
 		websocket.close(1000, "Connection timeout")
 		connection_failed.emit("Connection timeout after %.0f seconds" % CONNECTION_TIMEOUT)
 
+## 房间状态轮询
+func _on_room_state_poll() -> void:
+	if is_connected and current_room_id != "":
+		query_room_state()
+
 ## 房间相关操作
 func join_room(room_id: String, username: String) -> bool:
 	current_room_id = room_id
@@ -194,14 +238,28 @@ func join_room(room_id: String, username: String) -> bool:
 		"player_name": username
 	})
 
-func set_ready(is_ready: bool, deck_id: String = "") -> bool:
-	return send_message("ready", {
-		"is_ready": is_ready,
-		"deck_id": deck_id
+## 准备（提交卡组）
+func submit_deck(deck_id: String, cards: Array) -> bool:
+	_print("Submitting deck '%s' with %d cards" % [deck_id, cards.size()])
+	return send_message("submit_deck", {
+		"deck_id": deck_id,
+		"cards": cards
 	})
 
+## 取消准备
+func set_unready() -> bool:
+	_print("Setting unready")
+	return send_message("unready", {})
+
+## 离开房间
 func leave_room() -> bool:
+	_print("Leaving room")
+	room_state_timer.stop()
 	return send_message("leave_room", {})
+
+## 查询房间状态
+func query_room_state() -> bool:
+	return send_message("query_room_state", {})
 
 ## 打印日志
 func _print(msg: String) -> void:

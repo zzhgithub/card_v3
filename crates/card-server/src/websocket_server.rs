@@ -52,12 +52,18 @@ impl WebSocketServer {
 pub enum ClientMessage {
     #[serde(rename = "join_room")]
     JoinRoom { room_id: String, player_name: String },
+    #[serde(rename = "leave_room")]
+    LeaveRoom,
     #[serde(rename = "submit_deck")]
-    SubmitDeck { cards: Vec<String> }, // Card IDs as strings
+    SubmitDeck { deck_id: String, cards: Vec<String> }, // Card IDs as strings
+    #[serde(rename = "unready")]
+    Unready,
     #[serde(rename = "action")]
     Action { action: ClientAction },
     #[serde(rename = "recovery")]
     Recovery { cards: Vec<u32> }, // Instance IDs
+    #[serde(rename = "query_room_state")]
+    QueryRoomState,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,6 +94,14 @@ pub enum AttackTarget {
     Slot { slot_index: usize },
 }
 
+/// Player info for room state query.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayerInfo {
+    pub name: String,
+    pub is_ready: bool,
+    pub deck_id: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "zone_type")]
 pub enum ClientZone {
@@ -106,8 +120,26 @@ pub enum ServerMessage {
         player_id: String,
         room_state: String,
     },
+    #[serde(rename = "left")]
+    Left,
+    #[serde(rename = "player_ready")]
+    PlayerReady {
+        player_name: String,
+        deck_id: String,
+    },
+    #[serde(rename = "player_unready")]
+    PlayerUnready {
+        player_name: String,
+    },
+    #[serde(rename = "room_state")]
+    RoomState {
+        players: Vec<PlayerInfo>,
+        all_ready: bool,
+    },
     #[serde(rename = "waiting_for_deck")]
     WaitingForDeck,
+    #[serde(rename = "game_starting")]
+    GameStarting,
     #[serde(rename = "game_started")]
     GameStarted {
         state: serde_json::Value,
@@ -268,7 +300,7 @@ async fn handle_client_message(
             ws_tx.send(Message::Text(Utf8Bytes::from(json))).await?;
         }
 
-        ClientMessage::SubmitDeck { cards } => {
+        ClientMessage::SubmitDeck { deck_id, cards } => {
             let room_id = state
                 .room_id
                 .as_ref()
@@ -280,15 +312,72 @@ async fn handle_client_message(
             let card_ids: Vec<CardId> = cards.iter().map(|c| CardId::new(c)).collect();
 
             info!(
-                "Player {:?} submitting deck with {} cards",
-                player_id,
-                card_ids.len()
+                "Player {:?} submitting deck '{}' with {} cards",
+                player_id, deck_id, card_ids.len()
             );
 
-            room_manager.submit_deck(room_id, player_id, card_ids).await?;
+            // Submit deck and mark as ready
+            room_manager.submit_deck(room_id, player_id, card_ids, deck_id).await?;
+        }
 
-            // Notify client
-            let response = ServerMessage::WaitingForDeck;
+        ClientMessage::Unready => {
+            let room_id = state
+                .room_id
+                .as_ref()
+                .ok_or_else(|| anyhow!("Not in a room"))?;
+            let player_id = state
+                .player_id
+                .ok_or_else(|| anyhow!("Player ID not set"))?;
+
+            info!("Player {:?} is unready", player_id);
+
+            room_manager.set_unready(room_id, player_id).await?;
+        }
+
+        ClientMessage::LeaveRoom => {
+            let room_id = state
+                .room_id
+                .as_ref()
+                .ok_or_else(|| anyhow!("Not in a room"))?;
+            let player_id = state
+                .player_id
+                .ok_or_else(|| anyhow!("Player ID not set"))?;
+
+            info!("Player {:?} leaving room {}", player_id, room_id);
+
+            room_manager.leave_room(room_id, player_id).await?;
+
+            // Clear state
+            state.room_id = None;
+            state.player_id = None;
+            state.room_rx = None;
+
+            // Send confirmation
+            let response = ServerMessage::Left;
+            let json = serde_json::to_string(&response)?;
+            ws_tx.send(Message::Text(Utf8Bytes::from(json))).await?;
+        }
+
+        ClientMessage::QueryRoomState => {
+            let room_id = state
+                .room_id
+                .as_ref()
+                .ok_or_else(|| anyhow!("Not in a room"))?;
+            let player_id = state
+                .player_id
+                .ok_or_else(|| anyhow!("Player ID not set"))?;
+
+            let (players, all_ready) = room_manager.query_room_state(room_id, player_id).await?;
+
+            let player_infos: Vec<PlayerInfo> = players
+                .into_iter()
+                .map(|(name, is_ready, deck_id)| PlayerInfo { name, is_ready, deck_id })
+                .collect();
+
+            let response = ServerMessage::RoomState {
+                players: player_infos,
+                all_ready,
+            };
             let json = serde_json::to_string(&response)?;
             ws_tx.send(Message::Text(Utf8Bytes::from(json))).await?;
         }
@@ -375,7 +464,10 @@ fn convert_room_message(msg: RoomMessage, my_player_id: Option<PlayerId>) -> Ser
     match msg {
         PlayerJoined { player_name, .. } => ServerMessage::OpponentJoined { player_name },
         PlayerDisconnected { player_name, .. } => ServerMessage::PlayerDisconnected { player_name },
+        PlayerReady { player_name, deck_id, .. } => ServerMessage::PlayerReady { player_name, deck_id },
+        PlayerUnready { player_name, .. } => ServerMessage::PlayerUnready { player_name },
         WaitingForDecks => ServerMessage::WaitingForDeck,
+        GameStarting => ServerMessage::GameStarting,
         GameStarted { state } => ServerMessage::GameStarted {
             state: serde_json::to_value(state).unwrap_or_default(),
         },

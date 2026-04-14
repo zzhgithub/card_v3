@@ -58,8 +58,8 @@ impl RoomManager {
         Ok(result)
     }
 
-    /// Submit deck for a player.
-    pub async fn submit_deck(&self, room_id: &str, player_id: PlayerId, deck: Vec<CardId>) -> Result<()> {
+    /// Submit deck for a player (used for ready state).
+    pub async fn submit_deck(&self, room_id: &str, player_id: PlayerId, deck: Vec<CardId>, deck_id: String) -> Result<()> {
         let rooms = self.rooms.read().await;
         let room = rooms
             .get(room_id)
@@ -68,30 +68,61 @@ impl RoomManager {
         drop(rooms);
 
         let mut room_guard = room.lock().await;
+        // Store the deck
         room_guard.submit_deck(player_id, deck).await?;
+        // Mark player as ready with deck_id
+        room_guard.set_ready(player_id, deck_id).await?;
 
-        // Check if both decks are submitted, if so start the game
-        if room_guard.decks[0].is_some() && room_guard.decks[1].is_some() {
-            info!("Both decks submitted, starting game for room {}", room_id);
-            let room_clone = room.clone();
-            let rules = room_guard.rules.clone();
+        Ok(())
+    }
+
+    /// Set player as not ready.
+    pub async fn set_unready(&self, room_id: &str, player_id: PlayerId) -> Result<()> {
+        let rooms = self.rooms.read().await;
+        let room = rooms
+            .get(room_id)
+            .ok_or_else(|| anyhow!("Room not found"))?
+            .clone();
+        drop(rooms);
+
+        let mut room_guard = room.lock().await;
+        room_guard.set_unready(player_id).await
+    }
+
+    /// Handle player leaving room.
+    pub async fn leave_room(&self, room_id: &str, player_id: PlayerId) -> Result<()> {
+        let rooms = self.rooms.read().await;
+        let room = rooms
+            .get(room_id)
+            .ok_or_else(|| anyhow!("Room not found"))?
+            .clone();
+        drop(rooms);
+
+        let mut room_guard = room.lock().await;
+        room_guard.leave_room(player_id).await?;
+
+        // Check if room is empty, remove it
+        if room_guard.players[0].is_none() && room_guard.players[1].is_none() {
             drop(room_guard);
-
-            // Spawn game starter task
-            tokio::spawn(async move {
-                info!("Spawning game starter task");
-                if let Err(e) = crate::game_starter::start_game(room_clone, rules).await {
-                    error!("Game start failed: {}", e);
-                } else {
-                    info!("Game starter completed successfully");
-                }
-            });
-        } else {
-            info!("Waiting for more decks. Current status: deck1={}, deck2={}",
-                room_guard.decks[0].is_some(), room_guard.decks[1].is_some());
+            let mut rooms_write = self.rooms.write().await;
+            rooms_write.remove(room_id);
+            info!("Room {} removed (empty)", room_id);
         }
 
         Ok(())
+    }
+
+    /// Query room state.
+    pub async fn query_room_state(&self, room_id: &str, player_id: PlayerId) -> Result<(Vec<(String, bool, Option<String>)>, bool)> {
+        let rooms = self.rooms.read().await;
+        let room = rooms
+            .get(room_id)
+            .ok_or_else(|| anyhow!("Room not found"))?
+            .clone();
+        drop(rooms);
+
+        let room_guard = room.lock().await;
+        Ok(room_guard.get_room_state())
     }
 
     /// Submit an action from a player.
@@ -175,7 +206,10 @@ pub enum RoomState {
 pub enum RoomMessage {
     PlayerJoined { player_id: PlayerId, player_name: String },
     PlayerDisconnected { player_id: PlayerId, player_name: String },
+    PlayerReady { player_id: PlayerId, player_name: String, deck_id: String },
+    PlayerUnready { player_id: PlayerId, player_name: String },
     WaitingForDecks,
+    GameStarting,
     GameStarted { state: VisibleGameState },
     StateUpdate { for_player: PlayerId, state: VisibleGameState },
     ActionRequested { player_id: PlayerId, available_actions: Vec<String>, timeout_secs: u64 },
@@ -191,12 +225,15 @@ pub struct Room {
     pub rules: GameRules,
     pub players: [Option<PlayerSlot>; 2],
     pub decks: [Option<Vec<CardId>>; 2],
+    /// Ready state: deck_id if ready, None if not
+    pub ready_state: [Option<String>; 2],
     pub broadcast_tx: mpsc::UnboundedSender<RoomMessage>,
     /// Action request states for sync/async bridge (Player1, Player2)
     pub action_states: [Option<std::sync::Arc<crate::game_starter::ActionRequestState>>; 2],
     subscribers: Vec<mpsc::UnboundedSender<RoomMessage>>,
 }
 
+#[derive(Clone)]
 pub struct PlayerSlot {
     pub name: String,
     pub connected: bool,
@@ -258,6 +295,7 @@ impl Room {
             rules,
             players: [None, None],
             decks: [None, None],
+            ready_state: [None, None],
             broadcast_tx,
             action_states: [None, None],
             subscribers: Vec::new(),
@@ -292,6 +330,137 @@ impl Room {
         info!("Player {:?} submitted deck with {} cards", player_id, deck.len());
         self.decks[slot] = Some(deck);
         Ok(())
+    }
+
+    /// Mark player as ready with their deck selection.
+    pub async fn set_ready(&mut self, player_id: PlayerId, deck_id: String) -> Result<()> {
+        let slot = match player_id { PlayerId::Player1 => 0, PlayerId::Player2 => 1 };
+
+        if self.players[slot].is_none() {
+            bail!("Player not in room");
+        }
+
+        self.ready_state[slot] = Some(deck_id.clone());
+        let player_name = self.players[slot].as_ref().unwrap().name.clone();
+
+        info!("Player {:?} ({}) is ready with deck {}", player_id, player_name, deck_id);
+
+        // Broadcast player ready message
+        let _ = self.broadcast(RoomMessage::PlayerReady {
+            player_id,
+            player_name: player_name.clone(),
+            deck_id
+        });
+
+        // Check if both players are ready
+        if self.ready_state[0].is_some() && self.ready_state[1].is_some() {
+            info!("Both players ready in room {}, starting game", self.id);
+            let _ = self.broadcast(RoomMessage::GameStarting);
+
+            // Start the game
+            let room_clone = Arc::new(Mutex::new(self.clone_room()));
+            let rules = self.rules.clone();
+
+            tokio::spawn(async move {
+                if let Err(e) = crate::game_starter::start_game(room_clone, rules).await {
+                    error!("Game start failed: {}", e);
+                }
+            });
+        }
+
+        Ok(())
+    }
+
+    /// Mark player as not ready.
+    pub async fn set_unready(&mut self, player_id: PlayerId) -> Result<()> {
+        let slot = match player_id { PlayerId::Player1 => 0, PlayerId::Player2 => 1 };
+
+        if self.players[slot].is_none() {
+            bail!("Player not in room");
+        }
+
+        self.ready_state[slot] = None;
+        let player_name = self.players[slot].as_ref().unwrap().name.clone();
+
+        info!("Player {:?} ({}) is not ready", player_id, player_name);
+
+        // Broadcast player unready message
+        let _ = self.broadcast(RoomMessage::PlayerUnready { player_id, player_name });
+
+        Ok(())
+    }
+
+    /// Handle player leaving the room.
+    pub async fn leave_room(&mut self, player_id: PlayerId) -> Result<()> {
+        let slot = match player_id { PlayerId::Player1 => 0, PlayerId::Player2 => 1 };
+
+        if let Some(player) = self.players[slot].take() {
+            info!("Player {:?} ({}) left room {}", player_id, player.name, self.id);
+
+            // Clear ready state and deck
+            self.ready_state[slot] = None;
+            self.decks[slot] = None;
+
+            // Broadcast player left message
+            let _ = self.broadcast(RoomMessage::PlayerDisconnected {
+                player_id,
+                player_name: player.name,
+            });
+
+            // If game was playing, end it
+            if self.state == RoomState::Playing {
+                let winner = if slot == 0 && self.players[1].is_some() {
+                    Some(PlayerId::Player2)
+                } else if slot == 1 && self.players[0].is_some() {
+                    Some(PlayerId::Player1)
+                } else {
+                    None
+                };
+
+                let _ = self.broadcast(RoomMessage::GameOver {
+                    winner,
+                    reason: "Player left".to_string(),
+                });
+                self.state = RoomState::Finished;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get current room state for query.
+    pub fn get_room_state(&self) -> (Vec<(String, bool, Option<String>)>, bool) {
+        let mut players = Vec::new();
+        let mut all_ready = true;
+
+        for slot in 0..2 {
+            if let Some(player) = &self.players[slot] {
+                let is_ready = self.ready_state[slot].is_some();
+                if !is_ready {
+                    all_ready = false;
+                }
+                players.push((player.name.clone(), is_ready, self.ready_state[slot].clone()));
+            } else {
+                all_ready = false;
+            }
+        }
+
+        (players, all_ready)
+    }
+
+    /// Clone room state for game starting.
+    fn clone_room(&self) -> Self {
+        Self {
+            id: self.id.clone(),
+            state: self.state.clone(),
+            rules: self.rules.clone(),
+            players: self.players.clone(),
+            decks: self.decks.clone(),
+            ready_state: self.ready_state.clone(),
+            broadcast_tx: self.broadcast_tx.clone(),
+            action_states: [None, None],
+            subscribers: self.subscribers.clone(),
+        }
     }
 
     pub fn send_action(&self, player_id: PlayerId, action: PlayerAction) -> Result<()> {
