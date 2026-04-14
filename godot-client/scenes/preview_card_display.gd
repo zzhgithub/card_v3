@@ -162,7 +162,7 @@ func _render_title():
 	title_label.add_theme_font_size_override("font_size", int(_s(80)))
 
 	# 设置位置和尺寸（根据缩放比例，向上移动修正偏低问题）
-	title_label.position = Vector2(_s(125), _s(90))
+	title_label.position = Vector2(_s(125), _s(75))
 	title_label.size = Vector2(_s(1250), _s(80))
 
 func _render_attributes():
@@ -236,12 +236,19 @@ func _render_effect_area():
 		fields_label.add_theme_font_size_override("font_size", int(_s(60)))
 		fields_label.add_theme_color_override("font_color", Color.WHITE)
 		effect_container.add_child(fields_label)
-
-		# 添加分隔线
-		var line = ColorRect.new()
-		line.custom_minimum_size = Vector2(_s(1180), _s(2))
-		line.color = Color(1, 1, 1, 0.5)
-		effect_container.add_child(line)
+	else :
+		var fields_label = Label.new()
+		fields_label.text = "无"
+		fields_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		fields_label.add_theme_font_size_override("font_size", int(_s(60)))
+		fields_label.add_theme_color_override("font_color", Color.WHITE)
+		effect_container.add_child(fields_label)
+		
+	# 添加分隔线
+	var line = ColorRect.new()
+	line.custom_minimum_size = Vector2(_s(1180), _s(2))
+	line.color = Color(1, 1, 1, 0.5)
+	effect_container.add_child(line)
 
 	# 效果文本
 	var effects = card_data.get("effects", {})
@@ -257,7 +264,7 @@ func _render_effect_area():
 			effect_container.add_child(effect_label)
 
 	# 设置容器位置和尺寸
-	effect_container.position = Vector2(_s(160), _s(1300))
+	effect_container.position = Vector2(_s(160), _s(1300-50+10))
 	effect_container.size = Vector2(_s(1180), _s(500))
 
 	# 智能排版：如果内容超出，缩小字体

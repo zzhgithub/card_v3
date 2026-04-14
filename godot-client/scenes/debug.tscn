@@ -1,8 +1,8 @@
-[gd_scene format=3 uid="uid://cscfubcurfy3a"]
+[gd_scene format=3 uid="uid://ghpa235mdvaq"]
 
-[ext_resource type="Script" path="res://scenes/debug.gd" id="1_debug"]
+[ext_resource type="Script" uid="uid://cy1bblgt1mk48" path="res://scenes/debug.gd" id="1_debug"]
 
-[node name="Debug" type="Control"]
+[node name="Debug" type="Control" unique_id=1672722742]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -11,7 +11,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_debug")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1378721926]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -24,36 +24,36 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 
-[node name="StatusLabel" type="Label" parent="VBoxContainer"]
+[node name="StatusLabel" type="Label" parent="VBoxContainer" unique_id=1859418579]
 layout_mode = 2
 text = "Status: Not Connected"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="VBoxContainer" unique_id=546795492]
 layout_mode = 2
 
-[node name="RoomInput" type="LineEdit" parent="VBoxContainer"]
+[node name="RoomInput" type="LineEdit" parent="VBoxContainer" unique_id=1407614132]
 layout_mode = 2
-placeholder_text = "Room ID"
 text = "room1"
+placeholder_text = "Room ID"
 
-[node name="NameInput" type="LineEdit" parent="VBoxContainer"]
+[node name="NameInput" type="LineEdit" parent="VBoxContainer" unique_id=1898691077]
 layout_mode = 2
-placeholder_text = "Your Name"
 text = "Player"
+placeholder_text = "Your Name"
 
-[node name="ConnectButton" type="Button" parent="VBoxContainer"]
+[node name="ConnectButton" type="Button" parent="VBoxContainer" unique_id=152767219]
 layout_mode = 2
 text = "Connect"
 
-[node name="HSeparator2" type="HSeparator" parent="VBoxContainer"]
+[node name="HSeparator2" type="HSeparator" parent="VBoxContainer" unique_id=399349686]
 layout_mode = 2
 
-[node name="LogLabel" type="Label" parent="VBoxContainer"]
+[node name="LogLabel" type="Label" parent="VBoxContainer" unique_id=1466196206]
 layout_mode = 2
 text = "Log:"
 
-[node name="LogText" type="TextEdit" parent="VBoxContainer"]
+[node name="LogText" type="TextEdit" parent="VBoxContainer" unique_id=769127499]
 layout_mode = 2
 size_flags_vertical = 3
 editable = false

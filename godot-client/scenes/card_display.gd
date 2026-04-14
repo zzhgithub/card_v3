@@ -284,7 +284,7 @@ func _render_title():
 	title_label.add_theme_font_size_override("font_size", int(80 * scale_factor))
 
 	# 设置位置和尺寸（向上移动修正偏低问题）
-	title_label.position = Vector2(125 * scale_factor, 60 * scale_factor)
+	title_label.position = Vector2(125 * scale_factor, 75 * scale_factor)
 	title_label.size = Vector2(1250 * scale_factor, 80 * scale_factor)
 
 ## 渲染属性（费用+图标）
@@ -313,7 +313,7 @@ func _render_attributes():
 		property_icon.texture = load(prop_path)
 
 	# 设置容器位置和尺寸
-	attribute_container.position = Vector2(125 * scale_factor, 90 * scale_factor)
+	attribute_container.position = Vector2(125 * scale_factor, 90 * scale_factor-0.4)
 	attribute_container.size = Vector2(1250 * scale_factor, 80 * scale_factor)
 
 	# 设置图标尺寸
@@ -363,12 +363,19 @@ func _render_effect_area():
 		fields_label.add_theme_font_size_override("font_size", int(60 * scale_factor))
 		fields_label.add_theme_color_override("font_color", Color.WHITE)
 		effect_container.add_child(fields_label)
+	else :
+		var fields_label = Label.new()
+		fields_label.text = "无"
+		fields_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		fields_label.add_theme_font_size_override("font_size", int(60 * scale_factor))
+		fields_label.add_theme_color_override("font_color", Color.WHITE)
+		effect_container.add_child(fields_label)
 
-		# 添加分隔线
-		var line = ColorRect.new()
-		line.custom_minimum_size = Vector2(1180 * scale_factor, 2)
-		line.color = Color(1, 1, 1, 0.5)
-		effect_container.add_child(line)
+	# 添加分隔线
+	var line = ColorRect.new()
+	line.custom_minimum_size = Vector2(1180 * scale_factor, 1)
+	line.color = Color(1, 1, 1, 0.5)
+	effect_container.add_child(line)
 
 	# 效果文本
 	var effects = card_data.get("effects", {})
@@ -384,7 +391,7 @@ func _render_effect_area():
 			effect_container.add_child(effect_label)
 
 	# 设置容器位置和尺寸
-	effect_container.position = Vector2(160 * scale_factor, 1300 * scale_factor)
+	effect_container.position = Vector2(160 * scale_factor, (1300) * scale_factor)
 	effect_container.size = Vector2(1180 * scale_factor, 500 * scale_factor)
 
 	# 智能排版：如果内容超出，缩小字体
