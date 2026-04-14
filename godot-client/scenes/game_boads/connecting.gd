@@ -40,7 +40,7 @@ func _start_connection() -> void:
 	status_label.text = "正在连接服务器..."
 
 	if network_manager:
-		var success = network_manager.connect_to_server(server_url)
+		var success = await network_manager.connect_to_server(server_url)
 		if not success:
 			status_label.text = "连接失败"
 			_return_to_lobby(1.0)
@@ -67,14 +67,14 @@ func _on_connection_failed(error: String) -> void:
 	status_label.text = "连接失败: %s" % error
 	_return_to_lobby(2.0)
 
-func _on_room_joined(room_id: String, players: Array) -> void:
+func _on_room_joined(joined_room_id: String, players: Array) -> void:
 	is_connecting = false
-	status_label.text = "已加入房间 %s" % room_id
+	status_label.text = "已加入房间 %s" % joined_room_id
 
 	# 切换到房间等待场景
 	if scene_manager:
 		scene_manager.change_scene("room_waiting", {
-			"room_id": room_id,
+			"room_id": joined_room_id,
 			"players": players
 		})
 
