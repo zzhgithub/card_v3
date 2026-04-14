@@ -29,8 +29,12 @@ func _on_button_pressed(button: Button):
 			print("本地游戏 - 未实现")
 			# TODO: 切换到本地游戏场景
 		"OnlineGameButton":
-			print("联机游戏 - 未实现")
-			# TODO: 切换到联机游戏场景
+			print("联机游戏")
+			var scene_manager = get_node_or_null("/root/SceneManager")
+			if scene_manager:
+				scene_manager.change_scene("lobby", {})
+			else:
+				get_tree().change_scene_to_file("res://scenes/game_boads/game_lobby.tscn")
 		"CardCatalogButton":
 			print("卡片图鉴")
 			get_tree().change_scene_to_file("res://scenes/card_catalog.tscn")
