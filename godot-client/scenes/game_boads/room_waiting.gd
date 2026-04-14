@@ -4,7 +4,7 @@
 extends Control
 
 @onready var room_id_label: Label = $VBoxContainer/TopBar/RoomIdLabel
-@onready var player_list: VBoxContainer = $VBoxContainer/MiddleSection/PlayerListPanel/ScrollContainer/PlayerList
+@onready var player_list: VBoxContainer = $VBoxContainer/MiddleSection/PlayerListPanel/VBoxContainer/ScrollContainer/PlayerList
 @onready var ready_btn: Button = $VBoxContainer/TopBar/ReadyBtn
 @onready var leave_btn: Button = $VBoxContainer/TopBar/LeaveBtn
 @onready var deck_dropdown: OptionButton = $VBoxContainer/MiddleSection/RightPanel/DeckDropdown
@@ -104,11 +104,11 @@ func _on_player_left(player_name: String) -> void:
 	players = players.filter(func(p): return p.get("name", "") != player_name)
 	_refresh_player_list()
 
-func _on_player_ready_changed(player_name: String, ready: bool) -> void:
-	_print("Player %s ready: %s" % [player_name, ready])
+func _on_player_ready_changed(player_name: String, is_player_ready: bool) -> void:
+	_print("Player %s ready: %s" % [player_name, is_player_ready])
 	for player in players:
 		if player.get("name", "") == player_name:
-			player["is_ready"] = ready
+			player["is_ready"] = is_player_ready
 			break
 	_refresh_player_list()
 

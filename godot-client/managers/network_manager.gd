@@ -97,18 +97,19 @@ func disconnect_from_server() -> void:
 		is_connected = false
 		_print("Disconnected from server")
 
-## 发送消息
+## 发送消息 (直接展开 data 字段以匹配服务器格式)
 func send_message(type: String, data: Dictionary = {}) -> bool:
 	if not is_connected:
 		_print("Cannot send message: not connected")
 		return false
 
-	var message = {
-		"type": type,
-		"data": data
-	}
+	# 服务器期望直接字段，不是嵌套在 data 中
+	var message = {"type": type}
+	for key in data:
+		message[key] = data[key]
 
 	var json = JSON.stringify(message)
+	_print("Sending JSON: %s" % json)
 	var err = websocket.send_text(json)
 
 	if err == OK:
@@ -118,7 +119,7 @@ func send_message(type: String, data: Dictionary = {}) -> bool:
 		_print("Failed to send message: %d" % err)
 		return false
 
-## 处理接收到的消息
+## 处理接收到的消息 (服务器直接返回字段，不是嵌套在 data 中)
 func _handle_message(message: String) -> void:
 	_print("Received: %s" % message)
 
@@ -133,7 +134,9 @@ func _handle_message(message: String) -> void:
 		return
 
 	var msg_type = parsed.get("type", "")
-	var data = parsed.get("data", {})
+	# 服务器返回的消息直接包含字段，不需要从 data 中提取
+	var data = parsed.duplicate()
+	data.erase("type")
 
 	message_received.emit(msg_type, data)
 	_route_message(msg_type, data)
@@ -141,21 +144,35 @@ func _handle_message(message: String) -> void:
 ## 路由消息到具体处理函数
 func _route_message(type: String, data: Dictionary) -> void:
 	match type:
-		"room_joined":
-			current_room_id = data.get("room_id", "")
-			room_joined.emit(current_room_id, data.get("players", []))
+		"joined":
+			# 服务器返回 joined 消息，player_id 是字符串
+			_print("Joined room, player_id: %s" % data.get("player_id", ""))
+			# joined 消息没有 room_id，使用 current_room_id
+			room_joined.emit(current_room_id, [])
 
-		"player_joined":
+		"opponent_joined":
 			player_joined.emit(data.get("player_name", ""))
 
-		"player_left":
+		"player_disconnected":
 			player_left.emit(data.get("player_name", ""))
 
-		"player_ready":
-			player_ready_changed.emit(data.get("player_name", ""), data.get("is_ready", false))
+		"waiting_for_deck":
+			_print("Waiting for deck submission")
 
 		"game_started":
 			game_started.emit(data)
+
+		"state_update":
+			_print("State update received")
+
+		"action_request":
+			_print("Action requested")
+
+		"recovery_request":
+			_print("Recovery requested")
+
+		"game_over":
+			_print("Game over, winner: %s" % data.get("winner", "none"))
 
 		"error":
 			_print("Server error: %s" % data.get("message", "Unknown error"))
