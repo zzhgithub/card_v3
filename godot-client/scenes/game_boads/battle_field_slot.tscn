@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://b2slngr7wipb1"]
+
+[ext_resource type="Script" path="res://scenes/game_boads/battle_field_slot.gd" id="1_script"]
+
+[node name="BattleFieldSlot" type="Control"]
+custom_minimum_size = Vector2(180, 257)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_script")
+field_type = 0

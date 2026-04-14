@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://cardstack01"]
+
+[ext_resource type="Script" path="res://scenes/game_boads/card_stack.gd" id="1_script"]
+
+[node name="CardStack" type="Control"]
+custom_minimum_size = Vector2(120, 170)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_script")
+card_face_up = false
+restrict_to_top_card = true

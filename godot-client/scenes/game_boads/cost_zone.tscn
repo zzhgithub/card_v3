@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://cost0one01"]
+
+[ext_resource type="Script" path="res://scenes/game_boads/cost_zone.gd" id="1_script"]
+
+[node name="CostZone" type="Control"]
+custom_minimum_size = Vector2(140, 300)
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_script")

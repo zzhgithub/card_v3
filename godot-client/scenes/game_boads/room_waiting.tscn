@@ -1,0 +1,103 @@
+[gd_scene format=3 uid="uid://b715j1ts8txyy"]
+
+[ext_resource type="Script" path="res://scenes/game_boads/room_waiting.gd" id="1_script"]
+
+[node name="RoomWaiting" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.1, 0.12, 0.15, 1.0)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 20
+
+[node name="TopBar" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="RoomIdLabel" type="Label" parent="VBoxContainer/TopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "房间ID: -"
+
+[node name="Spacer" type="Control" parent="VBoxContainer/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ReadyBtn" type="Button" parent="VBoxContainer/TopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "准备"
+
+[node name="LeaveBtn" type="Button" parent="VBoxContainer/TopBar"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "离开"
+
+[node name="MiddleSection" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="PlayerListPanel" type="PanelContainer" parent="VBoxContainer/MiddleSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/MiddleSection/PlayerListPanel"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/MiddleSection/PlayerListPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "玩家列表"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/MiddleSection/PlayerListPanel/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PlayerList" type="VBoxContainer" parent="VBoxContainer/MiddleSection/PlayerListPanel/VBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RightPanel" type="VBoxContainer" parent="VBoxContainer/MiddleSection"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 20
+
+[node name="Label" type="Label" parent="VBoxContainer/MiddleSection/RightPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "卡组选择"
+horizontal_alignment = 1
+
+[node name="DeckDropdown" type="OptionButton" parent="VBoxContainer/MiddleSection/RightPanel"]
+layout_mode = 2
+
+[node name="DeckPreview" type="TextureRect" parent="VBoxContainer/MiddleSection/RightPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 5
