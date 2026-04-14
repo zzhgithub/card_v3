@@ -13,6 +13,7 @@ extends Control
 var room_id: String = ""
 var players: Array = []
 var is_ready: bool = false
+var current_player_name: String = ""
 
 var network_manager: Node
 var scene_manager: Node
@@ -21,6 +22,14 @@ func _ready() -> void:
 	# 获取管理器
 	network_manager = get_node_or_null("/root/NetworkManager")
 	scene_manager = get_node_or_null("/root/SceneManager")
+
+	# 获取当前用户名
+	if network_manager:
+		current_player_name = network_manager.current_username
+
+	# 将自己添加到玩家列表
+	if current_player_name and not players.any(func(p): return p.get("name", "") == current_player_name):
+		players.append({"name": current_player_name, "is_ready": false})
 
 	# 连接信号
 	ready_btn.pressed.connect(_on_ready_pressed)
@@ -43,6 +52,8 @@ func _update_room_id() -> void:
 	room_id_label.text = "房间ID: %s" % room_id
 
 func _refresh_player_list() -> void:
+	if player_list == null:
+		return
 	# 清空列表
 	for child in player_list.get_children():
 		child.queue_free()
@@ -65,12 +76,27 @@ func _refresh_player_list() -> void:
 		player_list.add_child(hbox)
 
 func _load_deck_list() -> void:
-	# 加载卡组列表（从本地存储或配置）
+	if deck_dropdown == null:
+		return
+	# 加载卡组列表（从 desks 文件夹）
 	deck_dropdown.clear()
 	deck_dropdown.add_item("选择卡组")
-	deck_dropdown.add_item("默认卡组")
-	deck_dropdown.add_item("自定义卡组1")
-	deck_dropdown.add_item("自定义卡组2")
+
+	var desks_dir = DirAccess.open("res://desks")
+	if desks_dir:
+		desks_dir.list_dir_begin()
+		var file_name = desks_dir.get_next()
+		while file_name != "":
+			if not desks_dir.current_is_dir() and file_name.ends_with(".json"):
+				# 去掉 .json 后缀显示
+				var deck_name = file_name.get_basename()
+				deck_dropdown.add_item(deck_name)
+			file_name = desks_dir.get_next()
+		desks_dir.list_dir_end()
+
+	# 如果没有找到任何卡组，添加默认选项
+	if deck_dropdown.item_count <= 1:
+		deck_dropdown.add_item("默认卡组")
 
 func _on_ready_pressed() -> void:
 	is_ready = not is_ready

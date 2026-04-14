@@ -148,6 +148,8 @@ func _route_message(type: String, data: Dictionary) -> void:
 			# 服务器返回 joined 消息，player_id 是字符串
 			_print("Joined room, player_id: %s" % data.get("player_id", ""))
 			# joined 消息没有 room_id，使用 current_room_id
+			# 将自己添加到玩家列表
+			player_joined.emit(current_username)
 			room_joined.emit(current_room_id, [])
 
 		"opponent_joined":
