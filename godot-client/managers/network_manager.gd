@@ -15,6 +15,7 @@ signal player_unready(player_name: String)
 signal room_state_updated(players: Array, all_ready: bool)
 signal game_starting
 signal game_started(game_data: Dictionary)
+signal state_update(state: Dictionary)
 
 const DEFAULT_SERVER_URL = "ws://localhost:8080/ws"
 const CONNECTION_TIMEOUT = 30.0
@@ -24,7 +25,7 @@ var websocket: WebSocketPeer
 var server_url: String = DEFAULT_SERVER_URL
 var current_room_id: String = ""
 var current_username: String = ""
-var is_connected: bool = false
+var ws_connected: bool = false
 var connection_timer: Timer
 var room_state_timer: Timer  ## 房间状态轮询定时器
 
@@ -47,7 +48,7 @@ func _create_room_state_timer() -> void:
 	add_child(room_state_timer)
 
 func _process(_delta: float) -> void:
-	if not is_connected:
+	if not ws_connected:
 		return
 
 	websocket.poll()
@@ -64,7 +65,7 @@ func _process(_delta: float) -> void:
 			var code = websocket.get_close_code()
 			var reason = websocket.get_close_reason()
 			_print("WebSocket closed: %d - %s" % [code, reason])
-			is_connected = false
+			ws_connected = false
 			room_state_timer.stop()
 			disconnected.emit()
 
@@ -89,7 +90,7 @@ func connect_to_server(url: String = "") -> bool:
 		var state = websocket.get_ready_state()
 
 		if state == WebSocketPeer.STATE_OPEN:
-			is_connected = true
+			ws_connected = true
 			connection_timer.stop()
 			_print("Connected to server")
 			connected.emit()
@@ -106,18 +107,18 @@ func connect_to_server(url: String = "") -> bool:
 ## 断开连接
 func disconnect_from_server() -> void:
 	# 先发送离开房间消息
-	if is_connected and current_room_id != "":
+	if ws_connected and current_room_id != "":
 		leave_room()
 
-	if is_connected:
+	if ws_connected:
 		websocket.close(1000, "Client disconnect")
-		is_connected = false
+		ws_connected = false
 		room_state_timer.stop()
 		_print("Disconnected from server")
 
 ## 发送消息 (直接展开 data 字段以匹配服务器格式)
 func send_message(type: String, data: Dictionary = {}) -> bool:
-	if not is_connected:
+	if not ws_connected:
 		_print("Cannot send message: not connected")
 		return false
 
@@ -208,6 +209,7 @@ func _route_message(type: String, data: Dictionary) -> void:
 
 		"state_update":
 			_print("State update received")
+			state_update.emit(data)
 
 		"action_request":
 			_print("Action requested")
@@ -223,17 +225,17 @@ func _route_message(type: String, data: Dictionary) -> void:
 
 ## 连接超时处理
 func _on_connection_timeout() -> void:
-	if not is_connected:
+	if not ws_connected:
 		websocket.close(1000, "Connection timeout")
 		connection_failed.emit("Connection timeout after %.0f seconds" % CONNECTION_TIMEOUT)
 
 ## 房间状态轮询
 func _on_room_state_poll() -> void:
 	_print("Room state poll triggered")
-	if is_connected and current_room_id != "":
+	if ws_connected and current_room_id != "":
 		query_room_state()
 	else:
-		_print("Skipping room state poll - not connected or not in room (connected=%s, room=%s)" % [is_connected, current_room_id])
+		_print("Skipping room state poll - not connected or not in room (connected=%s, room=%s)" % [ws_connected, current_room_id])
 
 ## 加入房间
 func join_room(room_id: String, username: String) -> bool:

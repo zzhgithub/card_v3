@@ -225,6 +225,22 @@ pub async fn start_game(
         next_id += 1;
     }
 
+    // Draw initial hands for both players before sending state
+    let initial_hand_size = state.rules.initial_hand_size;
+    println!("[GAME_STARTER] Drawing initial hands of {} cards for each player", initial_hand_size);
+    for player_idx in 0..2 {
+        for _ in 0..initial_hand_size {
+            if !state.players[player_idx].zones.deck.is_empty() {
+                let card = state.players[player_idx].zones.deck.remove(0);
+                state.players[player_idx].zones.hand.push(card);
+            }
+        }
+    }
+    println!("[GAME_STARTER] Player 1 hand: {} cards, deck: {} cards",
+        state.players[0].zones.hand.len(), state.players[0].zones.deck.len());
+    println!("[GAME_STARTER] Player 2 hand: {} cards, deck: {} cards",
+        state.players[1].zones.hand.len(), state.players[1].zones.deck.len());
+
     // Create action request states for sync/async bridge
     let action_state1 = Arc::new(ActionRequestState::new());
     let action_state2 = Arc::new(ActionRequestState::new());

@@ -18,7 +18,7 @@ signal game_over(winner: String, reason: String)
 @export var reconnect_delay: float = 3.0
 
 var socket: WebSocketPeer = WebSocketPeer.new()
-var is_connected: bool = false
+var ws_connected: bool = false
 var current_room_id: String = ""
 var current_player_name: String = ""
 var my_player_id: String = ""
@@ -32,8 +32,8 @@ func _process(_delta):
 
 	match state:
 		WebSocketPeer.STATE_OPEN:
-			if not is_connected:
-				is_connected = true
+			if not ws_connected:
+				ws_connected = true
 				emit_signal("connected")
 				print("[Network] Connected to server")
 
@@ -43,8 +43,8 @@ func _process(_delta):
 				_handle_message(message)
 
 		WebSocketPeer.STATE_CLOSED:
-			if is_connected:
-				is_connected = false
+			if ws_connected:
+				ws_connected = false
 				emit_signal("disconnected")
 				print("[Network] Disconnected from server")
 				set_process(false)
@@ -70,7 +70,7 @@ func disconnect_from_server():
 	auto_reconnect = false
 	socket.close()
 	set_process(false)
-	is_connected = false
+	ws_connected = false
 
 func _handle_message(message: String):
 	print("[Network] Received: ", message)
@@ -147,7 +147,7 @@ func _dispatch_message(data: Dictionary):
 			print("[Network] Unknown message type: ", msg_type)
 
 func _send_message(data: Dictionary) -> bool:
-	if not is_connected:
+	if not ws_connected:
 		print("[Network] Not connected, cannot send message")
 		return false
 

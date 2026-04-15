@@ -53,7 +53,8 @@ func _update_background_size() -> void:
 	if background:
 		background.size = size
 	if title_label:
-		title_label.position = Vector2(0, size.y + 5)
+		# 标题显示在费用区上方
+		title_label.position = Vector2(0, -20)
 		title_label.size = Vector2(size.x, 20)
 
 

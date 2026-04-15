@@ -1,11 +1,12 @@
-[gd_scene format=3 uid="uid://gameboard01"]
+[gd_scene load_steps=8 format=3]
 
-[ext_resource type="Script" path="res://scenes/game_boads/game_board.gd" id="1_script"]
-[ext_resource type="PackedScene" uid="uid://battlefieldslot01" path="res://scenes/game_boads/battle_field_slot.tscn" id="2_slot"]
-[ext_resource type="PackedScene" uid="uid://cardstack01" path="res://scenes/game_boads/card_stack.tscn" id="3_stack"]
-[ext_resource type="PackedScene" uid="uid://costzone01" path="res://scenes/game_boads/cost_zone.tscn" id="4_cost"]
-[ext_resource type="PackedScene" path="res://addons/card-framework/hand.tscn" id="5_hand"]
-[ext_resource type="PackedScene" path="res://addons/card-framework/card_manager.tscn" id="6_manager"]
+[ext_resource type="Script" path="res://scenes/game_boads/game_board.gd" id="1_game_board"]
+[ext_resource type="PackedScene" uid="uid://c8ce4cn8ntj1r" path="res://addons/card-framework/hand.tscn" id="2_hand"]
+[ext_resource type="PackedScene" uid="uid://battlefieldslot01" path="res://scenes/game_boads/battle_field_slot.tscn" id="3_battle_field_slot"]
+[ext_resource type="PackedScene" uid="uid://cardstack01" path="res://scenes/game_boads/card_stack.tscn" id="4_card_stack"]
+[ext_resource type="PackedScene" uid="uid://costzone01" path="res://scenes/game_boads/cost_zone.tscn" id="5_cost_zone"]
+[ext_resource type="PackedScene" path="res://scenes/game_boads/info_bar.tscn" id="6_info_bar"]
+[ext_resource type="PackedScene" path="res://addons/card-framework/card_manager.tscn" id="7_manager"]
 
 [node name="GameBoard" type="Control"]
 layout_mode = 3
@@ -14,9 +15,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_script")
+script = ExtResource("1_game_board")
 
-[node name="CardManager" parent="." instance=ExtResource("6_manager")]
+[node name="CardManager" parent="." instance=ExtResource("7_manager")]
 layout_mode = 1
 
 [node name="Background" type="ColorRect" parent="."]
@@ -26,113 +27,162 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.06, 0.08, 0.12, 1.0)
+color = Color(0.06, 0.08, 0.12, 1)
+
+[node name="MenuButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 80.0
+offset_bottom = 40.0
+text = "菜单"
+
+[node name="InfoBar" parent="." instance=ExtResource("6_info_bar")]
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -20.0
+offset_bottom = 20.0
+grow_vertical = 2
 
 [node name="OpponentArea" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 250.0
+offset_bottom = 280.0
 grow_horizontal = 2
+alignment = 1
 
-[node name="OpponentHand" parent="OpponentArea" instance=ExtResource("5_hand")]
+[node name="OpponentTopRow" type="HBoxContainer" parent="OpponentArea"]
 layout_mode = 2
 size_flags_vertical = 3
-card_face_up = false
+alignment = 1
 
-[node name="OpponentFieldArea" type="HBoxContainer" parent="OpponentArea"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 10
-
-[node name="OpponentStacks" type="VBoxContainer" parent="OpponentArea/OpponentFieldArea"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="OpponentDeck" parent="OpponentArea/OpponentFieldArea/OpponentStacks" instance=ExtResource("3_stack")]
+[node name="Spacer" type="Control" parent="OpponentArea/OpponentTopRow"]
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 
-[node name="OpponentGrave" parent="OpponentArea/OpponentFieldArea/OpponentStacks" instance=ExtResource("3_stack")]
-layout_mode = 2
-
-[node name="OpponentBattleField" type="VBoxContainer" parent="OpponentArea/OpponentFieldArea"]
+[node name="OpponentHand" parent="OpponentArea/OpponentTopRow" instance=ExtResource("2_hand")]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 10
+card_face_up = false
 
-[node name="OpponentBackField" type="HBoxContainer" parent="OpponentArea/OpponentFieldArea/OpponentBattleField"]
+[node name="OpponentStatus" type="VBoxContainer" parent="OpponentArea/OpponentTopRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="TitleLabel" type="Label" parent="OpponentArea/OpponentTopRow/OpponentStatus"]
+layout_mode = 2
+text = "对手"
+horizontal_alignment = 1
+
+[node name="HPLabel" type="Label" parent="OpponentArea/OpponentTopRow/OpponentStatus"]
+layout_mode = 2
+text = "HP: 20"
+horizontal_alignment = 1
+
+[node name="RealPointsLabel" type="Label" parent="OpponentArea/OpponentTopRow/OpponentStatus"]
+layout_mode = 2
+text = "RP: 0"
+horizontal_alignment = 1
+
+[node name="OpponentMainRow" type="HBoxContainer" parent="OpponentArea"]
 layout_mode = 2
 size_flags_vertical = 3
 alignment = 1
 
-[node name="Slot0" parent="OpponentArea/OpponentFieldArea/OpponentBattleField/OpponentBackField" instance=ExtResource("2_slot")]
-layout_mode = 2
-field_type = 1
-
-[node name="Slot1" parent="OpponentArea/OpponentFieldArea/OpponentBattleField/OpponentBackField" instance=ExtResource("2_slot")]
-layout_mode = 2
-field_type = 1
-slot_index = 1
-
-[node name="Slot2" parent="OpponentArea/OpponentFieldArea/OpponentBattleField/OpponentBackField" instance=ExtResource("2_slot")]
-layout_mode = 2
-field_type = 1
-slot_index = 2
-
-[node name="Slot3" parent="OpponentArea/OpponentFieldArea/OpponentBattleField/OpponentBackField" instance=ExtResource("2_slot")]
-layout_mode = 2
-field_type = 1
-slot_index = 3
-
-[node name="Slot4" parent="OpponentArea/OpponentFieldArea/OpponentBattleField/OpponentBackField" instance=ExtResource("2_slot")]
-layout_mode = 2
-field_type = 1
-slot_index = 4
-
-[node name="OpponentFrontField" type="HBoxContainer" parent="OpponentArea/OpponentFieldArea/OpponentBattleField"]
-layout_mode = 2
-size_flags_vertical = 3
-alignment = 1
-
-[node name="Slot0" parent="OpponentArea/OpponentFieldArea/OpponentBattleField/OpponentFrontField" instance=ExtResource("2_slot")]
-layout_mode = 2
-
-[node name="Slot1" parent="OpponentArea/OpponentFieldArea/OpponentBattleField/OpponentFrontField" instance=ExtResource("2_slot")]
-layout_mode = 2
-slot_index = 1
-
-[node name="Slot2" parent="OpponentArea/OpponentFieldArea/OpponentBattleField/OpponentFrontField" instance=ExtResource("2_slot")]
-layout_mode = 2
-slot_index = 2
-
-[node name="Slot3" parent="OpponentArea/OpponentFieldArea/OpponentBattleField/OpponentFrontField" instance=ExtResource("2_slot")]
-layout_mode = 2
-slot_index = 3
-
-[node name="Slot4" parent="OpponentArea/OpponentFieldArea/OpponentBattleField/OpponentFrontField" instance=ExtResource("2_slot")]
-layout_mode = 2
-slot_index = 4
-
-[node name="OpponentStatus" type="VBoxContainer" parent="OpponentArea/OpponentFieldArea"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="OpponentCost" parent="OpponentArea/OpponentFieldArea/OpponentStatus" instance=ExtResource("4_cost")]
+[node name="OpponentCost" parent="OpponentArea/OpponentMainRow" instance=ExtResource("5_cost_zone")]
+custom_minimum_size = Vector2(80, 200)
 layout_mode = 2
 cost_label = "费用"
 
-[node name="OpponentStatusPanel" type="VBoxContainer" parent="OpponentArea/OpponentFieldArea/OpponentStatus"]
+[node name="OpponentBattleField" type="VBoxContainer" parent="OpponentArea/OpponentMainRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="OpponentBackField" type="HBoxContainer" parent="OpponentArea/OpponentMainRow/OpponentBattleField"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="Slot0" parent="OpponentArea/OpponentMainRow/OpponentBattleField/OpponentBackField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
+
+[node name="Slot1" parent="OpponentArea/OpponentMainRow/OpponentBattleField/OpponentBackField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
+slot_index = 1
+
+[node name="Slot2" parent="OpponentArea/OpponentMainRow/OpponentBattleField/OpponentBackField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
+slot_index = 2
+
+[node name="Slot3" parent="OpponentArea/OpponentMainRow/OpponentBattleField/OpponentBackField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
+slot_index = 3
+
+[node name="Slot4" parent="OpponentArea/OpponentMainRow/OpponentBattleField/OpponentBackField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
+slot_index = 4
+
+[node name="OpponentFrontField" type="HBoxContainer" parent="OpponentArea/OpponentMainRow/OpponentBattleField"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="Slot0" parent="OpponentArea/OpponentMainRow/OpponentBattleField/OpponentFrontField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
 layout_mode = 2
 
-[node name="HPLabel" type="Label" parent="OpponentArea/OpponentFieldArea/OpponentStatus/OpponentStatusPanel"]
+[node name="Slot1" parent="OpponentArea/OpponentMainRow/OpponentBattleField/OpponentFrontField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "HP: 20"
+slot_index = 1
 
-[node name="RealPointsLabel" type="Label" parent="OpponentArea/OpponentFieldArea/OpponentStatus/OpponentStatusPanel"]
+[node name="Slot2" parent="OpponentArea/OpponentMainRow/OpponentBattleField/OpponentFrontField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "RP: 0"
+slot_index = 2
+
+[node name="Slot3" parent="OpponentArea/OpponentMainRow/OpponentBattleField/OpponentFrontField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+slot_index = 3
+
+[node name="Slot4" parent="OpponentArea/OpponentMainRow/OpponentBattleField/OpponentFrontField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+slot_index = 4
+
+[node name="OpponentStacks" type="VBoxContainer" parent="OpponentArea/OpponentMainRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+alignment = 1
+
+[node name="OpponentDeck" parent="OpponentArea/OpponentMainRow/OpponentStacks" instance=ExtResource("4_card_stack")]
+custom_minimum_size = Vector2(80, 100)
+layout_mode = 2
+stack_type = 0
+card_face_up = false
+layout_direction = 0
+
+[node name="OpponentGrave" parent="OpponentArea/OpponentMainRow/OpponentStacks" instance=ExtResource("4_card_stack")]
+custom_minimum_size = Vector2(80, 100)
+layout_mode = 2
+stack_type = 1
+card_face_up = true
+layout_direction = 0
 
 [node name="PlayerArea" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -140,126 +190,136 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -470.0
+offset_top = -280.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 10
+alignment = 1
 
-[node name="PlayerFieldArea" type="HBoxContainer" parent="PlayerArea"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 10
-
-[node name="PlayerStacks" type="VBoxContainer" parent="PlayerArea/PlayerFieldArea"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="PlayerDeck" parent="PlayerArea/PlayerFieldArea/PlayerStacks" instance=ExtResource("3_stack")]
-layout_mode = 2
-
-[node name="PlayerGrave" parent="PlayerArea/PlayerFieldArea/PlayerStacks" instance=ExtResource("3_stack")]
-layout_mode = 2
-
-[node name="PlayerBattleField" type="VBoxContainer" parent="PlayerArea/PlayerFieldArea"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 10
-
-[node name="PlayerFrontField" type="HBoxContainer" parent="PlayerArea/PlayerFieldArea/PlayerBattleField"]
+[node name="PlayerMainRow" type="HBoxContainer" parent="PlayerArea"]
 layout_mode = 2
 size_flags_vertical = 3
 alignment = 1
 
-[node name="Slot0" parent="PlayerArea/PlayerFieldArea/PlayerBattleField/PlayerFrontField" instance=ExtResource("2_slot")]
-layout_mode = 2
-
-[node name="Slot1" parent="PlayerArea/PlayerFieldArea/PlayerBattleField/PlayerFrontField" instance=ExtResource("2_slot")]
-layout_mode = 2
-slot_index = 1
-
-[node name="Slot2" parent="PlayerArea/PlayerFieldArea/PlayerBattleField/PlayerFrontField" instance=ExtResource("2_slot")]
-layout_mode = 2
-slot_index = 2
-
-[node name="Slot3" parent="PlayerArea/PlayerFieldArea/PlayerBattleField/PlayerFrontField" instance=ExtResource("2_slot")]
-layout_mode = 2
-slot_index = 3
-
-[node name="Slot4" parent="PlayerArea/PlayerFieldArea/PlayerBattleField/PlayerFrontField" instance=ExtResource("2_slot")]
-layout_mode = 2
-slot_index = 4
-
-[node name="PlayerBackField" type="HBoxContainer" parent="PlayerArea/PlayerFieldArea/PlayerBattleField"]
-layout_mode = 2
-size_flags_vertical = 3
-alignment = 1
-
-[node name="Slot0" parent="PlayerArea/PlayerFieldArea/PlayerBattleField/PlayerBackField" instance=ExtResource("2_slot")]
-layout_mode = 2
-field_type = 1
-
-[node name="Slot1" parent="PlayerArea/PlayerFieldArea/PlayerBattleField/PlayerBackField" instance=ExtResource("2_slot")]
-layout_mode = 2
-field_type = 1
-slot_index = 1
-
-[node name="Slot2" parent="PlayerArea/PlayerFieldArea/PlayerBattleField/PlayerBackField" instance=ExtResource("2_slot")]
-layout_mode = 2
-field_type = 1
-slot_index = 2
-
-[node name="Slot3" parent="PlayerArea/PlayerFieldArea/PlayerBattleField/PlayerBackField" instance=ExtResource("2_slot")]
-layout_mode = 2
-field_type = 1
-slot_index = 3
-
-[node name="Slot4" parent="PlayerArea/PlayerFieldArea/PlayerBattleField/PlayerBackField" instance=ExtResource("2_slot")]
-layout_mode = 2
-field_type = 1
-slot_index = 4
-
-[node name="PlayerStatus" type="VBoxContainer" parent="PlayerArea/PlayerFieldArea"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="PlayerCost" parent="PlayerArea/PlayerFieldArea/PlayerStatus" instance=ExtResource("4_cost")]
+[node name="PlayerCost" parent="PlayerArea/PlayerMainRow" instance=ExtResource("5_cost_zone")]
+custom_minimum_size = Vector2(80, 200)
 layout_mode = 2
 cost_label = "费用"
 
-[node name="PlayerStatusPanel" type="VBoxContainer" parent="PlayerArea/PlayerFieldArea/PlayerStatus"]
+[node name="PlayerBattleField" type="VBoxContainer" parent="PlayerArea/PlayerMainRow"]
 layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
 
-[node name="HPLabel" type="Label" parent="PlayerArea/PlayerFieldArea/PlayerStatus/PlayerStatusPanel"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "HP: 20"
-
-[node name="RealPointsLabel" type="Label" parent="PlayerArea/PlayerFieldArea/PlayerStatus/PlayerStatusPanel"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 16
-text = "RP: 0"
-
-[node name="PlayerHand" parent="PlayerArea" instance=ExtResource("5_hand")]
+[node name="PlayerFrontField" type="HBoxContainer" parent="PlayerArea/PlayerMainRow/PlayerBattleField"]
 layout_mode = 2
 size_flags_vertical = 3
+alignment = 1
 
-[node name="UIOverlay" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 1
+[node name="Slot0" parent="PlayerArea/PlayerMainRow/PlayerBattleField/PlayerFrontField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
 
-[node name="MenuButton" type="Button" parent="UIOverlay"]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -80.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = 45.0
-grow_horizontal = 0
-text = "菜单"
+[node name="Slot1" parent="PlayerArea/PlayerMainRow/PlayerBattleField/PlayerFrontField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+slot_index = 1
+
+[node name="Slot2" parent="PlayerArea/PlayerMainRow/PlayerBattleField/PlayerFrontField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+slot_index = 2
+
+[node name="Slot3" parent="PlayerArea/PlayerMainRow/PlayerBattleField/PlayerFrontField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+slot_index = 3
+
+[node name="Slot4" parent="PlayerArea/PlayerMainRow/PlayerBattleField/PlayerFrontField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+slot_index = 4
+
+[node name="PlayerBackField" type="HBoxContainer" parent="PlayerArea/PlayerMainRow/PlayerBattleField"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="Slot0" parent="PlayerArea/PlayerMainRow/PlayerBattleField/PlayerBackField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
+
+[node name="Slot1" parent="PlayerArea/PlayerMainRow/PlayerBattleField/PlayerBackField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
+slot_index = 1
+
+[node name="Slot2" parent="PlayerArea/PlayerMainRow/PlayerBattleField/PlayerBackField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
+slot_index = 2
+
+[node name="Slot3" parent="PlayerArea/PlayerMainRow/PlayerBattleField/PlayerBackField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
+slot_index = 3
+
+[node name="Slot4" parent="PlayerArea/PlayerMainRow/PlayerBattleField/PlayerBackField" instance=ExtResource("3_battle_field_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
+slot_index = 4
+
+[node name="PlayerStacks" type="VBoxContainer" parent="PlayerArea/PlayerMainRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+alignment = 1
+
+[node name="PlayerDeck" parent="PlayerArea/PlayerMainRow/PlayerStacks" instance=ExtResource("4_card_stack")]
+custom_minimum_size = Vector2(80, 100)
+layout_mode = 2
+stack_type = 0
+card_face_up = false
+layout_direction = 0
+
+[node name="PlayerGrave" parent="PlayerArea/PlayerMainRow/PlayerStacks" instance=ExtResource("4_card_stack")]
+custom_minimum_size = Vector2(80, 100)
+layout_mode = 2
+stack_type = 1
+card_face_up = true
+layout_direction = 0
+
+[node name="PlayerBottomRow" type="HBoxContainer" parent="PlayerArea"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="Spacer" type="Control" parent="PlayerArea/PlayerBottomRow"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+
+[node name="PlayerHand" parent="PlayerArea/PlayerBottomRow" instance=ExtResource("2_hand")]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PlayerStatus" type="VBoxContainer" parent="PlayerArea/PlayerBottomRow"]
+layout_mode = 2
+size_flags_horizontal = 0
+
+[node name="TitleLabel" type="Label" parent="PlayerArea/PlayerBottomRow/PlayerStatus"]
+layout_mode = 2
+text = "自己"
+horizontal_alignment = 1
+
+[node name="HPLabel" type="Label" parent="PlayerArea/PlayerBottomRow/PlayerStatus"]
+layout_mode = 2
+text = "HP: 20"
+horizontal_alignment = 1
+
+[node name="RealPointsLabel" type="Label" parent="PlayerArea/PlayerBottomRow/PlayerStatus"]
+layout_mode = 2
+text = "RP: 0"
+horizontal_alignment = 1

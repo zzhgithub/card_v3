@@ -5,7 +5,6 @@ signal turn_changed(turn_number: int, current_player: String)
 signal phase_changed(phase: String)
 signal hp_changed(player_id: String, new_hp: int)
 signal hand_changed(cards: Array)
-signal field_changed(zone: String, slot: int, card: Dictionary)
 
 # Game state data
 var turn_number: int = 0
