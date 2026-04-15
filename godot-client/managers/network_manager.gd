@@ -189,6 +189,9 @@ func _route_message(type: String, data: Dictionary) -> void:
 		"room_state":
 			var players = data.get("players", [])
 			var all_ready = data.get("all_ready", false)
+			_print("Room state response received: %d players, all_ready=%s" % [players.size(), all_ready])
+			for p in players:
+				_print("  - Player: %s, ready=%s, deck=%s" % [p.get("name", "?"), p.get("is_ready", false), p.get("deck_id", "none")])
 			room_state_updated.emit(players, all_ready)
 
 		"waiting_for_deck":
@@ -226,10 +229,13 @@ func _on_connection_timeout() -> void:
 
 ## 房间状态轮询
 func _on_room_state_poll() -> void:
+	_print("Room state poll triggered")
 	if is_connected and current_room_id != "":
 		query_room_state()
+	else:
+		_print("Skipping room state poll - not connected or not in room (connected=%s, room=%s)" % [is_connected, current_room_id])
 
-## 房间相关操作
+## 加入房间
 func join_room(room_id: String, username: String) -> bool:
 	current_room_id = room_id
 	current_username = username
@@ -259,6 +265,7 @@ func leave_room() -> bool:
 
 ## 查询房间状态
 func query_room_state() -> bool:
+	_print("Querying room state for room: %s" % current_room_id)
 	return send_message("query_room_state", {})
 
 ## 打印日志

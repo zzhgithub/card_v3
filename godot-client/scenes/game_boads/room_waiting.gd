@@ -28,10 +28,6 @@ func _ready() -> void:
 	if network_manager:
 		current_player_name = network_manager.current_username
 
-	# 将自己添加到玩家列表
-	if current_player_name and not players.any(func(p): return p.get("name", "") == current_player_name):
-		players.append({"name": current_player_name, "is_ready": false, "deck_id": ""})
-
 	# 连接信号
 	ready_btn.pressed.connect(_on_ready_pressed)
 	leave_btn.pressed.connect(_on_leave_pressed)
@@ -163,47 +159,52 @@ func _on_deck_selected(index: int) -> void:
 		_print("Selected deck: %s" % deck_name)
 
 func _on_player_joined(player_name: String) -> void:
-	_print("Player joined: %s" % player_name)
-	players.append({"name": player_name, "is_ready": false, "deck_id": ""})
-	_refresh_player_list()
+	_print("Player joined signal: %s" % player_name)
+	# 触发轮询获取最新房间状态
+	if network_manager:
+		_print("Triggering room state query after player joined")
+		network_manager.query_room_state()
 
 func _on_player_left(player_name: String) -> void:
-	_print("Player left: %s" % player_name)
-	players = players.filter(func(p): return p.get("name", "") != player_name)
-	_refresh_player_list()
+	_print("Player left signal: %s" % player_name)
+	# 触发轮询获取最新房间状态
+	if network_manager:
+		_print("Triggering room state query after player left")
+		network_manager.query_room_state()
 
 func _on_player_ready(player_name: String, deck_id: String) -> void:
-	_print("Player %s is ready with deck %s" % [player_name, deck_id])
-	for player in players:
-		if player.get("name", "") == player_name:
-			player["is_ready"] = true
-			player["deck_id"] = deck_id
-			break
-	_refresh_player_list()
+	_print("Player ready signal: %s with deck %s" % [player_name, deck_id])
+	# 触发轮询获取最新房间状态
+	if network_manager:
+		_print("Triggering room state query after player ready")
+		network_manager.query_room_state()
 
 func _on_player_unready(player_name: String) -> void:
-	_print("Player %s is unready" % player_name)
-	for player in players:
-		if player.get("name", "") == player_name:
-			player["is_ready"] = false
-			player["deck_id"] = ""
-			break
-	_refresh_player_list()
+	_print("Player unready signal: %s" % player_name)
+	# 触发轮询获取最新房间状态
+	if network_manager:
+		_print("Triggering room state query after player unready")
+		network_manager.query_room_state()
 
 func _on_room_state_updated(players_info: Array, all_ready: bool) -> void:
 	_print("Room state updated, all_ready: %s" % all_ready)
-	# 更新玩家列表
+	_print("Players info from server: %s" % str(players_info))
+
+	# 完全替换玩家列表（基于服务器返回的数据）
+	players.clear()
 	for player_info in players_info:
 		if player_info is Dictionary:
 			var player_name = player_info.get("name", "")
 			var is_player_ready = player_info.get("is_ready", false)
 			var deck_id = player_info.get("deck_id", "")
+			players.append({
+				"name": player_name,
+				"is_ready": is_player_ready,
+				"deck_id": deck_id if deck_id else ""
+			})
+			_print("Added player: %s (ready=%s, deck=%s)" % [player_name, is_player_ready, deck_id])
 
-			for player in players:
-				if player.get("name", "") == player_name:
-					player["is_ready"] = is_player_ready
-					player["deck_id"] = deck_id if deck_id else ""
-					break
+	_print("Total players in room: %d" % players.size())
 	_refresh_player_list()
 
 func _on_game_starting() -> void:

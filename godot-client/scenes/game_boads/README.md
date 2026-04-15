@@ -94,8 +94,8 @@
 {
   "type": "action",
   "action": {
-    "action_type": "play_card|declare_attack|pass|surrender",
-    ...
+	"action_type": "play_card|declare_attack|pass|surrender",
+	...
   }
 }
 ```
@@ -176,16 +176,16 @@
 {
   "type": "room_state",
   "players": [
-    {
-      "name": "玩家1",
-      "is_ready": true,
-      "deck_id": "Example"
-    },
-    {
-      "name": "玩家2",
-      "is_ready": false,
-      "deck_id": null
-    }
+	{
+	  "name": "玩家1",
+	  "is_ready": true,
+	  "deck_id": "Example"
+	},
+	{
+	  "name": "玩家2",
+	  "is_ready": false,
+	  "deck_id": null
+	}
   ],
   "all_ready": false
 }
@@ -217,11 +217,11 @@
 {
   "type": "game_started",
   "state": {
-    "turn_number": 1,
-    "current_phase": "Recovery",
-    "current_player": "Player1",
-    "your_state": { ... },
-    "opponent_state": { ... }
+	"turn_number": 1,
+	"current_phase": "Recovery",
+	"current_player": "Player1",
+	"your_state": { ... },
+	"opponent_state": { ... }
   }
 }
 ```
@@ -330,10 +330,10 @@
 {
   "name": "卡组名称",
   "cards": [
-    "S000-C-001",
-    "S000-C-001",
-    "S000-C-002",
-    ...
+	"S000-C-001",
+	"S000-C-001",
+	"S000-C-002",
+	...
   ]
 }
 ```

@@ -298,6 +298,20 @@ async fn handle_client_message(
             };
             let json = serde_json::to_string(&response)?;
             ws_tx.send(Message::Text(Utf8Bytes::from(json))).await?;
+
+            // Send current room state so the player knows who else is in the room
+            let (players, all_ready) = room_manager.query_room_state(&room_id, result.player_id).await?;
+            let player_infos: Vec<PlayerInfo> = players
+                .into_iter()
+                .map(|(name, is_ready, deck_id)| PlayerInfo { name, is_ready, deck_id })
+                .collect();
+
+            let room_state_response = ServerMessage::RoomState {
+                players: player_infos,
+                all_ready,
+            };
+            let room_state_json = serde_json::to_string(&room_state_response)?;
+            ws_tx.send(Message::Text(Utf8Bytes::from(room_state_json))).await?;
         }
 
         ClientMessage::SubmitDeck { deck_id, cards } => {
