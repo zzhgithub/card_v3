@@ -1,0 +1,138 @@
+[gd_scene format=3 uid="uid://dulecard01"]
+
+[ext_resource type="Script" uid="uid://c0mua4vmdnj1d" path="res://dule/dule_card.gd" id="1_script"]
+
+[node name="DuleCard" type="Control" unique_id=861132280]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_script")
+
+[node name="FrontFace" type="Control" parent="." unique_id=627021246]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="TextureRect" type="TextureRect" parent="FrontFace" unique_id=1781104129]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="BackFace" type="Control" parent="." unique_id=667297317]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="TextureRect" type="TextureRect" parent="BackFace" unique_id=1506937096]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TemplateLayer" type="Control" parent="." unique_id=488464473]
+z_index = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ArtworkLayer" type="TextureRect" parent="TemplateLayer" unique_id=655622790]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FrameworkLayer" type="TextureRect" parent="TemplateLayer" unique_id=90454696]
+z_index = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ContentLayer" type="Control" parent="TemplateLayer" unique_id=869321583]
+z_index = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="TemplateLayer/ContentLayer" unique_id=2045125422]
+layout_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 8
+vertical_alignment = 1
+
+[node name="AttributeContainer" type="HBoxContainer" parent="TemplateLayer/ContentLayer" unique_id=454883697]
+layout_mode = 0
+alignment = 2
+
+[node name="CostIcon" type="TextureRect" parent="TemplateLayer/ContentLayer/AttributeContainer" unique_id=1981882662]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Spacing" type="Control" parent="TemplateLayer/ContentLayer/AttributeContainer" unique_id=232609582]
+custom_minimum_size = Vector2(0.5, 0)
+layout_mode = 2
+
+[node name="PropertyIcon" type="TextureRect" parent="TemplateLayer/ContentLayer/AttributeContainer" unique_id=1981697321]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="CategoryLabel" type="Label" parent="TemplateLayer/ContentLayer" unique_id=1506475623]
+layout_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 6
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="EffectContainer" type="VBoxContainer" parent="TemplateLayer/ContentLayer" unique_id=982490475]
+layout_mode = 0
+
+[node name="SpecialAttrLabel" type="Label" parent="TemplateLayer/ContentLayer" unique_id=807984882]
+layout_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 6
+vertical_alignment = 1
+
+[node name="TypeLabel" type="Label" parent="TemplateLayer/ContentLayer" unique_id=1686393323]
+layout_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 6
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="CardIdLabel" type="Label" parent="TemplateLayer/ContentLayer" unique_id=2053585029]
+layout_mode = 0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 3
+vertical_alignment = 1

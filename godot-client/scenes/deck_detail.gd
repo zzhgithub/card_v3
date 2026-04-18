@@ -28,10 +28,16 @@ var current_data: Dictionary = {}
 var has_unsaved_changes: bool = false
 var all_card_data: Dictionary = {}  # 缓存所有卡片数据
 
+var _deck_resize_pending: bool = false
+var _catalog_resize_pending: bool = false
+
 func _ready():
 	rename_button.pressed.connect(_on_rename_pressed)
 	save_button.pressed.connect(_on_save_pressed)
 	back_button.pressed.connect(_on_back_pressed)
+
+	deck_grid.resized.connect(_on_deck_grid_resized)
+	catalog_grid.resized.connect(_on_catalog_grid_resized)
 
 	# 预加载所有卡片数据
 	_preload_all_cards()
@@ -168,21 +174,22 @@ func _refresh_deck_grid() -> void:
 	var cards = current_data.get("cards", [])
 	card_count_label.text = "卡组卡片: %d" % cards.size()
 
-	# 计算每张卡片的数量
 	var card_counts = _get_card_counts()
+	var card_size = _calculate_card_size(deck_grid, 5)
+	if card_size.x <= 0 or card_size.y <= 0:
+		return
 
-	# 创建卡组卡片显示（卡组列表：预览、+、- 三个按钮）
 	for card_id in cards:
 		var card_data = all_card_data.get(card_id, {"id": card_id, "name": card_id})
 		var card_display = CARD_DISPLAY_SCENE.instantiate()
-		card_display.custom_minimum_size = Vector2(100, 140)
+		card_display.custom_minimum_size = card_size
+		card_display.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		card_display.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		card_display.setup(card_data, null, true, false, CardDisplay.InteractionMode.DECK_MODE)
 
-		# 如果该卡片已经有3张或以上，禁用+按钮
 		if card_counts.get(card_id, 0) >= 3:
 			card_display.set_add_disabled(true)
 
-		# 连接信号（卡组列表需要预览、添加、移除三个功能）
 		card_display.preview_requested.connect(_on_preview_requested)
 		card_display.add_to_deck.connect(_on_add_card_to_deck)
 		card_display.remove_card.connect(_on_remove_card_from_deck)
@@ -196,21 +203,22 @@ func _refresh_catalog_grid() -> void:
 	for child in catalog_grid.get_children():
 		child.queue_free()
 
-	# 计算每张卡片的数量（用于限制规则）
 	var card_counts = _get_card_counts()
+	var card_size = _calculate_card_size(catalog_grid, 2)
+	if card_size.x <= 0 or card_size.y <= 0:
+		return
 
-	# 创建所有卡片显示
 	for card_id in all_card_data:
 		var card_data = all_card_data[card_id]
 		var card_display = CARD_DISPLAY_SCENE.instantiate()
-		card_display.custom_minimum_size = Vector2(100, 140)
+		card_display.custom_minimum_size = card_size
+		card_display.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		card_display.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		card_display.setup(card_data, null, true, false, CardDisplay.InteractionMode.ADD_MODE)
 
-		# 如果该卡片已经有3张或以上，禁用+按钮
 		if card_counts.get(card_id, 0) >= 3:
 			card_display.set_add_disabled(true)
 
-		# 连接信号（搜索列表：预览和+按钮）
 		card_display.preview_requested.connect(_on_preview_requested)
 		card_display.add_to_deck.connect(_on_add_card_to_deck)
 
@@ -246,6 +254,50 @@ func _on_remove_card_from_deck(card_id: String) -> void:
 		_refresh_deck_grid()
 		_refresh_catalog_grid()  # 刷新搜索列表以更新+按钮状态
 		print("[DeckDetail] 移除卡片: %s" % card_id)
+
+
+func _calculate_card_size(grid: GridContainer, columns: int) -> Vector2:
+	if grid.size.x <= 0:
+		return Vector2.ZERO
+	var h_sep = grid.get_theme_constant("h_separation")
+	var available_width = grid.size.x
+	var cell_width = (available_width - (columns - 1) * h_sep) / columns
+	var cell_height = cell_width * 2100.0 / 1500.0
+	return Vector2(max(cell_width, 1.0), max(cell_height, 1.0))
+
+
+func _on_deck_grid_resized() -> void:
+	if _deck_resize_pending:
+		return
+	_deck_resize_pending = true
+	call_deferred("_apply_deck_resize")
+
+
+func _apply_deck_resize() -> void:
+	_deck_resize_pending = false
+	var card_size = _calculate_card_size(deck_grid, 5)
+	if card_size.x <= 0:
+		return
+	for child in deck_grid.get_children():
+		if child is CardDisplay:
+			child.custom_minimum_size = card_size
+
+
+func _on_catalog_grid_resized() -> void:
+	if _catalog_resize_pending:
+		return
+	_catalog_resize_pending = true
+	call_deferred("_apply_catalog_resize")
+
+
+func _apply_catalog_resize() -> void:
+	_catalog_resize_pending = false
+	var card_size = _calculate_card_size(catalog_grid, 2)
+	if card_size.x <= 0:
+		return
+	for child in catalog_grid.get_children():
+		if child is CardDisplay:
+			child.custom_minimum_size = card_size
 
 
 ## 更新保存按钮状态

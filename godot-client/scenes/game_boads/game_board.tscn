@@ -19,6 +19,7 @@ script = ExtResource("1_game_board")
 
 [node name="CardManager" parent="." instance=ExtResource("7_manager")]
 layout_mode = 1
+card_size = Vector2(79, 110)
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1

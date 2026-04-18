@@ -107,11 +107,16 @@ func _ready():
 	# 连接尺寸变化信号，实现动态缩放
 	resized.connect(_on_resized)
 
-func _process(_delta):
-	# 确保尺寸一致（防止GridContainer拉伸导致蒙层不匹配）
-	if size != custom_minimum_size:
-		size = custom_minimum_size
+	# 禁用内部层的 Anchors 布局系统，防止父容器尺寸变化时覆盖手动设置
+	call_deferred("_disable_internal_layout_system")
 
+func _disable_internal_layout_system() -> void:
+	_ensure_nodes_initialized()
+	_reset_anchors(artwork_layer)
+	_reset_anchors(framework_layer)
+	_reset_anchors(content_layer)
+
+func _process(_delta):
 	var mouse_pos = get_global_mouse_position()
 	var rect = get_global_rect()
 	var is_mouse_inside = rect.has_point(mouse_pos)
@@ -141,10 +146,13 @@ func setup(data: Dictionary, front_texture: Texture2D = null, use_template: bool
 	card_id = data.get("id", "Unknown")
 	interaction_mode = mode
 
-	# 设置尺寸模式
+	# 设置尺寸模式：large_mode 优先；否则尊重外部已设置的 custom_minimum_size
 	if large_mode:
 		target_width = DESIGN_WIDTH
 		target_height = DESIGN_HEIGHT
+	elif custom_minimum_size.x > 0 and custom_minimum_size.y > 0:
+		target_width = custom_minimum_size.x
+		target_height = custom_minimum_size.y
 	else:
 		target_width = SMALL_WIDTH
 		target_height = SMALL_HEIGHT
@@ -152,7 +160,7 @@ func setup(data: Dictionary, front_texture: Texture2D = null, use_template: bool
 	# 计算缩放比例
 	scale_factor = target_width / DESIGN_WIDTH
 
-	# 设置控件尺寸（确保size和custom_minimum_size一致）
+	# 设置控件尺寸
 	custom_minimum_size = Vector2(target_width, target_height)
 	size = Vector2(target_width, target_height)
 
@@ -209,9 +217,16 @@ func _ensure_nodes_initialized():
 ## 模板渲染模式
 func _render_template_mode():
 	# 根据当前实际尺寸重新计算缩放比例
-	# 使用宽度比例，保持与设计稿的宽高比一致
+	# 使用宽高最小比例，保持与设计稿的宽高比一致，并在容器中居中
 	if size.x > 0 and size.y > 0:
-		scale_factor = size.x / DESIGN_WIDTH
+		scale_factor = min(size.x / DESIGN_WIDTH, size.y / DESIGN_HEIGHT)
+	else:
+		scale_factor = 1.0
+
+	var rendered_width = DESIGN_WIDTH * scale_factor
+	var rendered_height = DESIGN_HEIGHT * scale_factor
+	var offset_x = (size.x - rendered_width) / 2.0
+	var offset_y = (size.y - rendered_height) / 2.0
 
 	# 加载并显示卡图（底层）
 	_load_artwork()
@@ -227,6 +242,18 @@ func _render_template_mode():
 	_render_special_attr()
 	_render_card_type()
 	_render_card_id()
+
+	# 设置模板层的位置和尺寸，使其在控件内居中并保持比例
+	# 先禁用 anchors 避免 Godot 布局系统覆盖手动设置的 size
+	_reset_anchors(artwork_layer)
+	artwork_layer.position = Vector2(offset_x, offset_y)
+	artwork_layer.size = Vector2(rendered_width, rendered_height)
+	_reset_anchors(framework_layer)
+	framework_layer.position = Vector2(offset_x, offset_y)
+	framework_layer.size = Vector2(rendered_width, rendered_height)
+	_reset_anchors(content_layer)
+	content_layer.position = Vector2(offset_x, offset_y)
+	content_layer.size = Vector2(rendered_width, rendered_height)
 
 	# 显示模板层，隐藏图片层
 	artwork_layer.visible = true
@@ -277,15 +304,24 @@ func _load_framework():
 	if ResourceLoader.exists(frame_path):
 		framework_layer.texture = load(frame_path)
 
+func _reset_anchors(node: Control) -> void:
+	# 清除全填充 preset，改为 TOP_LEFT（所有锚点归 0），这样 Godot 不会根据父尺寸覆盖子节点 size
+	node.anchors_preset = Control.PRESET_TOP_LEFT
+	node.grow_horizontal = Control.GROW_DIRECTION_BEGIN
+	node.grow_vertical = Control.GROW_DIRECTION_BEGIN
+
+func _s(val: float) -> float:
+	return val * scale_factor
+
 ## 渲染标题
 func _render_title():
-	var name = card_data.get("name", "未知")
-	title_label.text = name
+	var card_name = card_data.get("name", "未知")
+	title_label.text = card_name
 	title_label.add_theme_font_size_override("font_size", int(80 * scale_factor))
 
 	# 设置位置和尺寸（向上移动修正偏低问题）
-	title_label.position = Vector2(125 * scale_factor, 75 * scale_factor)
-	title_label.size = Vector2(1250 * scale_factor, 80 * scale_factor)
+	title_label.position = Vector2(_s(125), _s(75))
+	title_label.size = Vector2(_s(1250), _s(80))
 
 ## 渲染属性（费用+图标）
 func _render_attributes():
@@ -313,7 +349,7 @@ func _render_attributes():
 		property_icon.texture = load(prop_path)
 
 	# 设置容器位置和尺寸
-	attribute_container.position = Vector2(125 * scale_factor, 90 * scale_factor-0.4)
+	attribute_container.position = Vector2(125 * scale_factor, 90 * scale_factor)
 	attribute_container.size = Vector2(1250 * scale_factor, 80 * scale_factor)
 
 	# 设置图标尺寸

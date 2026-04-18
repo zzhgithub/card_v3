@@ -1,0 +1,17 @@
+[gd_scene format=3 uid="uid://npb7hk3wbeel"]
+
+[ext_resource type="Script" uid="uid://dku5c5r2ao5v1" path="res://dule/card_box_test.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://dule/card_box.tscn" id="2_card_box"]
+
+[node name="CardBoxTest" type="Control" unique_id=971867933]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="CardBox" parent="." unique_id=1078251737 instance=ExtResource("2_card_box")]
+layout_mode = 1
+columns = 8

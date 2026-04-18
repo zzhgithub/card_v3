@@ -5,10 +5,10 @@
 class_name InfoBar
 extends Control
 
-@onready var turn_label: Label = $TurnLabel
-@onready var player_label: Label = $PlayerLabel
-@onready var phase_label: Label = $PhaseLabel
-@onready var timer_label: Label = $TimerLabel
+@onready var turn_label: Label = $HBoxContainer/TurnLabel
+@onready var player_label: Label = $HBoxContainer/PlayerLabel
+@onready var phase_label: Label = $HBoxContainer/PhaseLabel
+@onready var timer_label: Label = $HBoxContainer/TimerLabel
 
 var current_turn: int = 1
 var current_player: String = ""

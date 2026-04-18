@@ -52,7 +52,7 @@ func _ready():
 
 	# 加载卡背纹理
 	back_card_texture = load("res://images/framework/frame-c.png")
-	default_card_scene = load("res://addons/card-framework/card.tscn")
+	default_card_scene = load("res://dule/dule_card.tscn")
 
 	# 连接信号
 	menu_button.pressed.connect(_on_menu_pressed)
@@ -212,8 +212,24 @@ func _update_opponent_state(state: Dictionary) -> void:
 	_cache_cards(state.get("cost_zone", []))
 
 
+## 加载卡牌定义 JSON
+func _load_card_definition(definition_id: String) -> Dictionary:
+	var path = "res://scripts_json/%s/%s.json" % [definition_id.get_slice("-", 0), definition_id]
+	if not FileAccess.file_exists(path):
+		return {}
+	var file = FileAccess.open(path, FileAccess.READ)
+	var text = file.get_as_text()
+	file.close()
+	var json = JSON.new()
+	var err = json.parse(text)
+	if err != OK:
+		push_error("Failed to parse card JSON: %s" % path)
+		return {}
+	return json.data
+
+
 ## 创建一张卡牌
-func _create_card(definition_id: String, container: CardContainer, face_up: bool = true) -> Card:
+func _create_card(definition_id: String, container: CardContainer, face_up: bool = true, extra_data: Dictionary = {}) -> Card:
 	if default_card_scene == null:
 		push_error("Default card scene not loaded")
 		return null
@@ -224,32 +240,24 @@ func _create_card(definition_id: String, container: CardContainer, face_up: bool
 		return null
 
 	# 设置卡牌尺寸
-	card.card_size = Vector2(150, 210)
-
-	# 加载正面纹理
-	var front_texture = _load_card_texture(definition_id)
-	if front_texture == null:
-		front_texture = back_card_texture
-
-	# 设置纹理
-	card.set_faces(front_texture, back_card_texture)
-	card.show_front = face_up
+	card.custom_minimum_size = Vector2(79, 110)
+	card.size = Vector2(79, 110)
+	card.card_size = Vector2(79, 110)
 	card.card_name = definition_id
+	card.show_front = face_up
+
+	# 加载并合并卡片定义数据
+	var card_def = _load_card_definition(definition_id)
+	if not card_def.is_empty():
+		for key in extra_data:
+			card_def[key] = extra_data[key]
+		if card is DuleCard:
+			card.setup(card_def)
 
 	# 添加到容器
 	container.add_card(card)
 
 	return card
-
-
-## 加载卡牌纹理
-func _load_card_texture(definition_id: String) -> Texture2D:
-	var path = "res://images/cards/%s.png" % definition_id
-	var texture = load(path) as Texture2D
-	if texture == null:
-		_print("Failed to load card texture: %s" % path)
-		return back_card_texture
-	return texture
 
 
 ## 更新手牌显示
@@ -268,7 +276,7 @@ func _update_hand(hand: Hand, cards: Array, face_up: bool) -> void:
 		if definition_id == "":
 			continue
 
-		var card = _create_card(definition_id, hand, face_up)
+		var card = _create_card(definition_id, hand, face_up, card_info)
 		if card != null:
 			# 存储 instance_id 到卡牌 metadata 中
 			card.set_meta("instance_id", card_info.get("instance_id", 0))
@@ -328,7 +336,7 @@ func _update_grave_stack(stack: CardStack, cards: Array) -> void:
 		if definition_id == "":
 			continue
 
-		var card = _create_card(definition_id, stack, true)
+		var card = _create_card(definition_id, stack, true, card_info)
 		if card != null:
 			card.set_meta("instance_id", card_info.get("instance_id", 0))
 
@@ -362,38 +370,73 @@ func _update_status_panel(panel: VBoxContainer, hp: int, rp: int, label_prefix: 
 		title_label.text = label_prefix
 
 
+var current_popup: PopupPanel = null
+
 ## 菜单按钮点击
 func _on_menu_pressed() -> void:
-	var popup = PopupPanel.new()
-	popup.size = Vector2(200, 150)
+	# 关闭已打开的菜单
+	if current_popup != null:
+		current_popup.queue_free()
+		current_popup = null
+		return
+
+	current_popup = PopupPanel.new()
+	current_popup.size = Vector2(200, 150)
+	current_popup.exclusive = false
+	current_popup.unresizable = true
+
+	# 确保弹窗可以接收输入
+	current_popup.mouse_filter = Control.MOUSE_FILTER_STOP
 
 	var vbox = VBoxContainer.new()
 	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	var surrender_btn = Button.new()
 	surrender_btn.text = "投降"
-	surrender_btn.pressed.connect(func(): _on_surrender(popup))
+	surrender_btn.pressed.connect(func(): _on_surrender(current_popup))
 
 	var settings_btn = Button.new()
 	settings_btn.text = "设置"
-	settings_btn.pressed.connect(func(): _on_settings(popup))
+	settings_btn.pressed.connect(func(): _on_settings(current_popup))
 
 	var cancel_btn = Button.new()
 	cancel_btn.text = "取消"
-	cancel_btn.pressed.connect(func(): popup.hide())
+	cancel_btn.pressed.connect(func():
+		if current_popup != null:
+			current_popup.hide()
+			current_popup.queue_free()
+			current_popup = null
+	)
 
 	vbox.add_child(surrender_btn)
 	vbox.add_child(settings_btn)
 	vbox.add_child(cancel_btn)
 
-	popup.add_child(vbox)
-	add_child(popup)
-	popup.popup_centered()
+	current_popup.add_child(vbox)
+	add_child(current_popup)
+
+	# 使用 call_deferred 确保正确显示
+	call_deferred("_show_popup", current_popup)
+
+func _show_popup(popup: PopupPanel) -> void:
+	if popup != null and is_instance_valid(popup):
+		popup.popup_centered()
+
+## 关闭菜单（点击外部时调用）
+func _close_menu() -> void:
+	if current_popup != null:
+		current_popup.queue_free()
+		current_popup = null
 
 
 ## 投降
 func _on_surrender(popup: PopupPanel) -> void:
-	popup.hide()
+	if popup != null and is_instance_valid(popup):
+		popup.hide()
+		popup.queue_free()
+	current_popup = null
 	_print("Player surrendered")
 
 	# 发送投降命令到服务器
@@ -412,7 +455,10 @@ func _on_surrender(popup: PopupPanel) -> void:
 
 ## 设置
 func _on_settings(popup: PopupPanel) -> void:
-	popup.hide()
+	if popup != null and is_instance_valid(popup):
+		popup.hide()
+		popup.queue_free()
+	current_popup = null
 	_print("Settings opened (no action)")
 	# 设置功能暂无操作
 

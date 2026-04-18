@@ -205,11 +205,15 @@ func _route_message(type: String, data: Dictionary) -> void:
 		"game_started":
 			_print("Game started!")
 			room_state_timer.stop()
-			game_started.emit(data)
+			# 服务器发送的是 {"state": {...}}，提取 state 字段
+			var state = data.get("state", {})
+			game_started.emit({"state": state})
 
 		"state_update":
 			_print("State update received")
-			state_update.emit(data)
+			# 服务器发送的是 {"state": {...}}，提取 state 字段
+			var state = data.get("state", {})
+			state_update.emit(state)
 
 		"action_request":
 			_print("Action requested")
