@@ -1,5 +1,6 @@
 ## 卡组详情页
 ## 左右结构：左侧卡组列表(70%)，右侧卡片查询(30%)
+## 使用 CardBox + DuleCard 展示卡片
 
 extends Control
 
@@ -10,17 +11,15 @@ const DECKS_DIR = "res://desks"
 const CARD_ASSET_DIR = "res://images/cards"
 const CARD_INFO_DIR = "res://scripts_json/S000"
 const CARD_PREVIEW_POPUP = preload("res://scenes/card_preview_popup.tscn")
-const CARD_DISPLAY_SCENE = preload("res://scenes/card_display.tscn")
+const DULE_CARD_SCENE = preload("res://dule/dule_card.tscn")
 
 @onready var title_label: Label = $VBoxContainer/TitleLabel
 @onready var card_count_label: Label = $VBoxContainer/CardCountLabel
 @onready var rename_button: Button = $VBoxContainer/RenameButton
 @onready var save_button: Button = $VBoxContainer/ButtonContainer/SaveButton
 @onready var back_button: Button = $VBoxContainer/ButtonContainer/BackButton
-@onready var deck_scroll: ScrollContainer = $VBoxContainer/MainHBox/DeckPanel/VBoxContainer/ScrollContainer
-@onready var deck_grid: GridContainer = $VBoxContainer/MainHBox/DeckPanel/VBoxContainer/ScrollContainer/DeckGrid
-@onready var catalog_scroll: ScrollContainer = $VBoxContainer/MainHBox/CatalogPanel/VBoxContainer/ScrollContainer
-@onready var catalog_grid: GridContainer = $VBoxContainer/MainHBox/CatalogPanel/VBoxContainer/ScrollContainer/CatalogGrid
+@onready var deck_card_box: CardBox = $VBoxContainer/MainHBox/DeckPanel/VBoxContainer/DeckCardBox
+@onready var catalog_card_box: CardBox = $VBoxContainer/MainHBox/CatalogPanel/VBoxContainer/CatalogCardBox
 
 var deck_name: String = ""
 var original_data: Dictionary = {}
@@ -28,16 +27,14 @@ var current_data: Dictionary = {}
 var has_unsaved_changes: bool = false
 var all_card_data: Dictionary = {}  # 缓存所有卡片数据
 
-var _deck_resize_pending: bool = false
-var _catalog_resize_pending: bool = false
-
 func _ready():
 	rename_button.pressed.connect(_on_rename_pressed)
 	save_button.pressed.connect(_on_save_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 
-	deck_grid.resized.connect(_on_deck_grid_resized)
-	catalog_grid.resized.connect(_on_catalog_grid_resized)
+	# 禁用 CardBox 的拖放区，避免找不到 CardManager 报错
+	deck_card_box.enable_drop_zone = false
+	catalog_card_box.enable_drop_zone = false
 
 	# 预加载所有卡片数据
 	_preload_all_cards()
@@ -165,71 +162,263 @@ func _get_card_counts() -> Dictionary:
 	return counts
 
 
-## 刷新左侧卡组网格
+## 刷新左侧卡组 CardBox
 func _refresh_deck_grid() -> void:
-	# 清除现有内容
-	for child in deck_grid.get_children():
-		child.queue_free()
+	deck_card_box.clear_cards()
 
 	var cards = current_data.get("cards", [])
 	card_count_label.text = "卡组卡片: %d" % cards.size()
 
 	var card_counts = _get_card_counts()
-	var card_size = _calculate_card_size(deck_grid, 5)
-	if card_size.x <= 0 or card_size.y <= 0:
-		return
+	var dule_cards: Array[DuleCard] = []
 
 	for card_id in cards:
 		var card_data = all_card_data.get(card_id, {"id": card_id, "name": card_id})
-		var card_display = CARD_DISPLAY_SCENE.instantiate()
-		card_display.custom_minimum_size = card_size
-		card_display.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		card_display.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		card_display.setup(card_data, null, true, false, CardDisplay.InteractionMode.DECK_MODE)
+		var card = DULE_CARD_SCENE.instantiate() as DuleCard
+		if card == null:
+			continue
+		card.setup(card_data)
+		_setup_deck_card_overlay(card, card_counts)
+		dule_cards.append(card)
 
-		if card_counts.get(card_id, 0) >= 3:
-			card_display.set_add_disabled(true)
-
-		card_display.preview_requested.connect(_on_preview_requested)
-		card_display.add_to_deck.connect(_on_add_card_to_deck)
-		card_display.remove_card.connect(_on_remove_card_from_deck)
-
-		deck_grid.add_child(card_display)
+	deck_card_box.add_cards(dule_cards)
 
 
-## 刷新右侧查询网格
+## 刷新右侧查询 CardBox
 func _refresh_catalog_grid() -> void:
-	# 清除现有内容
-	for child in catalog_grid.get_children():
-		child.queue_free()
+	catalog_card_box.clear_cards()
 
 	var card_counts = _get_card_counts()
-	var card_size = _calculate_card_size(catalog_grid, 2)
-	if card_size.x <= 0 or card_size.y <= 0:
-		return
+	var dule_cards: Array[DuleCard] = []
 
 	for card_id in all_card_data:
 		var card_data = all_card_data[card_id]
-		var card_display = CARD_DISPLAY_SCENE.instantiate()
-		card_display.custom_minimum_size = card_size
-		card_display.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		card_display.size_flags_vertical = Control.SIZE_EXPAND_FILL
-		card_display.setup(card_data, null, true, false, CardDisplay.InteractionMode.ADD_MODE)
+		var card = DULE_CARD_SCENE.instantiate() as DuleCard
+		if card == null:
+			continue
+		card.setup(card_data)
+		_setup_catalog_card_overlay(card, card_counts)
+		dule_cards.append(card)
 
-		if card_counts.get(card_id, 0) >= 3:
-			card_display.set_add_disabled(true)
-
-		card_display.preview_requested.connect(_on_preview_requested)
-		card_display.add_to_deck.connect(_on_add_card_to_deck)
-
-		catalog_grid.add_child(card_display)
+	catalog_card_box.add_cards(dule_cards)
 
 
-## 预览请求
-func _on_preview_requested(card_data: Dictionary) -> void:
-	var popup = CARD_PREVIEW_POPUP.instantiate()
-	add_child(popup)
-	popup.setup(card_data)
+# ---------------------------------------------------------------------------
+# 动态按钮覆盖层（类似 card_box_test.gd 的方式）
+# ---------------------------------------------------------------------------
+
+func _setup_deck_card_overlay(card: DuleCard, card_counts: Dictionary) -> void:
+	var card_id = card.card_id
+
+	# HoverOverlay — 使用锚点填满整个卡片
+	var hover_overlay = ColorRect.new()
+	hover_overlay.name = "HoverOverlay"
+	hover_overlay.color = Color(0, 0, 0, 0.5)
+	hover_overlay.z_index = 10
+	hover_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hover_overlay.visible = false
+	hover_overlay.anchor_right = 1.0
+	hover_overlay.anchor_bottom = 1.0
+	hover_overlay.offset_right = 0
+	hover_overlay.offset_bottom = 0
+	card.add_child(hover_overlay)
+
+	# PreviewButton — 使用锚点自适应
+	var preview_button = Button.new()
+	preview_button.name = "PreviewButton"
+	preview_button.text = "预览"
+	preview_button.z_index = 11
+	preview_button.visible = false
+	preview_button.anchor_left = 0.1
+	preview_button.anchor_right = 0.9
+	preview_button.anchor_top = 0.15
+	preview_button.anchor_bottom = 0.32
+	preview_button.offset_left = 0
+	preview_button.offset_right = 0
+	preview_button.offset_top = 0
+	preview_button.offset_bottom = 0
+	card.add_child(preview_button)
+
+	# AddButton
+	var add_button = Button.new()
+	add_button.name = "AddButton"
+	add_button.text = "+"
+	add_button.z_index = 11
+	add_button.visible = false
+	add_button.anchor_left = 0.1
+	add_button.anchor_right = 0.9
+	add_button.anchor_top = 0.36
+	add_button.anchor_bottom = 0.53
+	add_button.offset_left = 0
+	add_button.offset_right = 0
+	add_button.offset_top = 0
+	add_button.offset_bottom = 0
+	card.add_child(add_button)
+
+	# RemoveButton
+	var remove_button = Button.new()
+	remove_button.name = "RemoveButton"
+	remove_button.text = "-"
+	remove_button.z_index = 11
+	remove_button.visible = false
+	remove_button.anchor_left = 0.1
+	remove_button.anchor_right = 0.9
+	remove_button.anchor_top = 0.57
+	remove_button.anchor_bottom = 0.74
+	remove_button.offset_left = 0
+	remove_button.offset_right = 0
+	remove_button.offset_top = 0
+	remove_button.offset_bottom = 0
+	card.add_child(remove_button)
+
+	# 3张上限禁用
+	if card_counts.get(card_id, 0) >= 3:
+		add_button.disabled = true
+
+	# 信号连接
+	preview_button.pressed.connect(_on_preview_pressed.bind(card))
+	add_button.pressed.connect(_on_add_card_to_deck.bind(card_id))
+	remove_button.pressed.connect(_on_remove_card_from_deck.bind(card_id))
+	card.resized.connect(_update_deck_button_fonts.bind(card))
+
+	# 延迟一帧后更新字体，确保 CardBox 已完成布局
+	call_deferred("_update_deck_button_fonts", card)
+
+
+func _setup_catalog_card_overlay(card: DuleCard, card_counts: Dictionary) -> void:
+	var card_id = card.card_id
+
+	# HoverOverlay — 使用锚点填满整个卡片
+	var hover_overlay = ColorRect.new()
+	hover_overlay.name = "HoverOverlay"
+	hover_overlay.color = Color(0, 0, 0, 0.5)
+	hover_overlay.z_index = 10
+	hover_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hover_overlay.visible = false
+	hover_overlay.anchor_right = 1.0
+	hover_overlay.anchor_bottom = 1.0
+	hover_overlay.offset_right = 0
+	hover_overlay.offset_bottom = 0
+	card.add_child(hover_overlay)
+
+	# PreviewButton — 使用锚点自适应
+	var preview_button = Button.new()
+	preview_button.name = "PreviewButton"
+	preview_button.text = "预览"
+	preview_button.z_index = 11
+	preview_button.visible = false
+	preview_button.anchor_left = 0.15
+	preview_button.anchor_right = 0.85
+	preview_button.anchor_top = 0.25
+	preview_button.anchor_bottom = 0.43
+	preview_button.offset_left = 0
+	preview_button.offset_right = 0
+	preview_button.offset_top = 0
+	preview_button.offset_bottom = 0
+	card.add_child(preview_button)
+
+	# AddButton
+	var add_button = Button.new()
+	add_button.name = "AddButton"
+	add_button.text = "+"
+	add_button.z_index = 11
+	add_button.visible = false
+	add_button.anchor_left = 0.15
+	add_button.anchor_right = 0.85
+	add_button.anchor_top = 0.48
+	add_button.anchor_bottom = 0.66
+	add_button.offset_left = 0
+	add_button.offset_right = 0
+	add_button.offset_top = 0
+	add_button.offset_bottom = 0
+	card.add_child(add_button)
+
+	# 3张上限禁用
+	if card_counts.get(card_id, 0) >= 3:
+		add_button.disabled = true
+
+	# 信号连接
+	preview_button.pressed.connect(_on_preview_pressed.bind(card))
+	add_button.pressed.connect(_on_add_card_to_deck.bind(card_id))
+	card.resized.connect(_update_catalog_button_fonts.bind(card))
+
+	# 延迟一帧后更新字体，确保 CardBox 已完成布局
+	call_deferred("_update_catalog_button_fonts", card)
+
+
+## 卡组卡片按钮字体自适应
+func _update_deck_button_fonts(card: DuleCard) -> void:
+	var preview_button = card.get_node_or_null("PreviewButton")
+	var add_button = card.get_node_or_null("AddButton")
+	var remove_button = card.get_node_or_null("RemoveButton")
+
+	if preview_button != null:
+		var font_size = max(8, int(preview_button.size.y * 0.40))
+		preview_button.add_theme_font_size_override("font_size", font_size)
+	if add_button != null:
+		var font_size = max(8, int(add_button.size.y * 0.55))
+		add_button.add_theme_font_size_override("font_size", font_size)
+	if remove_button != null:
+		var font_size = max(8, int(remove_button.size.y * 0.55))
+		remove_button.add_theme_font_size_override("font_size", font_size)
+
+
+## 查询卡片按钮字体自适应
+func _update_catalog_button_fonts(card: DuleCard) -> void:
+	var preview_button = card.get_node_or_null("PreviewButton")
+	var add_button = card.get_node_or_null("AddButton")
+
+	if preview_button != null:
+		var font_size = max(8, int(preview_button.size.y * 0.40))
+		preview_button.add_theme_font_size_override("font_size", font_size)
+	if add_button != null:
+		var font_size = max(8, int(add_button.size.y * 0.55))
+		add_button.add_theme_font_size_override("font_size", font_size)
+
+
+# ---------------------------------------------------------------------------
+# 悬停检测（_process 轮询）
+# ---------------------------------------------------------------------------
+
+func _process(_delta: float) -> void:
+	var mouse_pos = get_global_mouse_position()
+	_update_hover_for_card_box(deck_card_box, mouse_pos)
+	_update_hover_for_card_box(catalog_card_box, mouse_pos)
+
+
+func _update_hover_for_card_box(card_box: CardBox, mouse_pos: Vector2) -> void:
+	var cards_node = card_box.get_node("ScrollContainer/Cards")
+	for child in cards_node.get_children():
+		if child is DuleCard:
+			var is_inside = child.get_global_rect().has_point(mouse_pos)
+			var was_hovered = child.get_meta("_hovered", false)
+			if is_inside != was_hovered:
+				child.set_meta("_hovered", is_inside)
+				_update_card_hover(child, is_inside)
+
+
+func _update_card_hover(card: DuleCard, hovered: bool) -> void:
+	var hover_overlay = card.get_node_or_null("HoverOverlay")
+	var preview_button = card.get_node_or_null("PreviewButton")
+	var add_button = card.get_node_or_null("AddButton")
+	var remove_button = card.get_node_or_null("RemoveButton")
+
+	if hover_overlay != null:
+		hover_overlay.visible = hovered
+	if preview_button != null:
+		preview_button.visible = hovered
+	if add_button != null:
+		add_button.visible = hovered
+	if remove_button != null:
+		remove_button.visible = hovered
+
+
+# ---------------------------------------------------------------------------
+# 交互处理
+# ---------------------------------------------------------------------------
+
+func _on_preview_pressed(card: DuleCard) -> void:
+	CardPreviewPopup.show_preview(self, card.card_data)
 
 
 ## 添加卡片到卡组
@@ -239,7 +428,7 @@ func _on_add_card_to_deck(card_id: String) -> void:
 	has_unsaved_changes = true
 	_update_save_button()
 	_refresh_deck_grid()
-	_refresh_catalog_grid()  # 刷新搜索列表以更新+按钮状态
+	_refresh_catalog_grid()
 	print("[DeckDetail] 添加卡片: %s" % card_id)
 
 
@@ -252,52 +441,8 @@ func _on_remove_card_from_deck(card_id: String) -> void:
 		has_unsaved_changes = true
 		_update_save_button()
 		_refresh_deck_grid()
-		_refresh_catalog_grid()  # 刷新搜索列表以更新+按钮状态
+		_refresh_catalog_grid()
 		print("[DeckDetail] 移除卡片: %s" % card_id)
-
-
-func _calculate_card_size(grid: GridContainer, columns: int) -> Vector2:
-	if grid.size.x <= 0:
-		return Vector2.ZERO
-	var h_sep = grid.get_theme_constant("h_separation")
-	var available_width = grid.size.x
-	var cell_width = (available_width - (columns - 1) * h_sep) / columns
-	var cell_height = cell_width * 2100.0 / 1500.0
-	return Vector2(max(cell_width, 1.0), max(cell_height, 1.0))
-
-
-func _on_deck_grid_resized() -> void:
-	if _deck_resize_pending:
-		return
-	_deck_resize_pending = true
-	call_deferred("_apply_deck_resize")
-
-
-func _apply_deck_resize() -> void:
-	_deck_resize_pending = false
-	var card_size = _calculate_card_size(deck_grid, 5)
-	if card_size.x <= 0:
-		return
-	for child in deck_grid.get_children():
-		if child is CardDisplay:
-			child.custom_minimum_size = card_size
-
-
-func _on_catalog_grid_resized() -> void:
-	if _catalog_resize_pending:
-		return
-	_catalog_resize_pending = true
-	call_deferred("_apply_catalog_resize")
-
-
-func _apply_catalog_resize() -> void:
-	_catalog_resize_pending = false
-	var card_size = _calculate_card_size(catalog_grid, 2)
-	if card_size.x <= 0:
-		return
-	for child in catalog_grid.get_children():
-		if child is CardDisplay:
-			child.custom_minimum_size = card_size
 
 
 ## 更新保存按钮状态

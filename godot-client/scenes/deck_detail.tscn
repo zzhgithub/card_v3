@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://deckdetail01"]
+[gd_scene load_steps=3 format=3 uid="uid://deckdetail01"]
 
 [ext_resource type="Script" path="res://scenes/deck_detail.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://dule/card_box.tscn" id="2_cardbox"]
 
 [node name="DeckDetail" type="Control"]
 layout_mode = 3
@@ -81,16 +82,12 @@ theme_override_font_sizes/font_size = 18
 text = "卡组卡片"
 horizontal_alignment = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/MainHBox/DeckPanel/VBoxContainer"]
+[node name="DeckCardBox" parent="VBoxContainer/MainHBox/DeckPanel/VBoxContainer" instance=ExtResource("2_cardbox")]
 layout_mode = 2
 size_flags_vertical = 3
-
-[node name="DeckGrid" type="GridContainer" parent="VBoxContainer/MainHBox/DeckPanel/VBoxContainer/ScrollContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-columns = 5
-theme_override_constants/h_separation = 10
-theme_override_constants/v_separation = 10
+columns = 9
+h_separation = 10
+v_separation = 10
 
 [node name="CatalogPanel" type="Panel" parent="VBoxContainer/MainHBox"]
 layout_mode = 2
@@ -116,16 +113,12 @@ theme_override_font_sizes/font_size = 18
 text = "卡片查询"
 horizontal_alignment = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="VBoxContainer/MainHBox/CatalogPanel/VBoxContainer"]
+[node name="CatalogCardBox" parent="VBoxContainer/MainHBox/CatalogPanel/VBoxContainer" instance=ExtResource("2_cardbox")]
 layout_mode = 2
 size_flags_vertical = 3
-
-[node name="CatalogGrid" type="GridContainer" parent="VBoxContainer/MainHBox/CatalogPanel/VBoxContainer/ScrollContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-columns = 2
-theme_override_constants/h_separation = 10
-theme_override_constants/v_separation = 10
+columns = 3
+h_separation = 10
+v_separation = 10
 
 [node name="ButtonContainer" type="HBoxContainer" parent="VBoxContainer"]
 layout_mode = 2

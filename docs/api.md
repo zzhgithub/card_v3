@@ -24,7 +24,7 @@
 - `card-core/src/rules/mod.rs`
 - `card-protocol/src/message.rs`
 - `card-client` 中待实现的 `ClientApi` 设计接口
-- Lua 卡牌脚本数据约定与解析映射
+- JSON 卡牌定义数据约定与解析映射
 
 ### 1.3 术语约定
 
@@ -780,7 +780,7 @@ pub enum NetworkMessage {
 
 `ClientApi` 用于统一不同客户端形态。
 目标是实现显示层与规则层彻底解耦。
-`ClientApi` 允许 TUI、Bevy、Web、Unity 共享同一协议流程。
+`ClientApi` 允许 TUI、Godot 共享同一协议流程。
 
 ### 9.2 规划接口
 
@@ -809,109 +809,107 @@ pub trait ClientApi: Send + Sync {
 - `on_state_update` 接收快照以修正显示一致性。
 - 请求方法必须遵守超时输入约束。
 
-## 第10章 Lua 卡牌脚本格式规范
+## 第10章 JSON 卡牌定义格式规范
 
 ### 10.1 设计原则
 
-- Lua 负责声明数据，不直接执行核心规则。
+- JSON 负责声明数据，不直接执行核心规则。
 - Rust 引擎负责解释与执行。
-- Lua 文件需稳定映射到 `CardDefinition`。
-- Lua 解析失败必须产生明确错误。
+- JSON 文件需稳定映射到 `CardDefinition`。
+- 解析失败必须产生明确错误。
 
-### 10.2 基础卡片模板（Lua）
+### 10.2 基础卡片模板（JSON）
 
-```lua
--- scripts/S000/S000-C-001.lua
-return {
-    id = "S000-C-001",
-    name = "测试人物甲",
-    card_type = "Character",
-    property = "Rational",
-    category = "Math",
-    cost = 3,
-    attack = 1500,
-    tags = { "测试标签" },
-    effects = {
-        e1 = {
-            trigger = "OnSummon",
-            optional = false,
-            actions = {
-                { type = "HealHp", player = "Self_", amount = 1 }
-            }
-        }
+```json
+{
+  "id": "S000-C-001",
+  "name": "测试人物甲",
+  "card_type": "Character",
+  "property": "Rational",
+  "category": "Math",
+  "cost": 3,
+  "attack": 1500,
+  "tags": ["测试标签"],
+  "effects": {
+    "e1": {
+      "trigger": "OnSummon",
+      "optional": false,
+      "actions": [
+        { "type": "HealHp", "player": "Self_", "amount": 1 }
+      ]
     }
+  }
 }
 ```
 
-### 10.3 策略卡模板（Lua）
+### 10.3 策略卡模板（JSON）
 
-```lua
--- scripts/S000/S000-S-001.lua
-return {
-    id = "S000-S-001",
-    name = "测试策略甲",
-    card_type = "Strategy",
-    strategy_kind = "Normal",
-    property = "Rational",
-    category = "Science",
-    cost = 2,
-    effects = {
-        e1 = {
-            trigger = "OwnMainPhase",
-            optional = true,
-            conditions = {
-                type = "Compare",
-                left = { type = "HandCount", player = "Opponent" },
-                op = "Gt",
-                right = { type = "HandCount", player = "Self_" }
-            },
-            actions = {
-                { type = "Draw", player = "Self_", count = 1 }
-            }
-        }
+```json
+{
+  "id": "S000-S-001",
+  "name": "测试策略甲",
+  "card_type": "Strategy",
+  "strategy_kind": "Normal",
+  "property": "Rational",
+  "category": "Science",
+  "cost": 2,
+  "effects": {
+    "e1": {
+      "trigger": "OwnMainPhase",
+      "optional": true,
+      "conditions": {
+        "type": "Compare",
+        "left": { "type": "HandCount", "player": "Opponent" },
+        "op": "Gt",
+        "right": { "type": "HandCount", "player": "Self_" }
+      },
+      "actions": [
+        { "type": "Draw", "player": "Self_", "count": 1 }
+      ]
     }
+  }
 }
 ```
 
-### 10.4 带费用要求的 Lua 效果
+### 10.4 带费用要求的 JSON 效果
 
-```lua
-effects = {
-    e1 = {
-        trigger = "OwnMainPhase",
-        optional = true,
-        costs = {
-            type = "SendFieldCardToGrave",
-            count = 1,
-            filter = nil
-        },
-        actions = {
-            { type = "Damage", player = "Opponent", amount = 1 }
-        }
-    }
+```json
+{
+  "e1": {
+    "trigger": "OwnMainPhase",
+    "optional": true,
+    "costs": {
+      "type": "SendFieldCardToGrave",
+      "count": 1,
+      "filter": null
+    },
+    "actions": [
+      { "type": "Damage", "player": "Opponent", "amount": 1 }
+    ]
+  }
 }
 ```
 
-### 10.5 带修饰器的 Lua 效果
+### 10.5 带修饰器的 JSON 效果
 
-```lua
-effects = {
-    e1 = {
-        trigger = "OnSummon",
-        optional = false,
-        actions = {
-            {
-                type = "ApplyModifier",
-                target = "This",
-                modifier = { type = "ImmuneToCardType", card_type = "Strategy" },
-                duration = "WhileSourceOnField"
-            }
-        }
-    }
+```json
+{
+  "e1": {
+    "trigger": "OnSummon",
+    "optional": false,
+    "actions": [
+      {
+        "type": "ApplyModifier",
+        "target": "This",
+        "modifier": { "type": "ImmuneToCardType", "card_type": "Strategy" },
+        "duration": "WhileSourceOnField"
+      }
+    ]
+  }
 }
 ```
 
-### 10.6 Lua 到 CardDefinition 映射建议
+### 10.6 JSON 到 CardDefinition 映射建议
 
 - `id` 映射为 `CardId`。
 - `card_type` 映射为 `CardType`。
@@ -934,11 +932,8 @@ effects = {
 
 ### 11.2 card-script 错误（规划名）
 
-- `ScriptError::LuaError`
 - `ScriptError::ParseError`
 - `ScriptError::CardNotFound`
-- `ScriptError::SandboxViolation`
-- `ScriptError::ScriptTimeout`
 - `ScriptError::InvalidCardDefinition`
 
 ### 11.3 card-protocol 错误（规划名）
@@ -976,7 +971,7 @@ effects = {
 
 ### 12.4 对 ClientApi 的影响
 
-- `ClientApi` 不直接依赖 Lua 解析细节。
+- `ClientApi` 不直接依赖 JSON 解析细节。
 - `ClientApi` 只依赖可见状态、命令与 `GameEvent`。
 - 客户端无需感知内部 AST 结构体的全部细节。
 
@@ -996,8 +991,8 @@ effects = {
 
 ### 13.3 脚本建议
 
-- Lua 脚本保持声明式与最小化。
-- 避免在 Lua 中写业务流程控制。
+- JSON 定义保持声明式与最小化。
+- 避免在 JSON 中嵌入业务逻辑。
 - 用统一键名降低脚本迁移成本。
 
 ## 第14章 关键字索引
@@ -1005,7 +1000,7 @@ effects = {
 - ClientApi
 - CardDefinition
 - GameEvent
-- Lua
+- JSON
 - CardId
 - InstanceId
 - EffectKey
@@ -1016,5 +1011,5 @@ effects = {
 
 本文档给出当前公开 API 的统一视图。
 文档覆盖类型定义、效果系统、规则配置、网络协议与客户端接口。
-文档明确了 `CardDefinition`、`GameEvent`、`ClientApi`、`Lua` 四条核心边界。
+文档明确了 `CardDefinition`、`GameEvent`、`ClientApi`、`JSON` 四条核心边界。
 后续实现可直接以本文件作为跨 crate 协作基线。

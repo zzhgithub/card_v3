@@ -11,7 +11,7 @@
 ### 1.2 核心特性
 
 - Rust 引擎：负责完整规则执行、状态推进与事件生成。
-- Lua 脚本：描述卡片定义与效果数据，不直接执行游戏逻辑。
+- JSON 卡牌定义：描述卡片定义与效果数据，不直接执行游戏逻辑。
 - P2P TCP：对战阶段由玩家主机与客机直连通信。
 - TUI 客户端：提供终端交互式体验，支持快速调试与低资源运行。
 - 回放与存档：支持完整重放与中途快照恢复。
@@ -45,7 +45,7 @@
 
 ```mermaid
 graph LR
-  card-core -->|Lua加载| card-script
+  card-core -->|JSON加载| card-script
   card-core --> card-protocol
   card-core --> card-client
   card-protocol --> card-server
@@ -67,11 +67,10 @@ card-core 是游戏引擎核心。
 
 ### 2.4 card-script 职责
 
-card-script 负责 Lua 集成与脚本装载：
+card-script 负责 JSON 卡牌定义加载：
 
-- 加载脚本文件并建立沙盒。
-- 限制可用标准库，禁止脚本做系统调用。
-- 将 Lua table 解析为 Rust 的 CardDefinition。
+- 加载 JSON 脚本文件。
+- 将 JSON 解析为 Rust 的 CardDefinition。
 - 产出可被 card-core 消费的强类型定义对象。
 
 ### 2.5 card-protocol 职责
@@ -135,15 +134,15 @@ card-core 只处理规则，不依赖任何 IO。
 
 此模式统一了“操作请求”与“事实结果”的语义边界。
 
-### 3.3 Lua 声明式脚本
+### 3.3 JSON 声明式卡牌定义
 
-Lua 负责表达卡片定义与效果结构。
+JSON 负责表达卡片定义与效果结构。
 Rust 负责解析、校验与执行。
-脚本不可直接改变引擎状态，避免不可控副作用。
+定义文件不可直接改变引擎状态，避免不可控副作用。
 
 ### 3.4 客户端抽象
 
-通过 ClientApi trait，系统可无缝支持 TUI、Bevy、Web、Unity 等实现。
+通过 ClientApi trait，系统可无缝支持 TUI、Godot 等实现。
 界面层只消费可见状态与事件，不侵入规则层。
 
 ### 3.5 可配置规则
@@ -477,7 +476,7 @@ card-matchmaker 为独立服务，采用 WebSocket 协议。
 | 组件 | 选型 | 理由 |
 |------|------|------|
 | 核心语言 | Rust Edition 2024 | 性能、安全、类型系统 |
-| Lua 集成 | mlua 0.11（lua54, serialize, vendored） | 无系统Lua依赖，支持序列化 |
+| JSON 解析 | serde + serde_json | 人类可读，无外部运行时依赖 |
 | 异步运行时 | tokio（full） | 高性能异步IO |
 | 网络序列化 | serde + bincode 1.x | 高效二进制，适合wire format |
 | 存档格式 | serde + serde_json | 人类可读，适合持久化 |
@@ -499,15 +498,14 @@ card-matchmaker 为独立服务，采用 WebSocket 协议。
 
 ### 10.1 unsafe 使用边界
 
-unsafe 只允许在 card-script 的 Lua API 加载层使用。
-其他模块默认禁用 unsafe。
+unsafe 当前已无活跃使用场景（历史 Lua 集成层已移除）。
+新增代码默认禁用 unsafe。
 该策略降低全局内存安全风险。
 
-### 10.2 Lua 沙盒策略
+### 10.2 脚本安全策略
 
-Lua 运行环境应使用白名单标准库。
-通过 Lua::new_with(StdLib whitelist) 禁用 IO、网络与系统调用。
-脚本仅可声明数据，不可访问主机资源。
+JSON 为纯数据格式，无执行语义，天然沙盒化。
+解析层仅做结构校验，不执行任何用户提供的逻辑代码。
 
 ### 10.3 超时机制
 

@@ -7,6 +7,8 @@ const CARD_INFO_DIR = "res://scripts_json/S000"
 @onready var card_box = $CardBox
 
 var all_card_data: Array[Dictionary] = []
+var _cards_with_overlay: Array[DuleCard] = []
+var _card_dusted: Dictionary = {}  # DuleCard -> bool
 
 func _ready() -> void:
 	_load_card_data()
@@ -76,6 +78,7 @@ func _generate_test_cards() -> void:
 			continue
 
 		card.setup(card_data)
+		_setup_card_overlay(card)
 		cards.append(card)
 	card_box.add_cards(cards)
 	print("[CardBoxTest] done generating")
@@ -90,3 +93,116 @@ func _on_card_clicked(card_data: Dictionary) -> void:
 	var popup = CARD_PREVIEW_POPUP.instantiate()
 	add_child(popup)
 	popup.setup(card_data)
+
+# ---------------------------------------------------------------------------
+# 卡片覆盖层（悬停遮罩 + 预览按钮 + 蒙尘按钮 + 蒙尘遮罩）
+# ---------------------------------------------------------------------------
+
+func _setup_card_overlay(card: DuleCard) -> void:
+	# HoverOverlay：悬停时的半透明遮罩
+	var hover_overlay = ColorRect.new()
+	hover_overlay.name = "HoverOverlay"
+	hover_overlay.color = Color(0, 0, 0, 0.5)
+	hover_overlay.z_index = 10
+	hover_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hover_overlay.visible = false
+	hover_overlay.size = card.size
+	card.add_child(hover_overlay)
+
+	# DustOverlay：蒙尘状态的灰褐色遮罩
+	var dust_overlay = ColorRect.new()
+	dust_overlay.name = "DustOverlay"
+	dust_overlay.color = Color(0.4, 0.35, 0.3, 0.6)
+	dust_overlay.z_index = 9
+	dust_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	dust_overlay.visible = false
+	dust_overlay.size = card.size
+	card.add_child(dust_overlay)
+
+	# PreviewButton
+	var preview_button = Button.new()
+	preview_button.name = "PreviewButton"
+	preview_button.text = "预览"
+	preview_button.z_index = 11
+	preview_button.visible = false
+	card.add_child(preview_button)
+
+	# DustButton
+	var dust_button = Button.new()
+	dust_button.name = "DustButton"
+	dust_button.text = "蒙尘"
+	dust_button.z_index = 11
+	dust_button.visible = false
+	card.add_child(dust_button)
+
+	# 连接信号
+	preview_button.pressed.connect(_on_preview_pressed.bind(card))
+	dust_button.pressed.connect(_on_dust_pressed.bind(card))
+	card.resized.connect(_on_card_resized.bind(card))
+
+	# 初始化布局
+	_update_overlay_layout(card)
+
+	# 记录到轮询列表
+	_cards_with_overlay.append(card)
+
+func _update_overlay_layout(card: DuleCard) -> void:
+	var hover_overlay = card.get_node_or_null("HoverOverlay")
+	var dust_overlay = card.get_node_or_null("DustOverlay")
+	var preview_button = card.get_node_or_null("PreviewButton")
+	var dust_button = card.get_node_or_null("DustButton")
+
+	if hover_overlay != null:
+		hover_overlay.size = card.size
+	if dust_overlay != null:
+		dust_overlay.size = card.size
+
+	if preview_button != null:
+		preview_button.size = Vector2(card.size.x * 0.6, card.size.y * 0.12)
+		preview_button.position = Vector2(card.size.x * 0.2, card.size.y * 0.30)
+
+	if dust_button != null:
+		dust_button.size = Vector2(card.size.x * 0.6, card.size.y * 0.12)
+		dust_button.position = Vector2(card.size.x * 0.2, card.size.y * 0.50)
+
+func _process(_delta: float) -> void:
+	var mouse_pos = get_global_mouse_position()
+	for card in _cards_with_overlay:
+		var is_inside = card.get_global_rect().has_point(mouse_pos)
+		var was_hovered = card.get_meta("_hovered", false)
+		if is_inside != was_hovered:
+			card.set_meta("_hovered", is_inside)
+			_update_card_hover(card, is_inside)
+
+func _update_card_hover(card: DuleCard, hovered: bool) -> void:
+	var hover_overlay = card.get_node_or_null("HoverOverlay")
+	var preview_button = card.get_node_or_null("PreviewButton")
+	var dust_button = card.get_node_or_null("DustButton")
+
+	if hover_overlay != null:
+		hover_overlay.visible = hovered
+	if preview_button != null:
+		preview_button.visible = hovered
+	if dust_button != null:
+		dust_button.visible = hovered
+
+func _on_card_resized(card: DuleCard) -> void:
+	_update_overlay_layout(card)
+
+func _on_preview_pressed(card: DuleCard) -> void:
+	print("[CardBoxTest] Preview button clicked: %s" % card.card_id)
+	CardPreviewPopup.show_preview(self, card.card_data)
+
+func _on_dust_pressed(card: DuleCard) -> void:
+	var dusted = not _card_dusted.get(card, false)
+	_card_dusted[card] = dusted
+
+	var dust_overlay = card.get_node_or_null("DustOverlay")
+	var dust_button = card.get_node_or_null("DustButton")
+
+	if dust_overlay != null:
+		dust_overlay.visible = dusted
+	if dust_button != null:
+		dust_button.text = "去尘" if dusted else "蒙尘"
+
+	print("[CardBoxTest] Dust toggled for %s: %s" % [card.card_id, dusted])
