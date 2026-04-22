@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://myhand01"]
+
+[ext_resource type="Script" uid="uid://_xalX4apQzeZcDG" path="res://dule/my_hand.gd" id="1_my_hand"]
+
+[node name="MyHand" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 1
+script = ExtResource("1_my_hand")
