@@ -14,6 +14,15 @@ extends CardContainer
 
 func _ready() -> void:
 	super._ready()
+	resized.connect(_on_my_hand_resized)
+	# 确保 drop_zone 不拦截鼠标事件
+	if drop_zone != null:
+		drop_zone.visible = false
+
+
+func _on_my_hand_resized() -> void:
+	if cards_node != null:
+		cards_node.size = size
 
 
 func _card_can_be_added(_cards: Array) -> bool:

@@ -1,10 +1,10 @@
-[gd_scene format=3 uid="uid://myhandtest01"]
+[gd_scene format=3 uid="uid://b3k6hp7d7eirn"]
 
 [ext_resource type="PackedScene" path="res://dule/my_hand.tscn" id="1_my_hand"]
-[ext_resource type="Script" uid="uid://P6JdzXy0RJGW-Y2" path="res://dule/my_hand_test.gd" id="2_script"]
+[ext_resource type="Script" path="res://dule/my_hand_test.gd" id="2_script"]
 [ext_resource type="PackedScene" uid="uid://c7u8hryloq7hy" path="res://addons/card-framework/card_manager.tscn" id="3_manager"]
 
-[node name="MyHandTest" type="Control"]
+[node name="MyHandTest" type="Control" unique_id=1726704226]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,11 +13,11 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_script")
 
-[node name="CardManager" parent="." instance=ExtResource("3_manager")]
+[node name="CardManager" parent="." unique_id=654660446 instance=ExtResource("3_manager")]
 layout_mode = 1
 card_size = Vector2(79, 110)
 
-[node name="ButtonContainer" type="HBoxContainer" parent="."]
+[node name="ButtonContainer" type="HBoxContainer" parent="." unique_id=1811484170]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
@@ -29,15 +29,15 @@ offset_bottom = 60.0
 grow_horizontal = 2
 alignment = 1
 
-[node name="AddButton" type="Button" parent="ButtonContainer"]
+[node name="AddButton" type="Button" parent="ButtonContainer" unique_id=935841606]
 layout_mode = 2
 text = "添加一个卡片"
 
-[node name="RemoveButton" type="Button" parent="ButtonContainer"]
+[node name="RemoveButton" type="Button" parent="ButtonContainer" unique_id=1599536201]
 layout_mode = 2
 text = "删除一个卡片"
 
-[node name="PlayerArea" type="VBoxContainer" parent="."]
+[node name="PlayerArea" type="VBoxContainer" parent="." unique_id=1988180068]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -48,15 +48,15 @@ grow_horizontal = 2
 grow_vertical = 0
 alignment = 1
 
-[node name="PlayerBottomRow" type="HBoxContainer" parent="PlayerArea"]
+[node name="PlayerBottomRow" type="HBoxContainer" parent="PlayerArea" unique_id=1246579354]
 layout_mode = 2
 size_flags_vertical = 3
 alignment = 1
 
-[node name="Spacer" type="Control" parent="PlayerArea/PlayerBottomRow"]
+[node name="Spacer" type="Control" parent="PlayerArea/PlayerBottomRow" unique_id=431972769]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 
-[node name="MyHand" parent="PlayerArea/PlayerBottomRow" instance=ExtResource("1_my_hand")]
+[node name="MyHand" parent="PlayerArea/PlayerBottomRow" unique_id=1944470325 instance=ExtResource("1_my_hand")]
 layout_mode = 2
 size_flags_horizontal = 3

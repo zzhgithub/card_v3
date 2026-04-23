@@ -3,8 +3,7 @@
 [ext_resource type="Script" uid="uid://c0mua4vmdnj1d" path="res://dule/dule_card.gd" id="1_script"]
 
 [node name="DuleCard" type="Control" unique_id=861132280]
-layout_mode = 3
-anchors_preset = 0
+layout_mode = 0
 script = ExtResource("1_script")
 
 [node name="FrontFace" type="Control" parent="." unique_id=627021246]
@@ -53,6 +52,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="ArtworkLayer" type="TextureRect" parent="TemplateLayer" unique_id=655622790]
 layout_mode = 1

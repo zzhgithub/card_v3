@@ -11,11 +11,14 @@ var _card_counter := 0
 func _ready() -> void:
 	add_button.pressed.connect(_on_add_pressed)
 	remove_button.pressed.connect(_on_remove_pressed)
+	# 延迟一帧添加卡片，确保容器布局已完成
+	await get_tree().process_frame
+	for i in range(3):
+		_on_add_pressed()
 
 
 func _on_add_pressed() -> void:
 	if my_hand.get_card_count() >= my_hand.max_hand_size:
-		print("[MyHandTest] 手牌已满，无法添加")
 		return
 
 	var card = DULE_CARD_SCENE.instantiate() as DuleCard
@@ -39,15 +42,15 @@ func _on_add_pressed() -> void:
 	card.size = card_size
 	my_hand.add_card(card)
 	card.setup(data)
-	print("[MyHandTest] 添加卡片: %s，当前手牌数: %d" % [data["id"], my_hand.get_card_count()])
 
 
 func _on_remove_pressed() -> void:
 	if my_hand.get_card_count() == 0:
-		print("[MyHandTest] 手牌为空，无法删除")
 		return
 
 	var card = my_hand._held_cards[my_hand._held_cards.size() - 1]
+	# 强制退出交互状态，防止静态计数器泄漏
+	if card.current_state != DraggableObject.DraggableState.IDLE:
+		card.change_state(DraggableObject.DraggableState.IDLE)
 	my_hand.remove_card(card)
 	card.queue_free()
-	print("[MyHandTest] 删除最后一张卡片，当前手牌数: %d" % my_hand.get_card_count())

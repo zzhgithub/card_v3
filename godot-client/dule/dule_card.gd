@@ -60,11 +60,33 @@ func _ready() -> void:
 			back_face_texture.texture = default_back
 	_update_face_visibility()
 
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton or event is InputEventMouseMotion):
+		return
+	
+	var is_inside = get_global_rect().has_point(get_global_mouse_position())
+	
+	# 手动更新 mouse_inside 状态（因为 mouse_entered/mouse_exited 信号不触发状态切换）
+	if is_inside and not is_mouse_inside:
+		is_mouse_inside = true
+		if can_be_interacted_with and _can_start_hovering():
+			change_state(DraggableState.HOVERING)
+	elif not is_inside and is_mouse_inside:
+		is_mouse_inside = false
+		if current_state == DraggableState.HOVERING:
+			change_state(DraggableState.IDLE)
+	
+	# 手动转发鼠标按钮事件到 GUI 输入处理
+	if is_inside and event is InputEventMouseButton:
+		_on_gui_input(event)
 
 func _on_resized() -> void:
 	if card_data.is_empty():
 		return
 	call_deferred("_render_template")
+
+func _on_gui_input(event: InputEvent) -> void:
+	super._on_gui_input(event)
 
 
 func setup(data: Dictionary) -> void:
