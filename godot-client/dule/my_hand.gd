@@ -11,6 +11,13 @@ extends CardContainer
 @export var align_drop_zone_size_with_current_hand_size := true
 @export var swap_only_on_reorder := false
 
+## 堆叠模式下的弧形高度（中间卡片抬高像素）
+@export var stacked_arc_height := 18.0
+## 堆叠模式下的最大旋转角度（度）
+@export var stacked_max_rotation := 7.0
+## 正常模式下的轻微弧形高度
+@export var normal_arc_height := 6.0
+
 
 func _ready() -> void:
 	super._ready()
@@ -45,8 +52,8 @@ func _update_target_positions() -> void:
 	var card_size = card_manager.card_size
 	var _w = card_size.x
 	var _h = card_size.y
-
 	var total_cards = _held_cards.size()
+
 	if total_cards == 0:
 		if align_drop_zone_size_with_current_hand_size and enable_drop_zone and drop_zone != null:
 			drop_zone.return_sensor_size()
@@ -54,47 +61,86 @@ func _update_target_positions() -> void:
 
 	var available_width = size.x
 	var available_height = size.y
-
-	# 计算间距：优先使用 card_gap，如果放不下则压缩
-	var spacing = _w + card_gap
-	var total_width = total_cards * _w + (total_cards - 1) * card_gap
-	if total_width > available_width and total_cards > 1:
-		spacing = (available_width - _w) / float(total_cards - 1)
-
-	var actual_total_width = total_cards * _w + (total_cards - 1) * (spacing - _w)
-	var start_x = (available_width - actual_total_width) / 2.0
 	var center_y = available_height / 2.0 - _h / 2.0
+
+	# 计算正常排列的总宽度
+	var normal_width = total_cards * _w + (total_cards - 1) * card_gap
+	var use_stacked_mode = normal_width > available_width
 
 	var x_min = INF
 	var x_max = -INF
 	var y_min = INF
 	var y_max = -INF
-
 	var card_mids: Array = []
 
-	for i in range(total_cards):
-		var card = _held_cards[i]
-		var local_pos = Vector2.ZERO
+	if not use_stacked_mode:
+		# === 正常模式：等距水平排列，带轻微弧形 ===
+		var start_x = (available_width - normal_width) / 2.0
 
-		if total_cards == 1:
-			local_pos.x = available_width / 2.0 - _w / 2.0
+		for i in range(total_cards):
+			var card = _held_cards[i]
+			var local_pos = Vector2.ZERO
+			local_pos.x = start_x + i * (_w + card_gap)
+
+			# 轻微弧形：中间略高，两边略低
+			if total_cards > 1:
+				var ratio = float(i) / float(total_cards - 1)
+				local_pos.y = center_y - normal_arc_height * sin(ratio * PI)
+			else:
+				local_pos.y = center_y
+
+			var global_pos = global_position + local_pos
+			card_mids.append(global_pos.x + _w / 2.0)
+
+			x_min = min(x_min, local_pos.x)
+			x_max = max(x_max, local_pos.x + _w)
+			y_min = min(y_min, local_pos.y)
+			y_max = max(y_max, local_pos.y + _h)
+
+			card.move(global_pos, 0)
+			card.show_front = card_face_up
+			card.can_be_interacted_with = true
+	else:
+		# === 堆叠模式：均匀压缩分布，带弧形与旋转 ===
+		var spacing: float
+		if total_cards > 1:
+			spacing = (available_width - _w) / float(total_cards - 1)
 		else:
-			local_pos.x = start_x + i * spacing
+			spacing = 0.0
 
-		local_pos.y = center_y
+		for i in range(total_cards):
+			var card = _held_cards[i]
+			var ratio = 0.5 if total_cards == 1 else float(i) / float(total_cards - 1)
 
-		var global_pos = global_position + local_pos
+			var local_pos = Vector2.ZERO
+			local_pos.x = i * spacing
 
-		card_mids.append(global_pos.x + _w / 2.0)
+			# 弧形：中间高两边低
+			local_pos.y = center_y - stacked_arc_height * sin(ratio * PI)
 
-		x_min = min(x_min, local_pos.x)
-		x_max = max(x_max, local_pos.x + _w)
-		y_min = min(y_min, local_pos.y)
-		y_max = max(y_max, local_pos.y + _h)
+			# 旋转：中间水平，两侧向中间倾斜
+			var rotation_deg = stacked_max_rotation * sin((ratio - 0.5) * PI)
+			var rotation_rad = deg_to_rad(rotation_deg)
 
-		card.move(global_pos, 0)
-		card.show_front = card_face_up
-		card.can_be_interacted_with = true
+			var global_pos = global_position + local_pos
+			card_mids.append(global_pos.x + _w / 2.0)
+
+			# 估算旋转后的包围盒（用于 drop_zone）
+			var cos_r = abs(cos(rotation_rad))
+			var sin_r = abs(sin(rotation_rad))
+			var bbox_w = _w * cos_r + _h * sin_r
+			var bbox_h = _w * sin_r + _h * cos_r
+			var bbox_x_off = (_w - bbox_w) / 2.0
+			var bbox_y_off = (_h - bbox_h) / 2.0
+
+			x_min = min(x_min, local_pos.x + bbox_x_off)
+			x_max = max(x_max, local_pos.x + bbox_x_off + bbox_w)
+			y_min = min(y_min, local_pos.y + bbox_y_off)
+			y_max = max(y_max, local_pos.y + bbox_y_off + bbox_h)
+
+			card.move(global_pos, rotation_rad)
+			card.show_front = card_face_up
+			card.can_be_interacted_with = true
 
 	# 更新 drop zone
 	if align_drop_zone_size_with_current_hand_size and enable_drop_zone and drop_zone != null:

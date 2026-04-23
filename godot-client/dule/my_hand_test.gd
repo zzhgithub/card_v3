@@ -13,7 +13,7 @@ func _ready() -> void:
 	remove_button.pressed.connect(_on_remove_pressed)
 	# 延迟一帧添加卡片，确保容器布局已完成
 	await get_tree().process_frame
-	for i in range(3):
+	for i in range(12):
 		_on_add_pressed()
 
 
