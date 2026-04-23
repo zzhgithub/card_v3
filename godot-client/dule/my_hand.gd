@@ -11,18 +11,19 @@ extends CardContainer
 @export var align_drop_zone_size_with_current_hand_size := true
 @export var swap_only_on_reorder := false
 
-## 堆叠模式下的弧形高度（中间卡片抬高像素）
-@export var stacked_arc_height := 18.0
-## 堆叠模式下的最大旋转角度（度）
-@export var stacked_max_rotation := 7.0
-## 正常模式下的轻微弧形高度
+## 手牌展开的最大固定宽度（卡片在此宽度内排列，不受容器宽度影响）
+@export var hand_spread_width := 700.0
+## 堆叠模式：中间卡片弧形抬高（像素）
+@export var stacked_arc_height := 20.0
+## 堆叠模式：两侧卡片向中心倾斜的最大角度（度）
+@export var stacked_max_rotation := 8.0
+## 正常模式：轻微弧形抬高（像素）
 @export var normal_arc_height := 6.0
 
 
 func _ready() -> void:
 	super._ready()
 	resized.connect(_on_my_hand_resized)
-	# 确保 drop_zone 不拦截鼠标事件
 	if drop_zone != null:
 		drop_zone.visible = false
 
@@ -43,9 +44,16 @@ func _card_can_be_added(_cards: Array) -> bool:
 
 
 func _update_target_z_index() -> void:
-	for i in range(_held_cards.size()):
+	var total = _held_cards.size()
+	for i in range(total):
 		var card = _held_cards[i]
-		card.stored_z_index = i
+		# 中间卡片 z-index 最高，向两侧递减，形成清晰的前后遮挡层次
+		if total <= 1:
+			card.stored_z_index = 0
+		else:
+			var mid = float(total - 1) / 2.0
+			var dist_from_mid = abs(float(i) - mid)
+			card.stored_z_index = int((mid - dist_from_mid) * 2.0)
 
 
 func _update_target_positions() -> void:
@@ -59,13 +67,18 @@ func _update_target_positions() -> void:
 			drop_zone.return_sensor_size()
 		return
 
-	var available_width = size.x
-	var available_height = size.y
-	var center_y = available_height / 2.0 - _h / 2.0
+	var container_width = size.x
+	var container_height = size.y
+	var center_y = container_height / 2.0 - _h / 2.0
 
-	# 计算正常排列的总宽度
+	# 手牌实际使用宽度：固定 hand_spread_width，但不超过容器宽度
+	var spread_width = min(hand_spread_width, container_width)
+	# 手牌在容器内的起始偏移（居中）
+	var spread_offset_x = (container_width - spread_width) / 2.0
+
+	# 计算正常等距排列的总宽度
 	var normal_width = total_cards * _w + (total_cards - 1) * card_gap
-	var use_stacked_mode = normal_width > available_width
+	var use_stacked_mode = normal_width > spread_width
 
 	var x_min = INF
 	var x_max = -INF
@@ -74,15 +87,14 @@ func _update_target_positions() -> void:
 	var card_mids: Array = []
 
 	if not use_stacked_mode:
-		# === 正常模式：等距水平排列，带轻微弧形 ===
-		var start_x = (available_width - normal_width) / 2.0
+		# === 正常模式：在 spread_width 内居中排列，带轻微弧形 ===
+		var content_start = spread_offset_x + (spread_width - normal_width) / 2.0
 
 		for i in range(total_cards):
 			var card = _held_cards[i]
 			var local_pos = Vector2.ZERO
-			local_pos.x = start_x + i * (_w + card_gap)
+			local_pos.x = content_start + i * (_w + card_gap)
 
-			# 轻微弧形：中间略高，两边略低
 			if total_cards > 1:
 				var ratio = float(i) / float(total_cards - 1)
 				local_pos.y = center_y - normal_arc_height * sin(ratio * PI)
@@ -101,10 +113,10 @@ func _update_target_positions() -> void:
 			card.show_front = card_face_up
 			card.can_be_interacted_with = true
 	else:
-		# === 堆叠模式：均匀压缩分布，带弧形与旋转 ===
+		# === 堆叠模式：在固定 spread_width 内均匀压缩，带弧形与旋转 ===
 		var spacing: float
 		if total_cards > 1:
-			spacing = (available_width - _w) / float(total_cards - 1)
+			spacing = (spread_width - _w) / float(total_cards - 1)
 		else:
 			spacing = 0.0
 
@@ -113,19 +125,19 @@ func _update_target_positions() -> void:
 			var ratio = 0.5 if total_cards == 1 else float(i) / float(total_cards - 1)
 
 			var local_pos = Vector2.ZERO
-			local_pos.x = i * spacing
+			local_pos.x = spread_offset_x + i * spacing
 
-			# 弧形：中间高两边低
+			# 弧形：中间抬高，两边降低
 			local_pos.y = center_y - stacked_arc_height * sin(ratio * PI)
 
-			# 旋转：中间水平，两侧向中间倾斜
+			# 旋转：中间水平，两侧向中心倾斜
 			var rotation_deg = stacked_max_rotation * sin((ratio - 0.5) * PI)
 			var rotation_rad = deg_to_rad(rotation_deg)
 
 			var global_pos = global_position + local_pos
 			card_mids.append(global_pos.x + _w / 2.0)
 
-			# 估算旋转后的包围盒（用于 drop_zone）
+			# 估算旋转后的包围盒
 			var cos_r = abs(cos(rotation_rad))
 			var sin_r = abs(sin(rotation_rad))
 			var bbox_w = _w * cos_r + _h * sin_r
@@ -147,7 +159,6 @@ func _update_target_positions() -> void:
 		var _size = Vector2(x_max - x_min, y_max - y_min)
 		drop_zone.set_sensor_size_flexibly(_size, Vector2(x_min, y_min))
 
-		# 设置 vertical partitions 用于精确拖放排序
 		var vertical_partitions: Array = []
 		for j in range(card_mids.size() - 1):
 			var mid = (card_mids[j] + card_mids[j + 1]) / 2.0
