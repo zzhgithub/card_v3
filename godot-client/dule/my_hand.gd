@@ -11,14 +11,10 @@ extends CardContainer
 @export var align_drop_zone_size_with_current_hand_size := true
 @export var swap_only_on_reorder := false
 
-## 手牌展开的最大固定宽度（卡片在此宽度内排列，不受容器宽度影响）
-@export var hand_spread_width := 700.0
-## 堆叠模式：中间卡片弧形抬高（像素）
-@export var stacked_arc_height := 20.0
-## 堆叠模式：两侧卡片向中心倾斜的最大角度（度）
-@export var stacked_max_rotation := 8.0
-## 正常模式：轻微弧形抬高（像素）
-@export var normal_arc_height := 6.0
+## 不超过此数量时，手牌在容器宽度内正常展开；超过后在此宽度内均匀压缩
+@export var max_cards_without_stack := 10
+## 超过 max_cards_without_stack 后的最大展开宽度
+@export var hand_spread_width := 800.0
 
 
 func _ready() -> void:
@@ -44,16 +40,8 @@ func _card_can_be_added(_cards: Array) -> bool:
 
 
 func _update_target_z_index() -> void:
-	var total = _held_cards.size()
-	for i in range(total):
-		var card = _held_cards[i]
-		# 中间卡片 z-index 最高，向两侧递减，形成清晰的前后遮挡层次
-		if total <= 1:
-			card.stored_z_index = 0
-		else:
-			var mid = float(total - 1) / 2.0
-			var dist_from_mid = abs(float(i) - mid)
-			card.stored_z_index = int((mid - dist_from_mid) * 2.0)
+	for i in range(_held_cards.size()):
+		_held_cards[i].stored_z_index = i
 
 
 func _update_target_positions() -> void:
@@ -71,14 +59,18 @@ func _update_target_positions() -> void:
 	var container_height = size.y
 	var center_y = container_height / 2.0 - _h / 2.0
 
-	# 手牌实际使用宽度：固定 hand_spread_width，但不超过容器宽度
-	var spread_width = min(hand_spread_width, container_width)
-	# 手牌在容器内的起始偏移（居中）
-	var spread_offset_x = (container_width - spread_width) / 2.0
+	# 不超过 max_cards_without_stack 时用容器宽度；超过后用 hand_spread_width
+	var spread_width: float
+	if total_cards <= max_cards_without_stack:
+		spread_width = container_width
+	else:
+		spread_width = min(hand_spread_width, container_width)
 
 	# 计算正常等距排列的总宽度
 	var normal_width = total_cards * _w + (total_cards - 1) * card_gap
 	var use_stacked_mode = normal_width > spread_width
+
+
 
 	var x_min = INF
 	var x_max = -INF
@@ -88,18 +80,14 @@ func _update_target_positions() -> void:
 
 	if not use_stacked_mode:
 		# === 正常模式：在 spread_width 内居中排列，带轻微弧形 ===
-		var content_start = spread_offset_x + (spread_width - normal_width) / 2.0
+		var content_start = (spread_width - normal_width) / 2.0
 
 		for i in range(total_cards):
 			var card = _held_cards[i]
 			var local_pos = Vector2.ZERO
 			local_pos.x = content_start + i * (_w + card_gap)
 
-			if total_cards > 1:
-				var ratio = float(i) / float(total_cards - 1)
-				local_pos.y = center_y - normal_arc_height * sin(ratio * PI)
-			else:
-				local_pos.y = center_y
+			local_pos.y = center_y
 
 			var global_pos = global_position + local_pos
 			card_mids.append(global_pos.x + _w / 2.0)
@@ -113,7 +101,7 @@ func _update_target_positions() -> void:
 			card.show_front = card_face_up
 			card.can_be_interacted_with = true
 	else:
-		# === 堆叠模式：在固定 spread_width 内均匀压缩，带弧形与旋转 ===
+		# === 堆叠模式：在容器宽度内均匀压缩 ===
 		var spacing: float
 		if total_cards > 1:
 			spacing = (spread_width - _w) / float(total_cards - 1)
@@ -122,35 +110,23 @@ func _update_target_positions() -> void:
 
 		for i in range(total_cards):
 			var card = _held_cards[i]
-			var ratio = 0.5 if total_cards == 1 else float(i) / float(total_cards - 1)
+
+			var total_visual_width = (total_cards - 1) * spacing + _w
+			var stack_offset_x = (container_width - total_visual_width) / 2.0
 
 			var local_pos = Vector2.ZERO
-			local_pos.x = spread_offset_x + i * spacing
-
-			# 弧形：中间抬高，两边降低
-			local_pos.y = center_y - stacked_arc_height * sin(ratio * PI)
-
-			# 旋转：中间水平，两侧向中心倾斜
-			var rotation_deg = stacked_max_rotation * sin((ratio - 0.5) * PI)
-			var rotation_rad = deg_to_rad(rotation_deg)
+			local_pos.x = stack_offset_x + i * spacing
+			local_pos.y = center_y
 
 			var global_pos = global_position + local_pos
 			card_mids.append(global_pos.x + _w / 2.0)
 
-			# 估算旋转后的包围盒
-			var cos_r = abs(cos(rotation_rad))
-			var sin_r = abs(sin(rotation_rad))
-			var bbox_w = _w * cos_r + _h * sin_r
-			var bbox_h = _w * sin_r + _h * cos_r
-			var bbox_x_off = (_w - bbox_w) / 2.0
-			var bbox_y_off = (_h - bbox_h) / 2.0
+			x_min = min(x_min, local_pos.x)
+			x_max = max(x_max, local_pos.x + _w)
+			y_min = min(y_min, local_pos.y)
+			y_max = max(y_max, local_pos.y + _h)
 
-			x_min = min(x_min, local_pos.x + bbox_x_off)
-			x_max = max(x_max, local_pos.x + bbox_x_off + bbox_w)
-			y_min = min(y_min, local_pos.y + bbox_y_off)
-			y_max = max(y_max, local_pos.y + bbox_y_off + bbox_h)
-
-			card.move(global_pos, rotation_rad)
+			card.move(global_pos, 0)
 			card.show_front = card_face_up
 			card.can_be_interacted_with = true
 
