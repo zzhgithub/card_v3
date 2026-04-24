@@ -17,7 +17,7 @@ var scene_manager: Node
 @onready var card_manager: CardManager = $CardManager
 
 ## 场景引用 - 对手区域
-@onready var opponent_hand: Hand = $OpponentArea/OpponentTopRow/OpponentHand
+@onready var opponent_hand: MyHand = $OpponentArea/OpponentTopRow/OpponentHand
 @onready var opponent_deck: CardStack = $OpponentArea/OpponentMainRow/OpponentStacks/OpponentDeck
 @onready var opponent_grave: CardStack = $OpponentArea/OpponentMainRow/OpponentStacks/OpponentGrave
 @onready var opponent_front_field: HBoxContainer = $OpponentArea/OpponentMainRow/OpponentBattleField/OpponentFrontField
@@ -26,7 +26,7 @@ var scene_manager: Node
 @onready var opponent_status: VBoxContainer = $OpponentArea/OpponentTopRow/OpponentStatus
 
 ## 场景引用 - 自己区域
-@onready var player_hand: Hand = $PlayerArea/PlayerBottomRow/PlayerHand
+@onready var player_hand: MyHand = $PlayerArea/PlayerBottomRow/PlayerHand
 @onready var player_deck: CardStack = $PlayerArea/PlayerMainRow/PlayerStacks/PlayerDeck
 @onready var player_grave: CardStack = $PlayerArea/PlayerMainRow/PlayerStacks/PlayerGrave
 @onready var player_front_field: HBoxContainer = $PlayerArea/PlayerMainRow/PlayerBattleField/PlayerFrontField
@@ -167,9 +167,10 @@ func _update_player_state(state: Dictionary) -> void:
 	var hand_cards = state.get("hand", [])
 	_update_hand(player_hand, hand_cards, true)
 
-	# 更新卡组数量（在 CardStack 中显示卡背）
-	var deck_count = state.get("deck_count", 0)
-	_update_deck_stack(player_deck, deck_count)
+	# 更新卡组（优先用 deck 数组创建真实卡片背面，否则回退到 deck_count）
+	var deck_cards = state.get("deck", [])
+	var deck_count = state.get("deck_count", deck_cards.size())
+	_update_deck_stack(player_deck, deck_cards, deck_count)
 
 	# 更新墓地
 	var grave_cards = state.get("grave", [])
@@ -197,9 +198,10 @@ func _update_opponent_state(state: Dictionary) -> void:
 	var hand_count = state.get("hand_count", 0)
 	_update_opponent_hand(opponent_hand, hand_count)
 
-	# 更新对手卡组数量
-	var deck_count = state.get("deck_count", 0)
-	_update_deck_stack(opponent_deck, deck_count)
+	# 更新对手卡组
+	var deck_cards = state.get("deck", [])
+	var deck_count = state.get("deck_count", deck_cards.size())
+	_update_deck_stack(opponent_deck, deck_cards, deck_count)
 
 	# 更新对手墓地
 	var grave_cards = state.get("grave", [])
@@ -261,7 +263,7 @@ func _create_card(definition_id: String, container: CardContainer, face_up: bool
 
 
 ## 更新手牌显示
-func _update_hand(hand: Hand, cards: Array, face_up: bool) -> void:
+func _update_hand(hand: MyHand, cards: Array, face_up: bool) -> void:
 	if hand == null:
 		return
 
@@ -285,7 +287,7 @@ func _update_hand(hand: Hand, cards: Array, face_up: bool) -> void:
 
 
 ## 更新对手手牌（只显示背面）
-func _update_opponent_hand(hand: Hand, count: int) -> void:
+func _update_opponent_hand(hand: MyHand, count: int) -> void:
 	if hand == null:
 		return
 
@@ -299,18 +301,28 @@ func _update_opponent_hand(hand: Hand, count: int) -> void:
 
 
 ## 更新卡组堆叠
-func _update_deck_stack(stack: CardStack, count: int) -> void:
+func _update_deck_stack(stack: CardStack, cards: Array, count: int) -> void:
 	if stack == null:
 		return
 
 	# 清除现有卡牌
 	stack.clear_cards()
 
-	# 创建卡背卡牌堆叠
-	# 为了性能和视觉效果，最多只创建5张卡作为视觉表示
-	var display_count = min(count, 5)
-	for i in range(display_count):
-		_create_card("card_back", stack, false)
+	var display_count: int
+	if cards.size() > 0:
+		# 用真实卡片数据创建牌堆（背面显示）
+		display_count = min(cards.size(), stack.max_stack_display)
+		for i in range(display_count):
+			var card_info = cards[cards.size() - display_count + i]
+			var definition_id = card_info.get("definition_id", "card_back")
+			var card = _create_card(definition_id, stack, false, card_info)
+			if card != null:
+				card.set_meta("instance_id", card_info.get("instance_id", 0))
+	else:
+		# 回退：只用卡背假卡片
+		display_count = min(count, stack.max_stack_display)
+		for i in range(display_count):
+			_create_card("card_back", stack, false)
 
 	# 更新数量显示标签
 	if stack.count_label:

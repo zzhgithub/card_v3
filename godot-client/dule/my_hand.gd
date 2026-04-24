@@ -10,6 +10,10 @@ extends CardContainer
 @export var card_gap := 10.0
 @export var align_drop_zone_size_with_current_hand_size := true
 @export var swap_only_on_reorder := false
+## 每张卡片的额外旋转偏移（弧度），用于对手手牌旋转180度
+@export var card_rotation_offset := 0.0
+## 容器中的卡片是否可以被拖拽
+@export var cards_draggable := true
 
 ## 不超过此数量时，手牌在容器宽度内正常展开；超过后在此宽度内均匀压缩
 @export var max_cards_without_stack := 10
@@ -97,9 +101,9 @@ func _update_target_positions() -> void:
 			y_min = min(y_min, local_pos.y)
 			y_max = max(y_max, local_pos.y + _h)
 
-			card.move(global_pos, 0)
+			card.move(global_pos, card_rotation_offset)
 			card.show_front = card_face_up
-			card.can_be_interacted_with = true
+			card.can_be_interacted_with = cards_draggable
 	else:
 		# === 堆叠模式：在容器宽度内均匀压缩 ===
 		var spacing: float
@@ -126,9 +130,9 @@ func _update_target_positions() -> void:
 			y_min = min(y_min, local_pos.y)
 			y_max = max(y_max, local_pos.y + _h)
 
-			card.move(global_pos, 0)
+			card.move(global_pos, card_rotation_offset)
 			card.show_front = card_face_up
-			card.can_be_interacted_with = true
+			card.can_be_interacted_with = cards_draggable
 
 	# 更新 drop zone
 	if align_drop_zone_size_with_current_hand_size and enable_drop_zone and drop_zone != null:

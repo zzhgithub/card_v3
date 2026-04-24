@@ -12,6 +12,7 @@ var test_game_state: Dictionary = {
 		"hp": 5,
 		"real_point": 0,
 		"deck_count": 35,
+		"deck": _generate_deck_cards(35),
 		"hand": [
 			{"current_attack": 1500, "definition_id": "S000-C-001", "instance_id": 1},
 			{"current_attack": 1500, "definition_id": "S000-C-001", "instance_id": 2},
@@ -28,6 +29,7 @@ var test_game_state: Dictionary = {
 		"hp": 5,
 		"real_point": 0,
 		"deck_count": 35,
+		"deck": _generate_deck_cards(35),
 		"hand_count": 5,
 		"front": [null, null, null, null, null],
 		"back": [null, null, null, null, null],
@@ -38,6 +40,17 @@ var test_game_state: Dictionary = {
 
 ## 测试场景引用
 @onready var game_board: Control = $GameBoard
+
+## 生成假卡组数据
+func _generate_deck_cards(count: int) -> Array:
+	var cards = []
+	for i in range(count):
+		cards.append({
+			"current_attack": 1500,
+			"definition_id": "S000-C-001",
+			"instance_id": 1000 + i
+		})
+	return cards
 
 func _ready():
 	print("[Test] 游戏板测试场景已加载")

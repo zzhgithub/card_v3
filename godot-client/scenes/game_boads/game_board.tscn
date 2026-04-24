@@ -1,7 +1,7 @@
 [gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scenes/game_boads/game_board.gd" id="1_game_board"]
-[ext_resource type="PackedScene" uid="uid://c8ce4cn8ntj1r" path="res://addons/card-framework/hand.tscn" id="2_hand"]
+[ext_resource type="PackedScene" path="res://dule/my_hand.tscn" id="8_myhand"]
 [ext_resource type="PackedScene" uid="uid://battlefieldslot01" path="res://scenes/game_boads/battle_field_slot.tscn" id="3_battle_field_slot"]
 [ext_resource type="PackedScene" uid="uid://cardstack01" path="res://scenes/game_boads/card_stack.tscn" id="4_card_stack"]
 [ext_resource type="PackedScene" uid="uid://costzone01" path="res://scenes/game_boads/cost_zone.tscn" id="5_cost_zone"]
@@ -64,10 +64,12 @@ alignment = 1
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 
-[node name="OpponentHand" parent="OpponentArea/OpponentTopRow" instance=ExtResource("2_hand")]
+[node name="OpponentHand" parent="OpponentArea/OpponentTopRow" instance=ExtResource("8_myhand")]
 layout_mode = 2
 size_flags_horizontal = 3
 card_face_up = false
+card_rotation_offset = 3.14159
+cards_draggable = false
 
 [node name="OpponentStatus" type="VBoxContainer" parent="OpponentArea/OpponentTopRow"]
 layout_mode = 2
@@ -302,7 +304,7 @@ alignment = 1
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 
-[node name="PlayerHand" parent="PlayerArea/PlayerBottomRow" instance=ExtResource("2_hand")]
+[node name="PlayerHand" parent="PlayerArea/PlayerBottomRow" instance=ExtResource("8_myhand")]
 layout_mode = 2
 size_flags_horizontal = 3
 

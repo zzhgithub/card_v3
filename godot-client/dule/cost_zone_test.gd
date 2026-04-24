@@ -2,7 +2,7 @@ extends Control
 
 const DULE_CARD_SCENE = preload("res://dule/dule_card.tscn")
 
-@onready var my_hand = $PlayerArea/PlayerBottomRow/MyHand
+@onready var cost_zone = $CostZone
 @onready var add_button: Button = $ButtonContainer/AddButton
 @onready var remove_button: Button = $ButtonContainer/RemoveButton
 @onready var flip_button: Button = $ButtonContainer/FlipButton
@@ -19,17 +19,17 @@ func _ready() -> void:
 	rotate_button.pressed.connect(_on_rotate_pressed)
 	# 延迟一帧添加卡片，确保容器布局已完成
 	await get_tree().process_frame
-	for i in range(12):
+	for i in range(8):
 		_on_add_pressed()
 
 
 func _on_add_pressed() -> void:
-	if my_hand.get_card_count() >= my_hand.max_hand_size:
+	if cost_zone.get_card_count() >= cost_zone.max_cost_size:
 		return
 
 	var card = DULE_CARD_SCENE.instantiate() as DuleCard
 	if card == null:
-		push_error("[MyHandTest] 实例化 DuleCard 失败")
+		push_error("[CostZoneTest] 实例化 DuleCard 失败")
 		return
 
 	_card_counter += 1
@@ -47,31 +47,31 @@ func _on_add_pressed() -> void:
 	card.custom_minimum_size = card_size
 	card.size = card_size
 	card.card_size = card_size
-	my_hand.add_card(card)
+	cost_zone.add_card(card)
 	card.setup(data)
 
 
 func _on_remove_pressed() -> void:
-	if my_hand.get_card_count() == 0:
+	if cost_zone.get_card_count() == 0:
 		return
 
-	var card = my_hand._held_cards[my_hand._held_cards.size() - 1]
+	var card = cost_zone._held_cards[cost_zone._held_cards.size() - 1]
 	# 强制退出交互状态，防止静态计数器泄漏
 	if card.current_state != DraggableObject.DraggableState.IDLE:
 		card.change_state(DraggableObject.DraggableState.IDLE)
-	my_hand.remove_card(card)
+	cost_zone.remove_card(card)
 	card.queue_free()
 
 
 func _on_flip_pressed() -> void:
 	_is_face_up = !_is_face_up
-	my_hand.card_face_up = _is_face_up
-	my_hand.update_card_ui()
+	cost_zone.card_face_up = _is_face_up
+	cost_zone.update_card_ui()
 	flip_button.text = "正面" if _is_face_up else "背面"
 
 
 func _on_rotate_pressed() -> void:
 	_is_rotated = !_is_rotated
-	my_hand.card_rotation_offset = PI if _is_rotated else 0.0
-	my_hand.update_card_ui()
+	cost_zone.card_rotation_offset = PI if _is_rotated else 0.0
+	cost_zone.update_card_ui()
 	rotate_button.text = "旋转: 180°" if _is_rotated else "旋转: 0°"

@@ -37,6 +37,14 @@ text = "添加一个卡片"
 layout_mode = 2
 text = "删除一个卡片"
 
+[node name="FlipButton" type="Button" parent="ButtonContainer" unique_id=1599536202]
+layout_mode = 2
+text = "正面"
+
+[node name="RotateButton" type="Button" parent="ButtonContainer" unique_id=1599536203]
+layout_mode = 2
+text = "旋转: 0°"
+
 [node name="PlayerArea" type="VBoxContainer" parent="." unique_id=1988180068]
 layout_mode = 1
 anchors_preset = 12

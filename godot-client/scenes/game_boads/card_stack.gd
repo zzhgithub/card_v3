@@ -17,6 +17,10 @@ enum StackLayoutDirection {
 @export var stack_type: StackType = StackType.DECK
 @export var show_count_label: bool = true
 @export var stack_layout: StackLayoutDirection = StackLayoutDirection.VERTICAL
+## 每张卡片的额外旋转偏移（弧度）
+@export var card_rotation_offset := 0.0
+## 堆叠间距（浮点，支持小数偏移）
+@export var stack_gap: float = 0.5
 
 var count_label: Label
 var stack_name_label: Label
@@ -57,14 +61,12 @@ func _ready() -> void:
 	stack_name_label.add_theme_color_override("font_color", Color(0.8, 0.8, 0.8))
 	add_child(stack_name_label)
 
-	# 根据布局方向设置堆叠方向
-	if stack_layout == StackLayoutDirection.VERTICAL:
-		layout = PileDirection.DOWN
-	else:
-		layout = PileDirection.RIGHT
+	# 根据布局方向设置堆叠方向（统一为右下）
+	layout = PileDirection.DOWN
 
 	# 设置默认堆叠间距（体现厚度）
-	stack_display_gap = 3
+	stack_gap = 0.5
+	max_stack_display = 40
 
 	# 更新标签位置
 	_update_label_positions()
@@ -72,16 +74,33 @@ func _ready() -> void:
 	super._ready()
 
 
-## 重写：更新目标位置（控制卡片正反面）
+## 重写：更新目标位置（控制卡片正反面、旋转）
 func _update_target_positions() -> void:
-	super._update_target_positions()
+	# Calculate top card position for drop zone alignment
+	var last_index = _held_cards.size() - 1
+	if last_index < 0:
+		last_index = 0
+	var last_offset = _calculate_offset(last_index)
+
+	# Align drop zone with top card if enabled
+	if enable_drop_zone and align_drop_zone_with_top_card:
+		drop_zone.change_sensor_position_with_offset(last_offset)
+
+	# Position each card and set interaction state
+	for i in range(_held_cards.size()):
+		var card = _held_cards[i]
+		var offset = _calculate_offset(i)
+		var target_pos = global_position + offset
+
+		# Set card appearance, position, and rotation
+		card.show_front = card_face_up
+		card.move(target_pos, card_rotation_offset)
+
+		# CardStack 中的卡片不可被拖拽
+		card.can_be_interacted_with = false
+
 	_update_label_positions()
 	_update_count_display()
-
-	# 更新所有卡片的显示面
-	for card in _held_cards:
-		card.show_front = card_face_up
-		card.can_be_interacted_with = card_face_up  # 只有正面朝上时才可交互（查看详情）
 
 
 ## 更新标签位置
@@ -138,6 +157,13 @@ func draw_top_card() -> Card:
 ## 向卡组添加卡片（放到顶部）
 func add_card_to_top(card: Card) -> void:
 	add_card(card, -1)
+
+
+## 重写：卡片向右下方堆叠（同时向右和向下偏移）
+func _calculate_offset(index: int) -> Vector2:
+	var actual_index = min(index, max_stack_display - 1)
+	var offset_value = actual_index * stack_gap
+	return Vector2(offset_value, offset_value)
 
 
 ## 绘制边框

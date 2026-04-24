@@ -1,0 +1,65 @@
+[gd_scene format=3 uid="uid://cn7v5c76e2xto"]
+
+[ext_resource type="PackedScene" uid="uid://cardstack01" path="res://scenes/game_boads/card_stack.tscn" id="1_card_stack"]
+[ext_resource type="Script" path="res://dule/card_stack_test.gd" id="2_script"]
+[ext_resource type="PackedScene" uid="uid://c7u8hryloq7hy" path="res://addons/card-framework/card_manager.tscn" id="3_manager"]
+
+[node name="CardStackTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_script")
+
+[node name="CardManager" parent="." instance=ExtResource("3_manager")]
+layout_mode = 1
+card_size = Vector2(79, 110)
+
+[node name="ButtonContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -250.0
+offset_top = 20.0
+offset_right = 250.0
+offset_bottom = 60.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="AddButton" type="Button" parent="ButtonContainer"]
+layout_mode = 2
+text = "添加卡片"
+
+[node name="RemoveButton" type="Button" parent="ButtonContainer"]
+layout_mode = 2
+text = "删除卡片"
+
+[node name="FlipButton" type="Button" parent="ButtonContainer"]
+layout_mode = 2
+text = "正面"
+
+[node name="RotateButton" type="Button" parent="ButtonContainer"]
+layout_mode = 2
+text = "旋转: 0°"
+
+[node name="GapLabel" type="Label" parent="ButtonContainer"]
+layout_mode = 2
+text = "偏移:"
+
+[node name="GapSpinBox" type="SpinBox" parent="ButtonContainer"]
+layout_mode = 2
+min_value = 0.0
+max_value = 20.0
+value = 3.0
+
+[node name="CardStack" parent="." instance=ExtResource("1_card_stack")]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 100.0
+offset_right = 200.0
+offset_bottom = 220.0
+stack_type = 0
+card_face_up = false
