@@ -14,6 +14,7 @@ enum FieldType {
 @export var slot_index: int = 0  ## 格子索引 (0-4)
 
 var background: ColorRect
+var attack_label: Label
 
 const FRONT_COLOR = Color(0.7, 0.85, 1.0, 0.6)  ## 淡蓝色
 const BACK_COLOR = Color(1.0, 0.85, 0.7, 0.6)   ## 淡橙色
@@ -32,6 +33,18 @@ func _ready() -> void:
 
 	# 确保 drop zone 接受卡片
 	enable_drop_zone = true
+
+	# 创建攻击力标签（显示在左上角）
+	attack_label = Label.new()
+	attack_label.name = "AttackLabel"
+	attack_label.position = Vector2(4, 2)
+	attack_label.add_theme_font_size_override("font_size", 18)
+	attack_label.add_theme_color_override("font_color", Color.WHITE)
+	attack_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	attack_label.add_theme_constant_override("outline_size", 3)
+	attack_label.z_index = 1000
+	attack_label.visible = false
+	add_child(attack_label)
 
 	super._ready()
 
@@ -64,6 +77,7 @@ func _card_can_be_added(_cards: Array) -> bool:
 ## 重写：更新位置（居中显示）
 func _update_target_positions() -> void:
 	if _held_cards.is_empty():
+		_update_attack_display()
 		return
 
 	var card = _held_cards[0]
@@ -73,10 +87,13 @@ func _update_target_positions() -> void:
 	var center_x = (size.x - card_size.x) / 2.0
 	var center_y = (size.y - card_size.y) / 2.0
 
-	var target_pos = Vector2(center_x, center_y)
+	var target_pos = global_position + Vector2(center_x, center_y)
 	card.move(target_pos, 0)
 	card.show_front = true
 	card.can_be_interacted_with = true
+
+	# 更新攻击力显示
+	_update_attack_display()
 
 
 ## 重写：更新 z-index
@@ -97,6 +114,27 @@ func has_card(card: Card = null) -> bool:
 	if card == null:
 		return not _held_cards.is_empty()
 	return card in _held_cards
+
+
+## 更新攻击力显示
+func _update_attack_display() -> void:
+	if attack_label == null:
+		return
+
+	if _held_cards.is_empty():
+		attack_label.visible = false
+		return
+
+	var card = _held_cards[0]
+	var attack_value = "?"
+	if card is DuleCard:
+		var dule_card = card as DuleCard
+		if not dule_card.card_data.is_empty():
+			var attack = dule_card.card_data.get("attack", 0)
+			attack_value = "ACK: %d" % int(attack)
+
+	attack_label.text = attack_value
+	attack_label.visible = true
 
 
 ## 当尺寸变化时更新背景

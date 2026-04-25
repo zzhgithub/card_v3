@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://b7p1hk0584fim"]
+
+[ext_resource type="Script" path="res://dule/battle_field_slot_test.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://b2slngr7wipb1" path="res://scenes/game_boads/battle_field_slot.tscn" id="2_slot"]
+[ext_resource type="PackedScene" uid="uid://c7u8hryloq7hy" path="res://addons/card-framework/card_manager.tscn" id="3_manager"]
+
+[node name="BattleFieldSlotTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="CardManager" parent="." instance=ExtResource("3_manager")]
+layout_mode = 1
+card_size = Vector2(79, 110)
+
+[node name="ButtonContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 20.0
+offset_right = 150.0
+offset_bottom = 60.0
+grow_horizontal = 2
+alignment = 1
+
+[node name="PlaceButton" type="Button" parent="ButtonContainer"]
+layout_mode = 2
+text = "放置卡片"
+
+[node name="ClearButton" type="Button" parent="ButtonContainer"]
+layout_mode = 2
+text = "清空格子"
+
+[node name="InfoLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -200.0
+offset_top = 70.0
+offset_right = 200.0
+offset_bottom = 100.0
+grow_horizontal = 2
+horizontal_alignment = 1
+
+[node name="SlotsContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -60.0
+offset_right = 250.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+alignment = 1
+
+[node name="FrontSlot" parent="SlotsContainer" instance=ExtResource("2_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 0
+
+[node name="BackSlot" parent="SlotsContainer" instance=ExtResource("2_slot")]
+custom_minimum_size = Vector2(100, 120)
+layout_mode = 2
+field_type = 1
