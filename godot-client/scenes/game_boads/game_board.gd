@@ -122,10 +122,9 @@ func _initialize_card_stacks() -> void:
 
 ## 游戏开始
 func _on_game_started(game_data: Dictionary) -> void:
-	_print("Game started! Updating board...")
-
-	var state = game_data.get("state", {})
-	_update_from_state(state)
+	_print("Game started! Waiting for first state update...")
+	# GameStarted 是纯通知，不再携带状态。
+	# Board 的初始化和状态更新由 state_update 信号驱动。
 
 
 ## 状态更新

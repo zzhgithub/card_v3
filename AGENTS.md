@@ -5,9 +5,9 @@
 
 ## OVERVIEW
 
-这是一个双人网络卡牌对战游戏项目。核心游戏逻辑完全用 Rust 实现，卡牌定义通过 JSON 描述（仅描述效果，逻辑执行在 Rust 侧）。采用 P2P TCP 架构，没有中央游戏服务器，主机在开局时运行本地服务器。项目包含多个前端：终端 TUI（ratatui）与 Godot 图形客户端。
+这是一个双人网络卡牌对战游戏项目。核心游戏逻辑完全用 Rust 实现，卡牌定义通过 JSON 描述（仅描述效果，逻辑执行在 Rust 侧）。采用 P2P TCP 架构，没有中央游戏服务器，主机在开局时运行本地服务器。项目活跃前端为 Godot 图形客户端（card-tui 与 card-bevy 已移除）。
 
-项目已经不是 Greenfield 状态——核心引擎、网络协议、服务器（WebSocket Room + 传统 TCP）、多种客户端、卡组编辑器、匹配服务器、录像/残局系统均已实现，并配有大量测试。
+项目已经不是 Greenfield 状态——核心引擎、网络协议、服务器（WebSocket Room）、Godot 客户端、卡组编辑器、匹配服务器、录像/残局系统均已实现，并配有大量测试。
 
 ---
 
@@ -16,14 +16,12 @@
 ```
 card_v3/
 ├── Cargo.toml              # Workspace 根配置，Edition 2024，resolver = "2"
-├── crates/                 # Rust workspace crates（9 个成员，其中 1 个废弃）
+├── crates/                 # Rust workspace crates（7 个成员）
 │   ├── card-core           # 纯游戏逻辑核心（状态、效果 AST、引擎、规则）
 │   ├── card-script         # JSON 卡牌定义加载与解析
 │   ├── card-protocol       # 网络消息协议与 TCP 编解码
 │   ├── card-client         # 客户端 API trait 与可见状态抽象
-│   ├── card-server         # 游戏服务器（WebSocket Room Server + 传统 Raw TCP）
-│   ├── card-tui            # 终端用户界面（ratatui + crossterm）
-│   ├── card-bevy           # Bevy 图形客户端（已废弃，存在但不再编译维护）
+│   ├── card-server         # 游戏服务器（WebSocket Room Server）
 │   ├── card-matchmaker     # 独立 WebSocket 匹配服务器（端口 9090）
 │   └── card-effect-cli     # 卡牌效果文本 CLI 工具（二进制名 card-effect-tool）
 ├── godot-client/           # Godot 4.6 图形客户端（Mobile renderer）
@@ -66,7 +64,7 @@ card_v3/
 | 语言 | Rust Edition 2024 | 全 workspace 统一使用 Edition 2024 |
 | 异步运行时 | tokio（full features） | 网络层、服务器、客户端均基于 tokio |
 | 序列化 | serde + serde_json + bincode | 状态、消息、录像、快照；TCP 层使用 bincode |
-| 终端 UI | ratatui 0.29 + crossterm 0.28 | card-tui 的完整终端界面 |
+| 前端 | Godot 4.6（Mobile renderer） | 唯一活跃图形客户端 |
 | WebSocket | tokio-tungstenite 0.26 | 房间服务器与匹配服务器 |
 | 日志 | tracing + tracing-subscriber | 结构化日志，env-filter 支持 |
 | 错误处理 | thiserror（库）+ anyhow（应用） | 分层错误处理 |
@@ -106,8 +104,8 @@ card_v3/
 - Godot 客户端与引擎均只读取 JSON。
 
 ### `card-protocol` — 网络协议层
-- 定义所有对等节点间的消息类型：`NetworkMessage`、`Command`、`GameEvent`、`AvailableAction`。
-- `TcpConnection`（`codec.rs`）：基于 tokio 的长度前缀 + bincode 序列化编解码器，消息上限 1 MiB。
+- 定义游戏核心消息类型：`Command`、`GameEvent`、`AvailableAction`、`CostPayment`。
+- ~~`TcpConnection`（`codec.rs`）~~：已移除。原 Raw TCP 传输层（bincode + 长度前缀帧）已废弃，当前使用 WebSocket + JSON。
 - 包含单元测试（loopback、复杂消息往返、超大消息拒绝）。
 
 ### `card-client` — 客户端 API 抽象
@@ -119,35 +117,13 @@ card_v3/
 ### `card-server` — 游戏服务器
 - **双轨实现**：
   1. **WebSocket Room Server**（当前主要入口，`main.rs` 使用）：`WebSocketServer` → `RoomManager`/`Room` → `game_starter::start_game()`。使用 JSON-over-WebSocket 协议，支持房间 join/leave、deck 提交、ready/unready、自动开局。默认端口 8080。
-  2. **传统 Raw TCP Server**（`network.rs`）：直接接受 2 个 TCP 连接，握手、deck 校验后运行 `GameSession`。用于更直接的 P2P 场景。
 - 其他模块：
-  - `session.rs`：完整游戏生命周期 `GameSession`
   - `ai_client.rs`：确定性 AI 客户端 `AiClient`
   - `replay.rs`：`ReplayRecorder` / `ReplayData`（录像 JSON 文件）
   - `snapshot.rs`：`GameSnapshot` 残局存盘
-  - `remote_client.rs`：TCP 上的 `ClientApi` 实现 `RemoteClient`
   - `room.rs`：房间管理、`VisibleGameState` 构建、信息隐藏
   - `game_starter.rs`：游戏启动流程编排（卡组加载、校验、引擎启动）
 - 使用 `ActionRequestState` + `Condvar` 在 async WebSocket 层与同步 `GameEngine` 线程之间桥接。
-
-### `card-tui` — 终端用户界面
-- ratatui 实现的完整终端体验：主菜单、卡组浏览器/编辑器、本地 AI 对战、在线匹配。
-- `TuiClient` 实现 `ClientApi` trait，通过 channel 与引擎交互。
-- `app.rs`：主应用状态机与渲染循环（~1186 行，核心文件）。
-- `ui/` 下包含：
-  - `field.rs`：场地渲染（手牌、前后场、费用区、墓地）
-  - `info_panel.rs`：信息面板与连锁显示
-  - `menu.rs`：菜单系统
-  - `log.rs`：日志与事件滚动窗口
-  - `layout.rs`：布局计算
-  - `overlay.rs`：弹窗与覆盖层
-  - `hand.rs` / `hp_display.rs`：手牌与 HP 显示
-- 所有界面文本为中文。
-- `network.rs`：TUI 网络客户端；`matchmaker_client.rs`：匹配服务器客户端。
-
-### `card-bevy` — Bevy 图形客户端（已废弃）
-- 该 crate 已不再使用，也不再编译。当前活跃的前端为 `card-tui`（终端）与 `godot-client`（Godot 图形客户端）。
-- 保留在 workspace 中仅作历史参考。
 
 ### `card-matchmaker` — 独立匹配服务器
 - WebSocket 端口 9090（默认）。FIFO 队列配对，版本检查，返回对手信息及 P2P host 地址。
@@ -218,7 +194,6 @@ cargo build
 # 构建特定 crate（推荐）
 cargo build -p card-core
 cargo build -p card-server
-cargo build -p card-tui
 cargo build -p card-effect-cli
 
 # 运行特定 crate 单元测试（推荐）
@@ -231,7 +206,7 @@ cargo test -p card-server --lib        # 服务器模块单元测试
 cargo test -p card-core --test engine_tests           # 引擎集成测试
 cargo test -p card-server --test room_websocket_test  # WebSocket 房间集成测试
 cargo test -p card-server --test local_game_test      # 本地游戏测试
-cargo test -p card-server --test network_game_test    # 网络对战测试
+# 注：network_game_test（Raw TCP）已随 TCP 路径移除而删除
 cargo test -p card-server --test replay_test          # 录像系统测试
 
 # 运行全部测试
@@ -252,7 +227,7 @@ cargo clippy --workspace
 
 ## CODE ORGANIZATION PRINCIPLES
 
-- **分层架构**：`card-core`（纯逻辑） → `card-protocol`（网络消息） → `card-client`/`card-server`（网络 + 会话） → `card-tui`/`godot-client`（前端）。上层 crate 可以依赖下层，**禁止反向依赖**。
+- **分层架构**：`card-core`（纯逻辑） → `card-protocol`（消息类型） → `card-client`/`card-server`（网络 + 会话） → `godot-client`（前端）。上层 crate 可以依赖下层，**禁止反向依赖**。
 - **事件驱动**：`card-core` 中所有状态变更产生 `CoreGameEvent`；网络层将其转为 `GameEvent`；客户端据此更新 UI。录像与残局均基于此事件流。
 - **trait 抽象**：`PhaseClient`（引擎请求玩家决策）与 `ClientApi`（前端接收事件/做出选择）是核心抽象，允许多种前端接入同一引擎。
 - **信息隐藏**：`VisibleGameState` 确保对手手牌仅显示 `hand_count`，绝不暴露内容。服务器在构建状态视图时严格分离。
@@ -268,11 +243,11 @@ cargo clippy --workspace
 - **语言**：游戏规格、UI 文本、注释文档使用中文；代码标识符、API、类型名使用英文。
 - **AI 交互语言**：所有与项目相关的对话、分析、解释必须使用 **中文**。
 - **日志**：使用 `tracing` 进行结构化日志记录，是显式要求。应用层启用 `tracing-subscriber`（带 `env-filter`）。
-- **错误类型**：库 crate（`card-core`、`card-protocol`、`card-client`、`card-script`）使用 `thiserror` 定义精确错误枚举；应用 crate（`card-server`、`card-tui`、`card-matchmaker`、`card-effect-cli`）使用 `anyhow` 进行错误传播。
+- **错误类型**：库 crate（`card-core`、`card-protocol`、`card-client`、`card-script`）使用 `thiserror` 定义精确错误枚举；应用 crate（`card-server`、`card-matchmaker`、`card-effect-cli`）使用 `anyhow` 进行错误传播。
 - **测试风格**：
   - 大量单元测试内联在 `#[cfg(test)]` 模块中（如 `card-core/src/types/tests.rs`、`card-core/src/effect/tests.rs`）。
   - 集成测试使用 `ScriptedClient`/`PassAllClient` 驱动引擎进行确定性测试。
-  - `card-server` 包含基于真实 WebSocket/TCP 的异步集成测试（`tests/` 目录）。
+  - `card-server` 包含基于真实 WebSocket 的异步集成测试（`tests/` 目录）。
   - Python 测试脚本（`test_game_start.py`、`test_two_player_flow.py`）用于端到端流程验证。
 
 ---
@@ -282,7 +257,7 @@ cargo clippy --workspace
 ### 单元测试
 - `card-core/src/types/tests.rs`：类型构造、序列化、CardId 格式校验。
 - `card-core/src/effect/tests.rs`：效果 AST 解析、条件求值、中文文本生成。
-- `card-protocol`：TCP 编解码 loopback、边界消息、超大消息拒绝。
+- `card-protocol`：消息类型序列化/反序列化测试。
 - `card-script`：JSON 加载、字段映射、错误处理。
 
 ### 集成测试
@@ -291,7 +266,7 @@ cargo clippy --workspace
 - `card-script/tests/integration_test.rs`：JSON 端到端加载与注册表构建。
 - `card-script/tests/card_effect_test.rs`：效果定义解析与动作验证。
 - `card-server/tests/local_game_test.rs`：本地 AI 对战完整流程。
-- `card-server/tests/network_game_test.rs`：双 TCP 客户端对战流程。
+- ~~`card-server/tests/network_game_test.rs`~~：已移除（Raw TCP 路径废弃）。
 - `card-server/tests/room_websocket_test.rs`：WebSocket 房间 join/leave/ready/开局。
 - `card-server/tests/replay_test.rs`：录像录制与回放一致性校验。
 
@@ -305,7 +280,7 @@ cargo clippy --workspace
 
 - **无 CI/CD**：当前没有 GitHub Actions、Dockerfile、Makefile 或 justfile。构建和部署依赖手动 `cargo` 命令和项目根目录的两个 shell 脚本。
 - **服务器部署**：`restart_server.sh` 以 `nohup` 后台方式启动 `card-server`（release 模式），日志输出到 `logs/server.log`。
-- **消息大小限制**：`card-protocol` 的 `TcpConnection` 限制单条消息最大 1 MiB，防止内存耗尽攻击。
+- **消息大小限制**：WebSocket 消息通过 tokio-tungstenite 处理，应用层可配置消息大小上限。
 - **版本检查**：匹配服务器和 TCP 握手均包含版本校验，不匹配时拒绝连接。
 - **脚本安全**：JSON 为纯数据格式，无执行语义，天然沙盒化。解析层仅做结构校验，不执行任何用户提供的逻辑代码。
 - **超时机制**：系统支持单操作响应超时与单局总时间超时，均可在对局前通过 `GameRules` 配置，超时默认判负。
@@ -373,4 +348,4 @@ Turn Start → Draw → Recovery → Main1 → Battle → Main2 → Turn End
 - 游戏状态 `GameState` 是权威的唯一真实来源（single source of truth），任何前端都不应自行推演状态，只应根据事件更新表现层。
 - 修改 `card-core` 的效果系统或类型定义后，需要检查 `card-script` 的解析器和 `card-effect-cli` 的文本生成器是否仍兼容。
 - 修改网络协议时，需要同步更新 `card-protocol`、`card-server`、Godot 客户端的 `PROTOCOL.md` 以及 `network_manager.gd`。
-- `card-bevy` 已废弃，不要投入维护精力。
+- ~~`card-bevy`~~ 与 ~~`card-tui`~~ 已移除，活跃前端只有 `godot-client`。

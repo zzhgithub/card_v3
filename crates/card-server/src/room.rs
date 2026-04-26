@@ -9,6 +9,7 @@ use card_core::engine::phase::{PhaseAction, RecoveryCardOption};
 use card_core::rules::GameRules;
 use card_core::types::{CardId, InstanceId, PlayerId};
 use card_protocol::message::Phase;
+use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, Mutex, RwLock};
 use tracing::{error, info};
 
@@ -201,6 +202,44 @@ pub enum RoomState {
     Finished,
 }
 
+/// Structured action option sent to clients in action requests.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "action_type")]
+pub enum ActionOption {
+    #[serde(rename = "pass")]
+    Pass,
+    #[serde(rename = "surrender")]
+    Surrender,
+    #[serde(rename = "play_card")]
+    PlayCard { instance_id: u32, target_zone: ActionZone },
+    #[serde(rename = "declare_attack")]
+    DeclareAttack { attacker: u32, target: ActionTarget },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "zone_type")]
+pub enum ActionZone {
+    #[serde(rename = "front")]
+    Front { slot: usize },
+    #[serde(rename = "back")]
+    Back { slot: usize },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "target_type")]
+pub enum ActionTarget {
+    #[serde(rename = "direct")]
+    Direct,
+    #[serde(rename = "slot")]
+    Slot { slot_index: usize },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RecoveryOption {
+    pub instance_id: u32,
+    pub definition_id: String,
+}
+
 /// Messages broadcasted to room participants.
 #[derive(Debug, Clone)]
 pub enum RoomMessage {
@@ -210,10 +249,10 @@ pub enum RoomMessage {
     PlayerUnready { player_id: PlayerId, player_name: String },
     WaitingForDecks,
     GameStarting,
-    GameStarted { state: VisibleGameState },
+    GameStarted,
     StateUpdate { for_player: PlayerId, state: VisibleGameState },
-    ActionRequested { player_id: PlayerId, available_actions: Vec<String>, timeout_secs: u64 },
-    RecoveryRequested { player_id: PlayerId, count: usize, options: Vec<String> },
+    ActionRequested { player_id: PlayerId, available_actions: Vec<ActionOption>, timeout_secs: u64 },
+    RecoveryRequested { player_id: PlayerId, count: usize, options: Vec<RecoveryOption> },
     GameOver { winner: Option<PlayerId>, reason: String },
     Error { message: String },
 }
@@ -510,8 +549,8 @@ impl Room {
 
             // Signal the action state if there's a pending request
             if let Some(ref action_state) = self.action_states[slot] {
-                // The action state will timeout naturally, but we could also signal it here
-                info!("Player {:?} had pending action request, will timeout", player_id);
+                action_state.cancel();
+                info!("Player {:?} had pending action request, cancelled due to disconnect", player_id);
             }
         }
 

@@ -118,7 +118,15 @@ WebSocket服务器地址: `ws://host:port`
 ### 游戏开始
 ```json
 {
-  "type": "game_started",
+  "type": "game_started"
+}
+```
+> **注意**：`game_started` 是纯通知，不携带状态数据。客户端应在收到此消息后等待紧随其后的 `state_update` 获取初始游戏状态。
+
+### 状态更新
+```json
+{
+  "type": "state_update",
   "state": {
 	"turn_number": 1,
 	"current_phase": "TurnStart",
@@ -159,7 +167,12 @@ WebSocket服务器地址: `ws://host:port`
 ```json
 {
   "type": "action_request",
-  "available_actions": ["Pass", "Surrender", "PlayCard"],
+  "available_actions": [
+    {"action_type": "pass"},
+    {"action_type": "surrender"},
+    {"action_type": "play_card", "instance_id": 42, "target_zone": {"zone_type": "front", "slot": 2}},
+    {"action_type": "declare_attack", "attacker": 10, "target": {"target_type": "direct"}}
+  ],
   "timeout_secs": 60
 }
 ```
@@ -169,7 +182,10 @@ WebSocket服务器地址: `ws://host:port`
 {
   "type": "recovery_request",
   "count": 2,
-  "options": ["card1", "card2"]
+  "options": [
+    {"instance_id": 5, "definition_id": "S000-C-001"},
+    {"instance_id": 8, "definition_id": "S000-C-002"}
+  ]
 }
 ```
 

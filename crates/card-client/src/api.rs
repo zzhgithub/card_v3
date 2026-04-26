@@ -30,10 +30,20 @@ impl CardPublicInfo {
         Self {
             instance_id: instance.instance_id,
             definition_id: instance.definition_id.clone(),
-            // TODO: Fill from card registry in real implementation
-            card_type: CardType::Character,
+            card_type: infer_card_type(&instance.definition_id),
             current_attack: instance.current_attack,
         }
+    }
+}
+
+/// Infer `CardType` from `CardId` naming convention (e.g. `S000-C-001` -> Character).
+/// Falls back to `Character` if the ID does not follow the convention.
+fn infer_card_type(id: &CardId) -> CardType {
+    match id.card_type() {
+        Some("S") => CardType::Strategy,
+        Some("I") => CardType::Item,
+        Some("L") => CardType::Legendary,
+        _ => CardType::Character,
     }
 }
 

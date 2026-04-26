@@ -205,9 +205,8 @@ func _route_message(type: String, data: Dictionary) -> void:
 		"game_started":
 			_print("Game started!")
 			room_state_timer.stop()
-			# 服务器发送的是 {"state": {...}}，提取 state 字段
-			var state = data.get("state", {})
-			game_started.emit({"state": state})
+			# GameStarted 是纯通知，不再携带 state（由后续的 state_update 推送）
+			game_started.emit({})
 
 		"state_update":
 			_print("State update received")

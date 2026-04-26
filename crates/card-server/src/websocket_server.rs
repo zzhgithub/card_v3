@@ -141,22 +141,20 @@ pub enum ServerMessage {
     #[serde(rename = "game_starting")]
     GameStarting,
     #[serde(rename = "game_started")]
-    GameStarted {
-        state: serde_json::Value,
-    },
+    GameStarted,
     #[serde(rename = "state_update")]
     StateUpdate {
         state: serde_json::Value,
     },
     #[serde(rename = "action_request")]
     ActionRequest {
-        available_actions: Vec<String>,
+        available_actions: Vec<crate::room::ActionOption>,
         timeout_secs: u64,
     },
     #[serde(rename = "recovery_request")]
     RecoveryRequest {
         count: usize,
-        options: Vec<String>,
+        options: Vec<crate::room::RecoveryOption>,
     },
     #[serde(rename = "game_over")]
     GameOver {
@@ -179,7 +177,6 @@ pub enum ServerMessage {
 
 /// Per-client connection state.
 struct ClientState {
-    addr: SocketAddr,
     room_id: Option<String>,
     player_id: Option<PlayerId>,
     room_rx: Option<mpsc::UnboundedReceiver<RoomMessage>>,
@@ -196,7 +193,6 @@ async fn handle_client(
     let (mut ws_tx, mut ws_rx) = ws.split();
 
     let mut state = ClientState {
-        addr,
         room_id: None,
         player_id: None,
         room_rx: None,
@@ -453,7 +449,6 @@ fn convert_client_action(action: ClientAction) -> Result<card_core::engine::phas
             Ok(PhaseAction::PlayCard {
                 instance_id: InstanceId(instance_id),
                 target_zone: zone,
-                cost_payment: vec![], // Simplified - should calculate from client
             })
         }
         ClientAction::DeclareAttack {
@@ -482,9 +477,7 @@ fn convert_room_message(msg: RoomMessage, my_player_id: Option<PlayerId>) -> Ser
         PlayerUnready { player_name, .. } => ServerMessage::PlayerUnready { player_name },
         WaitingForDecks => ServerMessage::WaitingForDeck,
         GameStarting => ServerMessage::GameStarting,
-        GameStarted { state } => ServerMessage::GameStarted {
-            state: serde_json::to_value(state).unwrap_or_default(),
-        },
+        GameStarted => ServerMessage::GameStarted,
         StateUpdate { for_player, state } => {
             // Only send state intended for this player
             if my_player_id == Some(for_player) {
@@ -497,10 +490,10 @@ fn convert_room_message(msg: RoomMessage, my_player_id: Option<PlayerId>) -> Ser
                 }
             }
         }
-        ActionRequested { player_id, available_actions: _, timeout_secs } => {
+        ActionRequested { player_id, available_actions, timeout_secs } => {
             if my_player_id == Some(player_id) {
                 ServerMessage::ActionRequest {
-                    available_actions: vec![], // Simplified
+                    available_actions,
                     timeout_secs,
                 }
             } else {
@@ -509,11 +502,11 @@ fn convert_room_message(msg: RoomMessage, my_player_id: Option<PlayerId>) -> Ser
                 }
             }
         }
-        RecoveryRequested { player_id, count, options: _ } => {
+        RecoveryRequested { player_id, count, options } => {
             if my_player_id == Some(player_id) {
                 ServerMessage::RecoveryRequest {
                     count,
-                    options: vec![], // Simplified
+                    options,
                 }
             } else {
                 ServerMessage::StateUpdate {
@@ -526,8 +519,6 @@ fn convert_room_message(msg: RoomMessage, my_player_id: Option<PlayerId>) -> Ser
             reason,
         },
         Error { message } => ServerMessage::Error { message },
-        _ => ServerMessage::StateUpdate {
-            state: serde_json::Value::Null,
-        },
+
     }
 }

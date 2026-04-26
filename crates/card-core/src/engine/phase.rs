@@ -3,14 +3,13 @@ use std::time::Duration;
 use crate::engine::modifier::ModifierManager;
 use crate::state::events::GameOverReason;
 use crate::state::{CardRegistryImpl, CoreGameEvent, GameState, Phase};
-use crate::types::{CardId, InstanceId, PlayerId, Zone, ZoneLocation};
+use crate::types::{CardId, CardType, InstanceId, PlayerId, Zone, ZoneLocation};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PhaseAction {
     PlayCard {
         instance_id: InstanceId,
         target_zone: Zone,
-        cost_payment: Vec<InstanceId>,
     },
     DeclareAttack {
         attacker: InstanceId,
@@ -35,11 +34,26 @@ pub trait PhaseClient: Send + Sync {
         _count: usize,
         _timeout: Duration,
     ) -> Option<Vec<InstanceId>>;
+
+    /// Called after a turn (and any follow-up effects) completes, with the
+    /// events produced and the current game state.
+    fn on_events(&self, _events: &[CoreGameEvent], _state: &crate::state::GameState) {}
 }
 
 pub struct PhaseRunner;
 
 impl PhaseRunner {
+    #[inline]
+    fn notify_clients(
+        state: &GameState,
+        events: &[CoreGameEvent],
+        client1: &dyn PhaseClient,
+        client2: &dyn PhaseClient,
+    ) {
+        client1.on_events(events, state);
+        client2.on_events(events, state);
+    }
+
     pub fn run_turn(
         state: &mut GameState,
         registry: &CardRegistryImpl,
@@ -64,6 +78,7 @@ impl PhaseRunner {
         events.push(CoreGameEvent::PhaseChanged {
             new_phase: Phase::TurnStart,
         });
+        Self::notify_clients(state, &events, client1, client2);
 
         // ── Draw ─────────────────────────────────────────────────────────────
         state.phase = Phase::Draw;
@@ -79,6 +94,7 @@ impl PhaseRunner {
                     winner: Some(state.turn_player.opponent()),
                     reason: GameOverReason::DeckOut,
                 });
+                Self::notify_clients(state, &events, client1, client2);
                 return events;
             }
             let card = state.players[player_idx].zones.deck.remove(0);
@@ -89,6 +105,7 @@ impl PhaseRunner {
                 instance_id: iid,
             });
         }
+        Self::notify_clients(state, &events, client1, client2);
 
         // ── Recovery ─────────────────────────────────────────────────────────
         state.phase = Phase::Recovery;
@@ -132,13 +149,15 @@ impl PhaseRunner {
                 }
             }
         }
+        Self::notify_clients(state, &events, client1, client2);
 
         // ── Main1 ─────────────────────────────────────────────────────────────
         state.phase = Phase::Main1;
         events.push(CoreGameEvent::PhaseChanged {
             new_phase: Phase::Main1,
         });
-        let game_over = Self::run_main_phase(state, client1, client2, timeout, &mut events);
+        let game_over = Self::run_main_phase(state, registry, client1, client2, timeout, &mut events);
+        Self::notify_clients(state, &events, client1, client2);
         if game_over {
             return events;
         }
@@ -149,6 +168,7 @@ impl PhaseRunner {
             new_phase: Phase::Battle,
         });
         let game_over = Self::run_battle_phase(state, client1, client2, timeout, &mut events);
+        Self::notify_clients(state, &events, client1, client2);
         if game_over {
             return events;
         }
@@ -158,7 +178,8 @@ impl PhaseRunner {
         events.push(CoreGameEvent::PhaseChanged {
             new_phase: Phase::Main2,
         });
-        let game_over = Self::run_main_phase(state, client1, client2, timeout, &mut events);
+        let game_over = Self::run_main_phase(state, registry, client1, client2, timeout, &mut events);
+        Self::notify_clients(state, &events, client1, client2);
         if game_over {
             return events;
         }
@@ -192,12 +213,14 @@ impl PhaseRunner {
             new_active_player: next_player,
             turn_number: state.turn_number,
         });
+        Self::notify_clients(state, &events, client1, client2);
 
         events
     }
 
     fn run_main_phase(
         state: &mut GameState,
+        registry: &CardRegistryImpl,
         client1: &dyn PhaseClient,
         client2: &dyn PhaseClient,
         timeout: Duration,
@@ -209,7 +232,7 @@ impl PhaseRunner {
             client2
         };
         loop {
-            let available = Self::build_main_actions(state);
+            let available = Self::build_main_actions(state, registry);
             let action = match client.choose_action(&available, timeout) {
                 Some(a) => a,
                 None => {
@@ -217,6 +240,7 @@ impl PhaseRunner {
                         winner: Some(state.turn_player.opponent()),
                         reason: GameOverReason::Timeout,
                     });
+                    Self::notify_clients(state, &*events, client1, client2);
                     return true;
                 }
             };
@@ -228,34 +252,94 @@ impl PhaseRunner {
                         winner: Some(state.turn_player.opponent()),
                         reason: GameOverReason::Surrender,
                     });
+                    Self::notify_clients(state, &*events, client1, client2);
                     return true;
                 }
                 PhaseAction::PlayCard {
                     instance_id,
                     target_zone,
-                    cost_payment,
                 } => {
+                    let mut action_events = Vec::new();
                     let player_idx = player_idx(state.turn_player);
-                    // Pay costs: move cost cards from hand to cost_zone
-                    for cost_iid in &cost_payment {
-                        if let Some((card, _)) =
-                            state.players[player_idx].zones.remove_card(*cost_iid)
-                        {
-                            let iid = card.instance_id;
-                            state.players[player_idx].zones.cost_zone.push(card);
-                            events.push(CoreGameEvent::CardExposed { instance_id: iid });
-                        }
-                    }
+
+                    // Resolve the card definition to determine cost
+                    let cost_info = state.players[player_idx]
+                        .zones
+                        .hand
+                        .iter()
+                        .find(|c| c.instance_id == instance_id)
+                        .and_then(|c| registry.get(&c.definition_id))
+                        .map(|def| def.cost as usize);
+
                     // Move card from hand to target zone
                     if let Some((card, _)) =
                         state.players[player_idx].zones.remove_card(instance_id)
                     {
+                        let player = &mut state.players[player_idx];
                         let to = ZoneLocation::new(state.turn_player, target_zone);
-                        let _ = state.players[player_idx]
-                            .zones
-                            .add_card_to_zone(card, target_zone);
-                        events.push(CoreGameEvent::CardSummoned { instance_id, to });
+                        let iid = card.instance_id;
+
+                        // Handle Item-replace-Item: if target slot is occupied, move old card to grave
+                        let old_card = match target_zone {
+                            Zone::Front(slot) => player.zones.front[slot].take(),
+                            Zone::Back(slot) => player.zones.back[slot].take(),
+                            _ => None,
+                        };
+                        if let Some(old) = old_card {
+                            let old_iid = old.instance_id;
+                            player.zones.grave.push(old);
+                            action_events.push(CoreGameEvent::CardMoved {
+                                instance_id: old_iid,
+                                from: to.clone(),
+                                to: ZoneLocation::new(state.turn_player, Zone::Grave),
+                            });
+                        }
+
+                        let _ = player.zones.add_card_to_zone(card, target_zone);
+                        action_events.push(CoreGameEvent::CardSummoned { instance_id: iid, to });
                     }
+
+                    // Auto-calculate and pay cost (RealPoint first, then hand cards)
+                    if let Some(card_cost) = cost_info {
+                        let player = &mut state.players[player_idx];
+                        let available_rp = player.real_point as usize;
+                        let rp_to_use = card_cost.min(available_rp);
+                        let hand_cost = card_cost - rp_to_use;
+
+                        // Deduct RealPoint
+                        if rp_to_use > 0 {
+                            let old_rp = player.real_point;
+                            player.real_point -= rp_to_use as u8;
+                            action_events.push(CoreGameEvent::RealPointChanged {
+                                player: state.turn_player,
+                                old_rp,
+                                new_rp: player.real_point,
+                            });
+                        }
+
+                        // Pay remaining cost from hand (take from front of hand)
+                        let cost_ids: Vec<InstanceId> = player.zones.hand
+                            .iter()
+                            .take(hand_cost)
+                            .map(|c| c.instance_id)
+                            .collect();
+
+                        for cost_iid in cost_ids {
+                            if let Some((cost_card, _)) = player.zones.remove_card(cost_iid) {
+                                let cid = cost_card.instance_id;
+                                player.zones.cost_zone.push(cost_card);
+                                action_events.push(CoreGameEvent::CardExposed { instance_id: cid });
+                                action_events.push(CoreGameEvent::CardMoved {
+                                    instance_id: cid,
+                                    from: ZoneLocation::new(state.turn_player, Zone::Hand),
+                                    to: ZoneLocation::new(state.turn_player, Zone::CostZone),
+                                });
+                            }
+                        }
+                    }
+
+                    events.append(&mut action_events);
+                    Self::notify_clients(state, events, client1, client2);
                 }
                 PhaseAction::DeclareAttack { .. } => {
                     // Attack declarations not valid in main phase — treat as Pass
@@ -325,6 +409,7 @@ impl PhaseRunner {
                         winner: Some(turn_player.opponent()),
                         reason: GameOverReason::Timeout,
                     });
+                    Self::notify_clients(state, &*events, client1, client2);
                     return true;
                 }
             };
@@ -373,6 +458,7 @@ impl PhaseRunner {
                                     winner: Some(turn_player),
                                     reason: GameOverReason::HpZero,
                                 });
+                                Self::notify_clients(state, &*events, client1, client2);
                                 return true;
                             }
                         }
@@ -439,6 +525,7 @@ impl PhaseRunner {
                             }
                         }
                     }
+                    Self::notify_clients(state, &*events, client1, client2);
                 }
                 PhaseAction::Pass | PhaseAction::Surrender => break,
                 _ => break,
@@ -447,16 +534,75 @@ impl PhaseRunner {
         false
     }
 
-    fn build_main_actions(state: &GameState) -> Vec<PhaseAction> {
+    fn build_main_actions(state: &GameState, registry: &CardRegistryImpl) -> Vec<PhaseAction> {
         let mut actions = vec![PhaseAction::Pass, PhaseAction::Surrender];
         let p_idx = player_idx(state.turn_player);
-        // Add PlayCard for each hand card (simplified: no cost check for now)
-        for card in &state.players[p_idx].zones.hand {
-            actions.push(PhaseAction::PlayCard {
-                instance_id: card.instance_id,
-                target_zone: Zone::Front(0),
-                cost_payment: vec![],
-            });
+        let player = &state.players[p_idx];
+
+        for card in &player.zones.hand {
+            if let Some(def) = registry.get(&card.definition_id) {
+                let card_cost = def.cost as usize;
+                // The card being played cannot be used as cost itself
+                let available_hand = player.zones.hand.len().saturating_sub(1);
+                let available_rp = player.real_point as usize;
+                let max_payable = available_hand + available_rp;
+
+                // Check if player can afford the cost
+                if card_cost > max_payable {
+                    continue;
+                }
+
+                // Check if cost zone has enough space for hand cards used as cost
+                let hand_cost = card_cost.saturating_sub(available_rp);
+                if player.zones.cost_zone.len() + hand_cost > state.rules.max_cost_zone {
+                    continue;
+                }
+
+                // Generate PlayCard actions for each valid target slot based on card type
+                match def.card_type {
+                    CardType::Character => {
+                        // Character cards go to front field
+                        for slot in 0..5 {
+                            if player.zones.front[slot].is_none() {
+                                actions.push(PhaseAction::PlayCard {
+                                    instance_id: card.instance_id,
+                                    target_zone: Zone::Front(slot),
+                                });
+                            }
+                        }
+                    }
+                    CardType::Strategy | CardType::Legendary => {
+                        // Strategy and Legendary cards go to back field
+                        for slot in 0..5 {
+                            if player.zones.back[slot].is_none() {
+                                actions.push(PhaseAction::PlayCard {
+                                    instance_id: card.instance_id,
+                                    target_zone: Zone::Back(slot),
+                                });
+                            }
+                        }
+                    }
+                    CardType::Item => {
+                        // Item cards go to back field.
+                        // They can be placed in empty slots, or replace an existing Item card.
+                        for slot in 0..5 {
+                            let can_place = match &player.zones.back[slot] {
+                                None => true,
+                                Some(existing) => registry
+                                    .get(&existing.definition_id)
+                                    .map(|d| d.card_type == CardType::Item)
+                                    .unwrap_or(false),
+                            };
+                            if can_place {
+                                actions.push(PhaseAction::PlayCard {
+                                    instance_id: card.instance_id,
+                                    target_zone: Zone::Back(slot),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
         }
         actions
     }
@@ -491,7 +637,7 @@ mod tests {
     use crate::rules::GameRules;
     use crate::state::{CardInstance, CardRegistryImpl, CoreGameEvent, GameState, Phase};
     use crate::types::{
-        CardDefinition, CardId, CardType, Category, InstanceId, PlayerId, Property,
+        CardDefinition, CardId, CardType, Category, InstanceId, PlayerId, Property, Zone,
     };
 
     use super::{PhaseAction, PhaseClient, PhaseRunner, RecoveryCardOption};
@@ -730,5 +876,171 @@ mod tests {
                 Phase::TurnEnd,
             ]
         );
+    }
+
+    /// Client that records all on_events calls for verification.
+    struct RecordingClient {
+        actions: Mutex<VecDeque<PhaseAction>>,
+        recovery: Mutex<VecDeque<Vec<InstanceId>>>,
+        events_log: Mutex<Vec<Vec<CoreGameEvent>>>,
+    }
+
+    impl RecordingClient {
+        fn new(actions: Vec<PhaseAction>) -> Self {
+            Self {
+                actions: Mutex::new(actions.into()),
+                recovery: Mutex::new(VecDeque::new()),
+                events_log: Mutex::new(Vec::new()),
+            }
+        }
+
+        fn take_events(&self) -> Vec<Vec<CoreGameEvent>> {
+            std::mem::take(&mut *self.events_log.lock().unwrap())
+        }
+    }
+
+    impl PhaseClient for RecordingClient {
+        fn choose_action(
+            &self,
+            _available: &[PhaseAction],
+            _timeout: Duration,
+        ) -> Option<PhaseAction> {
+            self.actions.lock().unwrap().pop_front()
+        }
+
+        fn choose_recovery_cards(
+            &self,
+            _options: &[RecoveryCardOption],
+            _count: usize,
+            _timeout: Duration,
+        ) -> Option<Vec<InstanceId>> {
+            self.recovery.lock().unwrap().pop_front().or_else(|| Some(Vec::new()))
+        }
+
+        fn on_events(&self, events: &[CoreGameEvent], _state: &GameState) {
+            self.events_log.lock().unwrap().push(events.to_vec());
+        }
+    }
+
+    #[test]
+    fn test_build_main_actions_filters_unaffordable_cards() {
+        let mut state = make_state();
+        // P1 hand: 3 cards with costs 3, 2, 2 (no RealPoint)
+        state.players[0].zones.hand.push(card(1, "S000-C-001", 100)); // cost 3 in registry
+        state.players[0].zones.hand.push(card(2, "S000-C-002", 100)); // cost 2 in registry
+        state.players[0].zones.hand.push(card(3, "S000-S-001", 100)); // cost 2 in registry
+
+        let mut registry = CardRegistryImpl::new();
+        // Register cards with costs: 3, 2, 2
+        registry.insert(CardDefinition::new(
+            CardId::new("S000-C-001"), "A".into(), CardType::Character,
+            Property::Rational, Category::Math, 3,
+        ));
+        registry.insert(CardDefinition::new(
+            CardId::new("S000-C-002"), "B".into(), CardType::Character,
+            Property::Rational, Category::Math, 2,
+        ));
+        registry.insert(CardDefinition::new(
+            CardId::new("S000-S-001"), "S".into(), CardType::Strategy,
+            Property::Rational, Category::Math, 2,
+        ));
+
+        let actions = PhaseRunner::build_main_actions(&state, &registry);
+        let play_actions: Vec<_> = actions.iter().filter(|a| matches!(a, PhaseAction::PlayCard { .. })).collect();
+
+        // 3-cost card cannot be played: hand has 3 cards, minus 1 for the card itself = 2 available,
+        // plus 0 RP = 2 max payable. 3 > 2, so filtered out.
+        // Both 2-cost cards can be played: 2 <= 2.
+        // Character card -> 5 front slots; Strategy card -> 5 back slots.
+        assert_eq!(play_actions.len(), 10, "Two playable cards × 5 empty slots each");
+        let char_actions: Vec<_> = play_actions.iter().filter(|a| matches!(a,
+            PhaseAction::PlayCard { instance_id, target_zone: Zone::Front(_) } if *instance_id == InstanceId(2)
+        )).collect();
+        let strat_actions: Vec<_> = play_actions.iter().filter(|a| matches!(a,
+            PhaseAction::PlayCard { instance_id, target_zone: Zone::Back(_) } if *instance_id == InstanceId(3)
+        )).collect();
+        assert_eq!(char_actions.len(), 5, "Character card should have 5 front slot options");
+        assert_eq!(strat_actions.len(), 5, "Strategy card should have 5 back slot options");
+    }
+
+    #[test]
+    fn test_play_card_auto_cost_payment_broadcasts_to_both_clients() {
+        let mut state = make_state();
+        state.turn_number = 2; // enable draw
+        state.players[0].zones.deck.push(card(99, "S000-C-001", 100));
+
+        // P1 hand: 3 cards. Costs: 3, 2, 2. Play the 2-cost card (instance_id=2).
+        state.players[0].zones.hand.push(card(1, "S000-C-001", 100)); // cost 3
+        state.players[0].zones.hand.push(card(2, "S000-C-002", 100)); // cost 2
+        state.players[0].zones.hand.push(card(3, "S000-S-001", 100)); // cost 2
+
+        let mut registry = CardRegistryImpl::new();
+        registry.insert(CardDefinition::new(
+            CardId::new("S000-C-001"), "A".into(), CardType::Character,
+            Property::Rational, Category::Math, 3,
+        ));
+        registry.insert(CardDefinition::new(
+            CardId::new("S000-C-002"), "B".into(), CardType::Character,
+            Property::Rational, Category::Math, 2,
+        ));
+        registry.insert(CardDefinition::new(
+            CardId::new("S000-S-001"), "S".into(), CardType::Strategy,
+            Property::Rational, Category::Math, 2,
+        ));
+
+        let p1 = RecordingClient::new(vec![
+            PhaseAction::PlayCard {
+                instance_id: InstanceId(2),
+                target_zone: Zone::Front(0),
+            },
+            PhaseAction::Pass,
+            PhaseAction::Pass,
+        ]);
+        let p2 = RecordingClient::new(vec![]);
+
+        let _events = PhaseRunner::run_turn(&mut state, &registry, &p1, &p2);
+
+        // Verify state changes
+        // Hand originally had 3 cards + 1 drawn in Draw phase = 4.
+        // Play 1 card (moved to front) + 2 cost cards (moved to cost_zone) = 1 card remaining in hand.
+        assert_eq!(state.players[0].zones.hand.len(), 1, "Hand should have 1 card left (the drawn card)");
+        assert!(state.players[0].zones.front[0].is_some(), "Card should be on front field");
+        assert_eq!(state.players[0].zones.cost_zone.len(), 2, "2 hand cards paid as cost");
+
+        // Verify both clients received on_events with cost-related events
+        let p1_log = p1.take_events();
+        let p2_log = p2.take_events();
+
+        // Both clients should have received the same number of on_events calls
+        assert_eq!(p1_log.len(), p2_log.len(), "Both clients should receive same number of broadcasts");
+        assert!(!p1_log.is_empty(), "P1 should have received events");
+        assert!(!p2_log.is_empty(), "P2 should have received events");
+
+        // Find the on_events call that contains the PlayCard action events
+        // The PlayCard happens in Main1 phase; look for CardSummoned + CardMoved events
+        let p1_main1 = p1_log.iter().find(|events| {
+            events.iter().any(|e| matches!(e, CoreGameEvent::CardSummoned { instance_id, .. } if *instance_id == InstanceId(2)))
+        });
+        let p2_main1 = p2_log.iter().find(|events| {
+            events.iter().any(|e| matches!(e, CoreGameEvent::CardSummoned { instance_id, .. } if *instance_id == InstanceId(2)))
+        });
+
+        assert!(p1_main1.is_some(), "P1 should have received CardSummoned event for instance 2");
+        assert!(p2_main1.is_some(), "P2 should have received CardSummoned event for instance 2");
+
+        let p1_events = p1_main1.unwrap();
+        let p2_events = p2_main1.unwrap();
+
+        // Verify cost payment events are present
+        let summon_count = p1_events.iter().filter(|e| matches!(e, CoreGameEvent::CardSummoned { .. })).count();
+        let moved_count = p1_events.iter().filter(|e| matches!(e, CoreGameEvent::CardMoved { .. })).count();
+        let exposed_count = p1_events.iter().filter(|e| matches!(e, CoreGameEvent::CardExposed { .. })).count();
+
+        assert_eq!(summon_count, 1, "One card summoned");
+        assert_eq!(moved_count, 2, "2 cost cards moved from hand to cost_zone");
+        assert_eq!(exposed_count, 2, "2 cost cards exposed");
+
+        // P2 should have identical events (broadcast is the same)
+        assert_eq!(p1_events.len(), p2_events.len(), "Both clients should receive identical events");
     }
 }

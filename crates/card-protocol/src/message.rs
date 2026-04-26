@@ -1,9 +1,11 @@
 //! Network protocol message types for the card game.
 //!
-//! Defines all message types exchanged between game peers:
+//! Defines core message types used by the client API and engine:
 //! - [`Command`]: Player action commands (client → host)
 //! - [`GameEvent`]: Game state change events (host → client)
-//! - [`NetworkMessage`]: TCP transport envelope wrapping commands, events, and handshake
+//!
+//! Note: The legacy TCP transport layer (`NetworkMessage` + `TcpConnection`) has been
+//! removed. The active server uses WebSocket + JSON (see `card-server::websocket_server`).
 
 use card_core::types::{CardId, EffectKey, InstanceId, PlayerId, TargetRef, Zone, ZoneLocation};
 use serde::{Deserialize, Serialize};
@@ -44,7 +46,6 @@ pub enum Command {
     PlayCard {
         instance_id: InstanceId,
         target_zone: Zone,
-        cost_payment: CostPayment,
     },
     ActivateEffect {
         instance_id: InstanceId,
@@ -182,75 +183,6 @@ pub enum GameEvent {
     },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum NetworkMessage {
-    // -- Handshake --
-    Hello {
-        version: String,
-        player_name: String,
-    },
-    HelloAck {
-        player_id: PlayerId,
-    },
-
-    // -- Deck submission --
-    DeckSubmit {
-        card_ids: Vec<CardId>,
-    },
-    DeckAccepted,
-    DeckRejected {
-        reason: String,
-    },
-
-    // -- Game lifecycle --
-    GameStart {
-        rules_json: String,
-    },
-
-    // -- In-game host → client --
-    EventNotification {
-        event: GameEvent,
-    },
-    RequestAction {
-        player: PlayerId,
-        available_actions: Vec<AvailableAction>,
-        timeout_secs: u64,
-    },
-    RequestTargetSelection {
-        player: PlayerId,
-        prompt: String,
-        candidates: Vec<TargetRef>,
-        count: usize,
-        timeout_secs: u64,
-    },
-    RequestCardSelection {
-        player: PlayerId,
-        prompt: String,
-        candidates: Vec<InstanceId>,
-        count: usize,
-        timeout_secs: u64,
-    },
-
-    // -- In-game client → host --
-    CommandResponse {
-        command: Command,
-    },
-    TargetResponse {
-        targets: Vec<TargetRef>,
-    },
-    CardResponse {
-        instance_ids: Vec<InstanceId>,
-    },
-
-    // -- Keep-alive --
-    Ping,
-    Pong,
-
-    // -- Disconnect --
-    Disconnect {
-        reason: String,
-    },
-}
 
 #[cfg(test)]
 mod tests {
@@ -282,14 +214,6 @@ mod tests {
                 ..
             }
         ));
-    }
-
-    #[test]
-    fn network_message_ping_roundtrip() {
-        let msg = NetworkMessage::Ping;
-        let bytes = bincode::serialize(&msg).unwrap();
-        let decoded: NetworkMessage = bincode::deserialize(&bytes).unwrap();
-        assert!(matches!(decoded, NetworkMessage::Ping));
     }
 
     #[test]

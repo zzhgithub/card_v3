@@ -32,7 +32,7 @@
 - “实例 ID”：对局运行时对象标识（`InstanceId`）。
 - “效果键”：卡牌效果集合中的键（`EffectKey`）。
 - “公开类型”：通过模块 `pub use` 导出的类型。
-- “协议消息”：通过 TCP 传输的 `NetworkMessage`。
+- “协议消息”：WebSocket JSON 消息（`ClientMessage` / `ServerMessage`，定义于 `card-server::websocket_server`）。
 
 ## 第2章 标识符类型（card-core/types）
 
@@ -751,28 +751,15 @@ pub enum GameEvent {
 - 客户端应将 `GameEvent` 视为权威事实流。
 - `GameEvent` 中包含请求型事件，用于驱动交互回合。
 
-### 8.8 NetworkMessage（TCP 外层封装）
+### 8.8 ~~NetworkMessage（TCP 外层封装）~~
 
-```rust
-pub enum NetworkMessage {
-    Hello { version: String, player_name: String },
-    HelloAck { player_id: PlayerId },
-    DeckSubmit { card_ids: Vec<CardId> },
-    DeckAccepted,
-    DeckRejected { reason: String },
-    GameStart { rules_json: String },
-    EventNotification { event: GameEvent },
-    RequestAction { player: PlayerId, available_actions: Vec<AvailableAction>, timeout_secs: u64 },
-    RequestTargetSelection { player: PlayerId, prompt: String, candidates: Vec<TargetRef>, count: usize, timeout_secs: u64 },
-    RequestCardSelection { player: PlayerId, prompt: String, candidates: Vec<InstanceId>, count: usize, timeout_secs: u64 },
-    CommandResponse { command: Command },
-    TargetResponse { targets: Vec<TargetRef> },
-    CardResponse { instance_ids: Vec<InstanceId> },
-    Ping,
-    Pong,
-    Disconnect { reason: String },
-}
-```
+> **已移除。** 原 Raw TCP 传输层使用 `NetworkMessage` + bincode 编码，现已废弃。
+> 当前服务器使用 WebSocket + JSON，消息类型为 `ClientMessage` / `ServerMessage`
+> （定义于 `card-server::websocket_server`）。
+>
+> 保留在 `card-protocol` 中的类型：`Command`、`AvailableAction`、`GameEvent`、
+> `CostPayment`、`AttackTarget` 等，仍作为游戏语义层面的通用消息类型被
+> `ClientApi` 与引擎使用。
 
 ## 第9章 ClientApi Trait（card-client，待实现）
 
@@ -780,7 +767,7 @@ pub enum NetworkMessage {
 
 `ClientApi` 用于统一不同客户端形态。
 目标是实现显示层与规则层彻底解耦。
-`ClientApi` 允许 TUI、Godot 共享同一协议流程。
+`ClientApi` 允许多前端共享同一协议流程（当前实现为 Godot）。
 
 ### 9.2 规划接口
 
@@ -1005,7 +992,7 @@ pub trait ClientApi: Send + Sync {
 - InstanceId
 - EffectKey
 - GameRules
-- NetworkMessage
+- ~~NetworkMessage~~（已移除，原 TCP 传输封包）
 
 ## 第15章 小结
 

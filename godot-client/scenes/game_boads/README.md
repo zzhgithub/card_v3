@@ -211,20 +211,15 @@
 
 ### 10. game_started - 游戏开始
 
-游戏正式开始，包含初始游戏状态。
+游戏正式开始通知（纯通知，不包含状态数据）。
 
 ```json
 {
-  "type": "game_started",
-  "state": {
-	"turn_number": 1,
-	"current_phase": "Recovery",
-	"current_player": "Player1",
-	"your_state": { ... },
-	"opponent_state": { ... }
-  }
+  "type": "game_started"
 }
 ```
+
+> 客户端收到此通知后，应等待紧随其后的 `state_update` 获取初始游戏状态。
 
 ### 11. state_update - 状态更新
 

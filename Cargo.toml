@@ -5,9 +5,7 @@ members = [
     "crates/card-protocol",
     "crates/card-server",
     "crates/card-client",
-    "crates/card-tui",
     "crates/card-matchmaker",
-    "crates/card-bevy",
     "crates/card-effect-cli",
 ]
 resolver = "2"
@@ -26,8 +24,6 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tokio = { version = "1", features = ["full"] }
 tokio-tungstenite = "0.26"
 mlua = { version = "0.10", features = ["lua54", "serialize", "vendored"] }
-ratatui = "0.29"
-crossterm = "0.28"
 rand = "0.9"
 rand_chacha = "0.3"
 chrono = { version = "0.4", features = ["serde"] }

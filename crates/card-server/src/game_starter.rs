@@ -2,6 +2,7 @@
 //!
 //! This module bridges the async room management with the synchronous GameEngine.
 
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex as StdMutex};
 use std::time::Duration;
 
@@ -9,13 +10,13 @@ use anyhow::{anyhow, bail, Result};
 use card_core::engine::phase::{PhaseAction, PhaseClient, RecoveryCardOption};
 use card_core::engine::GameEngine;
 use card_core::rules::{validate_deck, GameRules};
-use card_core::state::{CardInstance, CardRegistryImpl, GameState};
+use card_core::state::{CardInstance, CardRegistryImpl, CoreGameEvent, GameState};
 use card_core::types::CardDefinition;
-use card_core::types::{CardId, CardType, Category, InstanceId, ItemKind, PlayerId, Property, StrategyKind};
+use card_core::types::{CardId, CardType, Category, InstanceId, ItemKind, PlayerId, Property, StrategyKind, Zone};
 use tokio::sync::{mpsc, Mutex};
-use tracing::{debug, info};
+use tracing::{debug, error, info, warn};
 
-use crate::room::{PlayerAction, Room, RoomMessage, VisibleGameState};
+use crate::room::{ActionOption, ActionTarget, ActionZone, PlayerAction, RecoveryOption, Room, RoomMessage, VisibleGameState};
 
 /// Shared state for sync/async bridge between game engine and network clients.
 #[derive(Debug)]
@@ -24,6 +25,8 @@ pub struct ActionRequestState {
     response: std::sync::Mutex<Option<PlayerAction>>,
     /// Condition variable to signal when response is available
     condvar: std::sync::Condvar,
+    /// Cancellation flag for player disconnection
+    cancelled: AtomicBool,
 }
 
 impl ActionRequestState {
@@ -31,17 +34,30 @@ impl ActionRequestState {
         Self {
             response: std::sync::Mutex::new(None),
             condvar: std::sync::Condvar::new(),
+            cancelled: AtomicBool::new(false),
         }
     }
 
-    /// Wait for a response with timeout. Returns None if timeout.
+    /// Wait for a response with timeout. Returns None if timeout or cancelled.
     pub fn wait_response(&self, timeout: Duration) -> Option<PlayerAction> {
         let mut response = self.response.lock().unwrap();
+
+        // Check if already cancelled
+        if self.cancelled.load(Ordering::Relaxed) {
+            return None;
+        }
+
         let result = self
             .condvar
             .wait_timeout_while(response, timeout, |r| r.is_none())
             .unwrap();
         response = result.0;
+
+        // Check cancellation after being woken up
+        if self.cancelled.load(Ordering::Relaxed) {
+            return None;
+        }
+
         response.take()
     }
 
@@ -56,10 +72,22 @@ impl ActionRequestState {
         true
     }
 
+    /// Cancel the pending request (e.g. player disconnected).
+    pub fn cancel(&self) {
+        self.cancelled.store(true, Ordering::Relaxed);
+        self.condvar.notify_all();
+    }
+
+    /// Check if the request was cancelled.
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled.load(Ordering::Relaxed)
+    }
+
     /// Reset for next action request
     pub fn reset(&self) {
         let mut response = self.response.lock().unwrap();
         *response = None;
+        self.cancelled.store(false, Ordering::Relaxed);
     }
 }
 
@@ -100,8 +128,6 @@ pub async fn start_game(
     room_guard.state = crate::room::RoomState::Playing;
     drop(room_guard);
 
-    println!("[GAME_STARTER] Starting game with {} vs {} cards", deck1.len(), deck2.len());
-
     info!(
         "Starting game in room: Player1 has {} cards, Player2 has {} cards",
         deck1.len(),
@@ -111,37 +137,9 @@ pub async fn start_game(
     // Load card definitions
     // Try to find scripts directory relative to manifest or current dir
     let scripts_path = find_scripts_path();
-    println!("[GAME_STARTER] Looking for scripts at: {:?}", scripts_path);
-    info!("Scanning scripts at: {:?}", scripts_path);
+    debug!("Looking for scripts at: {:?}", scripts_path);
 
-    // Manual scan test
-    println!("[GAME_STARTER] Manual scan test:");
-    if let Ok(entries) = std::fs::read_dir(&scripts_path) {
-        for entry in entries.flatten() {
-            let path = entry.path();
-            println!("[GAME_STARTER]   Entry: {:?}, is_dir: {}", path, path.is_dir());
-            if path.is_dir() {
-                if let Ok(subentries) = std::fs::read_dir(&path) {
-                    for sub in subentries.flatten() {
-                        let subpath = sub.path();
-                        let ext = subpath.extension().and_then(|e| e.to_str());
-                        let stem = subpath.file_stem().and_then(|s| s.to_str());
-                        println!("[GAME_STARTER]     Sub: {:?}, ext: {:?}, stem: {:?}", subpath, ext, stem);
-                        if ext == Some("json") {
-                            if let Some(s) = stem {
-                                match s.parse::<CardId>() {
-                                    Ok(id) => println!("[GAME_STARTER]       -> Parsed: {:?}", id),
-                                    Err(e) => println!("[GAME_STARTER]       -> Parse error: {:?}", e),
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Manually build script index since ScriptIndex::scan seems to have issues
+    // Build script index by recursively scanning JSON files
     let mut index_entries = std::collections::HashMap::new();
     fn scan_dir_recursive(dir: &std::path::Path, entries: &mut std::collections::HashMap<CardId, std::path::PathBuf>) {
         if let Ok(read_dir) = std::fs::read_dir(dir) {
@@ -160,44 +158,36 @@ pub async fn start_game(
         }
     }
     scan_dir_recursive(&scripts_path, &mut index_entries);
-    println!("[GAME_STARTER] Manually indexed {} scripts", index_entries.len());
+    info!("Indexed {} card scripts from {:?}", index_entries.len(), scripts_path);
 
     if index_entries.is_empty() {
         bail!("No card scripts found in {:?}", scripts_path);
     }
 
     // Load card registry using our manually built index
-    println!("[GAME_STARTER] About to load registry for {} unique cards", deck1.len() + deck2.len());
     let registry = match load_registry_for_game(&index_entries, &deck1, &deck2) {
         Ok(r) => {
-            println!("[GAME_STARTER] Successfully loaded {} card definitions", r.len());
+            info!("Loaded {} card definitions", r.len());
             r
         }
         Err(e) => {
-            println!("[GAME_STARTER] ERROR loading registry: {}", e);
+            error!("Failed to load card registry: {}", e);
             bail!("Failed to load card registry: {}", e);
         }
     };
 
-    println!("[GAME_STARTER] Registry loaded, validating decks...");
-
     // Validate decks
     if let Err(e) = validate_deck(&deck1, &rules, &registry) {
-        println!("[GAME_STARTER] ERROR: Player 1 deck invalid: {}", e);
+        error!("Player 1 deck invalid: {}", e);
         bail!("Player 1 deck invalid: {}", e);
     }
-    println!("[GAME_STARTER] Player 1 deck valid");
 
     if let Err(e) = validate_deck(&deck2, &rules, &registry) {
-        println!("[GAME_STARTER] ERROR: Player 2 deck invalid: {}", e);
+        error!("Player 2 deck invalid: {}", e);
         bail!("Player 2 deck invalid: {}", e);
     }
-    println!("[GAME_STARTER] Player 2 deck valid");
 
-    // Create game state
-    println!("[GAME_STARTER] Creating game state...");
     let mut state = GameState::new(rules, rand::random());
-    println!("[GAME_STARTER] Game state created, populating decks...");
 
     // Populate decks with card instances
     let mut next_id = 1u32;
@@ -227,7 +217,6 @@ pub async fn start_game(
 
     // Draw initial hands for both players before sending state
     let initial_hand_size = state.rules.initial_hand_size;
-    println!("[GAME_STARTER] Drawing initial hands of {} cards for each player", initial_hand_size);
     for player_idx in 0..2 {
         for _ in 0..initial_hand_size {
             if !state.players[player_idx].zones.deck.is_empty() {
@@ -236,10 +225,13 @@ pub async fn start_game(
             }
         }
     }
-    println!("[GAME_STARTER] Player 1 hand: {} cards, deck: {} cards",
-        state.players[0].zones.hand.len(), state.players[0].zones.deck.len());
-    println!("[GAME_STARTER] Player 2 hand: {} cards, deck: {} cards",
-        state.players[1].zones.hand.len(), state.players[1].zones.deck.len());
+    debug!(
+        "Initial hands drawn — P1: {} hand / {} deck, P2: {} hand / {} deck",
+        state.players[0].zones.hand.len(),
+        state.players[0].zones.deck.len(),
+        state.players[1].zones.hand.len(),
+        state.players[1].zones.deck.len()
+    );
 
     // Create action request states for sync/async bridge
     let action_state1 = Arc::new(ActionRequestState::new());
@@ -256,27 +248,17 @@ pub async fn start_game(
     let visible_p1 = build_visible_state(&state, PlayerId::Player1);
     let visible_p2 = build_visible_state(&state, PlayerId::Player2);
 
-    println!("[GAME_STARTER] Sending GameStarted and StateUpdate messages...");
-
     {
         let room_guard = room.lock().await;
-
-        room_guard.broadcast_message(RoomMessage::GameStarted {
-            state: visible_p1.clone(),
-        });
-        println!("[GAME_STARTER] GameStarted broadcasted");
-
+        room_guard.broadcast_message(RoomMessage::GameStarted);
         room_guard.broadcast_message(RoomMessage::StateUpdate {
             for_player: PlayerId::Player1,
             state: visible_p1,
         });
-        println!("[GAME_STARTER] StateUpdate for P1 broadcasted");
-
         room_guard.broadcast_message(RoomMessage::StateUpdate {
             for_player: PlayerId::Player2,
             state: visible_p2,
         });
-        println!("[GAME_STARTER] StateUpdate for P2 broadcasted");
     }
 
     info!("Game started, initial state sent to both players");
@@ -349,32 +331,66 @@ impl PhaseClient for NetworkPhaseClient {
         self.action_state.reset();
 
         // Notify the player that they need to choose an action
-        let action_strings: Vec<String> = available
+        let action_options: Vec<ActionOption> = available
             .iter()
-            .map(|a| format!("{:?}", a))
+            .map(|a| match a {
+                PhaseAction::Pass => ActionOption::Pass,
+                PhaseAction::Surrender => ActionOption::Surrender,
+                PhaseAction::PlayCard {
+                    instance_id,
+                    target_zone,
+                    ..
+                } => {
+                    let zone = match target_zone {
+                        Zone::Front(slot) => ActionZone::Front { slot: *slot },
+                        Zone::Back(slot) => ActionZone::Back { slot: *slot },
+                        _ => ActionZone::Front { slot: 0 },
+                    };
+                    ActionOption::PlayCard {
+                        instance_id: instance_id.0,
+                        target_zone: zone,
+                    }
+                }
+                PhaseAction::DeclareAttack {
+                    attacker,
+                    target_slot,
+                } => {
+                    let target = match target_slot {
+                        Some(slot) => ActionTarget::Slot { slot_index: *slot },
+                        None => ActionTarget::Direct,
+                    };
+                    ActionOption::DeclareAttack {
+                        attacker: attacker.0,
+                        target,
+                    }
+                }
+            })
             .collect();
 
         let _ = self.broadcast_tx.send(RoomMessage::ActionRequested {
             player_id: self.player_id,
-            available_actions: action_strings,
+            available_actions: action_options,
             timeout_secs: timeout.as_secs(),
         });
-
-        println!("[NetworkPhaseClient] Waiting for action from player {:?}", self.player_id);
 
         // Block waiting for response from the async side
         match self.action_state.wait_response(timeout) {
             Some(PlayerAction::PhaseAction(phase_action)) => {
-                println!("[NetworkPhaseClient] Received action from {:?}: {:?}", self.player_id, phase_action);
+                debug!("Player {:?} chose action: {:?}", self.player_id, phase_action);
                 Some(phase_action)
             }
             Some(PlayerAction::RecoverySelection(_)) => {
-                println!("[NetworkPhaseClient] Received recovery selection instead of phase action from {:?}", self.player_id);
+                warn!("Player {:?} sent recovery selection instead of phase action", self.player_id);
                 Some(PhaseAction::Pass) // Fallback
             }
             None => {
-                println!("[NetworkPhaseClient] Timeout waiting for action from {:?}, using Pass", self.player_id);
-                Some(PhaseAction::Pass) // Timeout fallback
+                if self.action_state.is_cancelled() {
+                    warn!("Action request cancelled for {:?} (disconnected)", self.player_id);
+                    Some(PhaseAction::Surrender)
+                } else {
+                    warn!("Player {:?} action timeout, using Pass", self.player_id);
+                    Some(PhaseAction::Pass) // Timeout fallback
+                }
             }
         }
     }
@@ -389,49 +405,56 @@ impl PhaseClient for NetworkPhaseClient {
         self.action_state.reset();
 
         // Notify the player that they need to choose recovery cards
-        let options_strings: Vec<String> = options
+        let options_data: Vec<RecoveryOption> = options
             .iter()
-            .map(|o| format!("{:?}", o))
+            .map(|o| RecoveryOption {
+                instance_id: o.instance_id.0,
+                definition_id: o.definition_id.0.clone(),
+            })
             .collect();
 
         let _ = self.broadcast_tx.send(RoomMessage::RecoveryRequested {
             player_id: self.player_id,
             count,
-            options: options_strings,
+            options: options_data,
         });
-
-        println!("[NetworkPhaseClient] Waiting for recovery selection from player {:?}", self.player_id);
 
         // Block waiting for response
         match self.action_state.wait_response(timeout) {
             Some(PlayerAction::RecoverySelection(instance_ids)) => {
-                println!("[NetworkPhaseClient] Received recovery selection from {:?}: {:?}", self.player_id, instance_ids);
+                debug!("Player {:?} recovery selection: {:?}", self.player_id, instance_ids);
                 Some(instance_ids)
             }
             Some(PlayerAction::PhaseAction(_)) => {
-                println!("[NetworkPhaseClient] Received phase action instead of recovery from {:?}", self.player_id);
+                warn!("Player {:?} sent phase action instead of recovery", self.player_id);
                 Some(vec![]) // Fallback
             }
             None => {
-                println!("[NetworkPhaseClient] Timeout waiting for recovery from {:?}", self.player_id);
+                warn!("Player {:?} recovery timeout", self.player_id);
                 Some(vec![]) // Timeout fallback
             }
         }
+    }
+
+    fn on_events(&self, _events: &[CoreGameEvent], state: &GameState) {
+        let visible_p1 = build_visible_state(state, PlayerId::Player1);
+        let visible_p2 = build_visible_state(state, PlayerId::Player2);
+
+        let _ = self.broadcast_tx.send(RoomMessage::StateUpdate {
+            for_player: PlayerId::Player1,
+            state: visible_p1,
+        });
+        let _ = self.broadcast_tx.send(RoomMessage::StateUpdate {
+            for_player: PlayerId::Player2,
+            state: visible_p2,
+        });
     }
 }
 
 /// Find scripts directory by checking multiple locations.
 fn find_scripts_path() -> std::path::PathBuf {
-    let cwd = std::env::current_dir().unwrap_or_default();
-    println!("[GAME_STARTER] Current working directory: {:?}", cwd);
-
     // Check current directory first
     let scripts_json = std::path::PathBuf::from("scripts_json");
-    println!("[GAME_STARTER] Checking {:?} (exists: {}, has content: {:?})",
-        scripts_json,
-        scripts_json.exists(),
-        scripts_json.read_dir().map(|mut d| d.next().is_some()).unwrap_or(false)
-    );
     if scripts_json.exists() && scripts_json.read_dir().map(|mut d| d.next().is_some()).unwrap_or(false) {
         return scripts_json;
     }
@@ -444,15 +467,11 @@ fn find_scripts_path() -> std::path::PathBuf {
     // Check relative to manifest dir (for tests)
     // Need to go up 2 levels: crates/card-server -> crates -> workspace root
     if let Ok(manifest_dir) = std::env::var("CARGO_MANIFEST_DIR") {
-        println!("[GAME_STARTER] CARGO_MANIFEST_DIR: {:?}", manifest_dir);
         let manifest_path = std::path::PathBuf::from(&manifest_dir);
-        // Go up 2 levels: card-server -> crates -> workspace root
         if let Some(crates_dir) = manifest_path.parent() {
             if let Some(workspace_root) = crates_dir.parent() {
-                println!("[GAME_STARTER] Workspace root: {:?}", workspace_root);
                 let scripts_json = workspace_root.join("scripts_json");
                 if scripts_json.exists() {
-                    println!("[GAME_STARTER] Found scripts_json at workspace root: {:?}", scripts_json);
                     return scripts_json;
                 }
                 let scripts = workspace_root.join("scripts");
@@ -695,6 +714,9 @@ fn parse_item_kind(s: &str) -> Result<ItemKind> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use card_core::state::{CardInstance, GameState};
+    use card_core::rules::GameRules;
+    use card_core::types::{CardId, InstanceId};
 
     #[test]
     fn test_network_phase_client_creation() {
@@ -708,5 +730,65 @@ mod tests {
         );
 
         assert!(matches!(client.player_id, PlayerId::Player1));
+    }
+
+    #[test]
+    fn network_phase_client_on_events_broadcasts_state_update() {
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let action_state = Arc::new(ActionRequestState::new());
+        let client = NetworkPhaseClient::new(
+            PlayerId::Player1,
+            tx,
+            action_state,
+        );
+
+        let mut state = GameState::new(GameRules::default(), 42);
+        // Populate P1 hand with 2 cards
+        state.players[0].zones.hand.push(CardInstance::new(
+            InstanceId(1),
+            CardId::new("S000-C-001"),
+            Some(100),
+        ));
+        state.players[0].zones.hand.push(CardInstance::new(
+            InstanceId(2),
+            CardId::new("S000-C-002"),
+            Some(200),
+        ));
+        // Populate P2 hand with 1 card
+        state.players[1].zones.hand.push(CardInstance::new(
+            InstanceId(3),
+            CardId::new("S000-C-003"),
+            Some(300),
+        ));
+
+        let events = vec![CoreGameEvent::PhaseChanged {
+            new_phase: card_core::state::Phase::Main1,
+        }];
+        client.on_events(&events, &state);
+
+        // Should receive StateUpdate for P1
+        let msg1 = rx.try_recv().expect("Expected StateUpdate for P1");
+        match msg1 {
+            RoomMessage::StateUpdate { for_player, state } => {
+                assert_eq!(for_player, PlayerId::Player1);
+                assert_eq!(state.your_state.hand.len(), 2);
+                assert_eq!(state.opponent_state.hand_count, 1);
+            }
+            _ => panic!("Expected StateUpdate for P1, got {:?}", msg1),
+        }
+
+        // Should receive StateUpdate for P2
+        let msg2 = rx.try_recv().expect("Expected StateUpdate for P2");
+        match msg2 {
+            RoomMessage::StateUpdate { for_player, state } => {
+                assert_eq!(for_player, PlayerId::Player2);
+                assert_eq!(state.your_state.hand.len(), 1);
+                assert_eq!(state.opponent_state.hand_count, 2);
+            }
+            _ => panic!("Expected StateUpdate for P2, got {:?}", msg2),
+        }
+
+        // No more messages
+        assert!(rx.try_recv().is_err());
     }
 }

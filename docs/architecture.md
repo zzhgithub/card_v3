@@ -12,8 +12,8 @@
 
 - Rust 引擎：负责完整规则执行、状态推进与事件生成。
 - JSON 卡牌定义：描述卡片定义与效果数据，不直接执行游戏逻辑。
-- P2P TCP：对战阶段由玩家主机与客机直连通信。
-- TUI 客户端：提供终端交互式体验，支持快速调试与低资源运行。
+- P2P WebSocket：对战阶段由玩家主机运行 WebSocket Room Server，客机通过 WebSocket 连接。
+- Godot 客户端：唯一活跃图形前端，提供完整对战体验。
 - 回放与存档：支持完整重放与中途快照恢复。
 - 匹配服务器：提供独立的联网匹配与版本检查能力。
 
@@ -50,7 +50,7 @@ graph LR
   card-core --> card-client
   card-protocol --> card-server
   card-client --> card-server
-  card-client --> card-tui
+  card-client --> godot-client[godot-client\n(Godot前端)]
   card-protocol --> card-matchmaker
 ```
 
@@ -79,7 +79,7 @@ card-protocol 定义跨进程、跨网络边界使用的消息协议：
 
 - Command：玩家意图，表示操作请求。
 - GameEvent：引擎确认后的事实事件。
-- NetworkMessage：传输封包，承载命令、事件、握手、心跳等。
+- ~~NetworkMessage~~：已移除。原 Raw TCP 传输封包，现使用 WebSocket + JSON。
 - VisibleGameState：面向客户端的可见状态，保障信息隔离。
 
 ### 2.6 card-client 职责
@@ -94,18 +94,20 @@ card-client 提供统一客户端抽象接口：
 
 card-server 负责对战会话管理与网络服务：
 
-- GameSession 生命周期管理。
-- TCP 服务端连接处理、消息接收与分发。
+- WebSocket Room 生命周期管理（join、deck 提交、ready、游戏运行）。
+- WebSocket 服务端连接处理、消息接收与分发。
 - 命令转发到引擎并广播事件。
 - 回放录制、快照存档、恢复流程编排。
 
-### 2.8 card-tui 职责
+### 2.8 前端职责
 
-card-tui 是终端客户端实现：
+当前唯一活跃前端为 `godot-client`（Godot 4.6）：
 
-- 使用 ratatui + crossterm 构建交互界面。
-- 呈现手牌、区域、阶段、提示、连锁窗口。
-- 接收用户输入并转为标准 Command。
+- 通过 WebSocket 协议与 `WebSocketServer` 通信。
+- 接收服务器推送的 `StateUpdate`、`ActionRequest` 等消息。
+- 发送 `action`、`submit_deck` 等客户端动作并渲染 UI。
+
+~~card-tui~~（ratatui 终端客户端）与 ~~card-bevy~~（Bevy 图形客户端）已移除。
 
 ### 2.9 card-matchmaker 职责
 
@@ -142,7 +144,7 @@ Rust 负责解析、校验与执行。
 
 ### 3.4 客户端抽象
 
-通过 ClientApi trait，系统可无缝支持 TUI、Godot 等实现。
+通过 ClientApi trait，系统可支持 Godot 等多前端实现（当前仅有 Godot）。
 界面层只消费可见状态与事件，不侵入规则层。
 
 ### 3.5 可配置规则
@@ -406,33 +408,33 @@ Effect {
 
 ## 第7章 网络架构
 
-### 7.1 P2P TCP 架构说明
+### 7.1 P2P WebSocket 架构说明
 
-对战采用 P2P TCP 架构，不使用中心服务器进行局内计算。
-主机负责监听端口并承载引擎执行。
-客机连接主机后参与同一会话。
+对战采用 P2P WebSocket 架构，不使用中心服务器进行局内计算。
+主机运行 `WebSocketServer`（端口 8080）并承载引擎执行。
+客机通过 WebSocket 连接主机后参与同一会话（Room）。
 
-### 7.2 RemoteClient 代理模型
+### 7.2 NetworkPhaseClient 代理模型
 
-RemoteClient 将远程玩家消息转为本地命令语义：
+`NetworkPhaseClient` 将远程玩家的 WebSocket 消息转为引擎命令语义：
 
-- 接收 TCP 消息。
-- 解析为 Command。
-- 交给服务层统一处理。
+- 通过 `ActionRequestState`（Mutex + Condvar）桥接异步 WebSocket 与同步引擎。
+- 收到 `ActionRequest` 时通过 `broadcast_tx` 发送给对应玩家的 WebSocket 连接。
+- 收到玩家 `action` 响应后通过 `Condvar::notify_all()` 唤醒引擎线程。
 
-此模型让本地玩家与远程玩家在引擎入口保持一致。
+此模型让本地 AI 玩家与远程 WebSocket 玩家在引擎入口保持一致。
 
-### 7.3 命令同步机制
+### 7.3 状态同步机制
 
-命令同步主链路：
+状态同步主链路：
 
-1. 主机接收玩家 Command。
-2. 引擎执行并生成 GameEvent。
-3. 事件封装为 NetworkMessage::EventNotification。
-4. 广播给所有客户端。
-5. 客户端渲染 VisibleGameState。
+1. 主机通过 `Room` 收集双方 deck 并校验。
+2. `game_starter::start_game()` 创建 `GameEngine` 与两个 `NetworkPhaseClient`。
+3. 引擎每执行一个动作后，通过 `NetworkPhaseClient::on_events()` 广播 `StateUpdate`。
+4. `Room` 将 `StateUpdate` 转换为玩家视角的 `VisibleGameState` 分别推送给双方。
+5. 客户端根据 `VisibleGameState` 渲染 UI。
 
-VisibleGameState 必须隐藏对方手牌与私密信息。
+`VisibleGameState` 必须隐藏对方手牌与私密信息。
 
 ### 7.4 匹配服务器定位
 
@@ -480,7 +482,7 @@ card-matchmaker 为独立服务，采用 WebSocket 协议。
 | 异步运行时 | tokio（full） | 高性能异步IO |
 | 网络序列化 | serde + bincode 1.x | 高效二进制，适合wire format |
 | 存档格式 | serde + serde_json | 人类可读，适合持久化 |
-| TUI | ratatui 0.29 + crossterm 0.28 | 跨平台TUI框架 |
+| ~~TUI~~ | ~~ratatui 0.29 + crossterm 0.28~~ | ~~已移除~~ |
 | 日志 | tracing + tracing-subscriber | 结构化日志 |
 | 错误处理 | thiserror（库）+ anyhow（应用） | 分层错误处理 |
 | 随机数 | rand + rand_chacha | 确定性随机（洗牌/AI） |
