@@ -16,6 +16,8 @@ signal room_state_updated(players: Array, all_ready: bool)
 signal game_starting
 signal game_started(game_data: Dictionary)
 signal state_update(state: Dictionary)
+signal action_request(available_actions: Array, timeout_secs: int)
+signal recovery_request(count: int, options: Array)
 
 const DEFAULT_SERVER_URL = "ws://localhost:8080/ws"
 const CONNECTION_TIMEOUT = 30.0
@@ -215,10 +217,14 @@ func _route_message(type: String, data: Dictionary) -> void:
 			state_update.emit(state)
 
 		"action_request":
-			_print("Action requested")
+			var actions = data.get("available_actions", [])
+			var timeout = data.get("timeout_secs", 60)
+			action_request.emit(actions, timeout)
 
 		"recovery_request":
-			_print("Recovery requested")
+			var count = data.get("count", 0)
+			var options = data.get("options", [])
+			recovery_request.emit(count, options)
 
 		"game_over":
 			_print("Game over, winner: %s" % data.get("winner", "none"))
@@ -272,6 +278,44 @@ func leave_room() -> bool:
 func query_room_state() -> bool:
 	_print("Querying room state for room: %s" % current_room_id)
 	return send_message("query_room_state", {})
+
+## 发送操作: Pass
+func send_action_pass() -> bool:
+	return send_message("action", {"action": {"action_type": "pass"}})
+
+## 发送操作: Surrender
+func send_action_surrender() -> bool:
+	return send_message("action", {"action": {"action_type": "surrender"}})
+
+## 发送操作: PlayCard
+func send_action_play_card(instance_id: int, zone_type: String, slot: int) -> bool:
+	return send_message("action", {
+		"action": {
+			"action_type": "play_card",
+			"instance_id": instance_id,
+			"target_zone": {
+				"zone_type": zone_type,
+				"slot": slot
+			}
+		}
+	})
+
+## 发送操作: DeclareAttack
+func send_action_declare_attack(attacker_id: int, target_type: String, slot_index: int = -1) -> bool:
+	var action = {
+		"action_type": "declare_attack",
+		"attacker_id": attacker_id,
+		"target": {
+			"target_type": target_type
+		}
+	}
+	if target_type == "slot" and slot_index >= 0:
+		action["target"]["slot_index"] = slot_index
+	return send_message("action", {"action": action})
+
+## 发送回收选择
+func send_recovery_selection(cards: Array[int]) -> bool:
+	return send_message("recovery", {"cards": cards})
 
 ## 打印日志
 func _print(msg: String) -> void:

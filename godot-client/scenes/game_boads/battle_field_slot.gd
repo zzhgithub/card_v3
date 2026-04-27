@@ -20,6 +20,9 @@ const FRONT_COLOR = Color(0.7, 0.85, 1.0, 0.6)  ## 淡蓝色
 const BACK_COLOR = Color(1.0, 0.85, 0.7, 0.6)   ## 淡橙色
 const BORDER_COLOR = Color(0.5, 0.5, 0.5, 0.8)
 
+## 标签在卡片上方的垂直偏移
+const ATTACK_LABEL_OFFSET_Y = -22
+
 func _ready() -> void:
 	# 创建背景
 	background = ColorRect.new()
@@ -34,16 +37,16 @@ func _ready() -> void:
 	# 确保 drop zone 接受卡片
 	enable_drop_zone = true
 
-	# 创建攻击力标签（显示在左上角）
+	# 创建攻击力标签（使用 top_level 确保独立绘制在最高层）
 	attack_label = Label.new()
 	attack_label.name = "AttackLabel"
-	attack_label.position = Vector2(4, 2)
 	attack_label.add_theme_font_size_override("font_size", 18)
 	attack_label.add_theme_color_override("font_color", Color.WHITE)
 	attack_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	attack_label.add_theme_constant_override("outline_size", 3)
-	attack_label.z_index = 1000
 	attack_label.visible = false
+	# top_level 让标签脱离 slot 的变换与层级，使用全局坐标绘制在最上层
+	attack_label.top_level = true
 	add_child(attack_label)
 
 	super._ready()
@@ -55,20 +58,16 @@ func _update_background() -> void:
 
 	var color = FRONT_COLOR if field_type == FieldType.FRONT else BACK_COLOR
 	background.color = color
-
-	# 添加边框效果
 	background.queue_redraw()
 
 
 func _draw() -> void:
-	# 绘制边框
 	var rect = Rect2(Vector2.ZERO, size)
 	draw_rect(rect, BORDER_COLOR, false, 2.0)
 
 
 ## 重写：只能放置一张卡
 func _card_can_be_added(_cards: Array) -> bool:
-	# 如果已经有卡片，不允许添加
 	if _held_cards.size() >= 1:
 		return false
 	return true
@@ -77,7 +76,7 @@ func _card_can_be_added(_cards: Array) -> bool:
 ## 重写：更新位置（居中显示）
 func _update_target_positions() -> void:
 	if _held_cards.is_empty():
-		_update_attack_display()
+		attack_label.visible = false
 		return
 
 	var card = _held_cards[0]
@@ -92,7 +91,10 @@ func _update_target_positions() -> void:
 	card.show_front = true
 	card.can_be_interacted_with = true
 
-	# 更新攻击力显示
+	# 更新攻击力标签全局位置：卡片左上角 + 向上偏移，显示在卡片上方
+	if attack_label:
+		attack_label.global_position = global_position + Vector2(center_x + 4, center_y + ATTACK_LABEL_OFFSET_Y)
+
 	_update_attack_display()
 
 
@@ -100,6 +102,13 @@ func _update_target_positions() -> void:
 func _update_target_z_index() -> void:
 	for i in range(_held_cards.size()):
 		_held_cards[i].stored_z_index = i
+
+
+## 重写：清除卡片时隐藏标签
+func clear_cards() -> void:
+	if attack_label:
+		attack_label.visible = false
+	super.clear_cards()
 
 
 ## 获取当前卡片
@@ -126,15 +135,18 @@ func _update_attack_display() -> void:
 		return
 
 	var card = _held_cards[0]
-	var attack_value = "?"
+	var attack_value = ""
 	if card is DuleCard:
 		var dule_card = card as DuleCard
 		if not dule_card.card_data.is_empty():
-			var attack = dule_card.card_data.get("attack", 0)
+			# 优先读取 current_attack（状态同步值），回退到 attack（卡面定义值）
+			var attack = dule_card.card_data.get("current_attack", null)
+			if attack == null:
+				attack = dule_card.card_data.get("attack", 0)
 			attack_value = "ACK: %d" % int(attack)
 
 	attack_label.text = attack_value
-	attack_label.visible = true
+	attack_label.visible = attack_value != ""
 
 
 ## 当尺寸变化时更新背景

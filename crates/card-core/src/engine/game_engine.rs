@@ -85,10 +85,8 @@ impl GameEngine {
 
             let game_over = Self::extract_game_over(&turn_events);
 
-            // Notify clients of state changes after each turn
-            self.clients[0].on_events(&turn_events, &self.state);
-            self.clients[1].on_events(&turn_events, &self.state);
-
+            // PhaseRunner::run_turn already calls notify_clients after each phase,
+            // so we don't need to call on_events again here.
             event_log.extend(turn_events);
 
             if let Some((winner, reason)) = game_over {

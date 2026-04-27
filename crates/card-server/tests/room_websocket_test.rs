@@ -30,6 +30,14 @@ enum TestClientMessage {
     SubmitDeck { deck_id: String, cards: Vec<String> },
     #[serde(rename = "action")]
     Action { action: TestAction },
+    #[serde(rename = "recovery")]
+    Recovery { cards: Vec<u32> },
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct TestRecoveryOption {
+    instance_id: u32,
+    definition_id: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -57,6 +65,8 @@ enum TestServerMessage {
     StateUpdate { state: serde_json::Value },
     #[serde(rename = "action_request")]
     ActionRequest { available_actions: Vec<serde_json::Value>, timeout_secs: u64 },
+    #[serde(rename = "recovery_request")]
+    RecoveryRequest { count: usize, options: Vec<TestRecoveryOption> },
     #[serde(rename = "opponent_joined")]
     OpponentJoined { player_name: String },
     #[serde(rename = "player_disconnected")]
@@ -686,16 +696,20 @@ async fn recv_message(ws: &mut WebSocketStream) -> TestServerMessage {
 
         match msg {
             Message::Text(text) => {
+                eprintln!("[DEBUG recv] raw text: {}", text);
                 let parsed: TestServerMessage = serde_json::from_str(text.as_str()).expect("Failed to parse message");
                 // Skip room-state and ready notifications that are not the focus of most tests
                 match parsed {
                     TestServerMessage::RoomState { .. }
                     | TestServerMessage::PlayerReady { .. }
                     | TestServerMessage::GameStarting => {
-                        println!("[Test] Skipping message: {:?}", parsed);
+                        eprintln!("[DEBUG recv] Skipping message: {:?}", parsed);
                         continue;
                     }
-                    other => return other,
+                    other => {
+                        eprintln!("[DEBUG recv] Returning message: {:?}", other);
+                        return other;
+                    }
                 }
             }
             _ => panic!("Expected text message"),
@@ -1069,4 +1083,345 @@ async fn test_player_disconnect() {
     println!("\n========================================");
     println!("[Test] ✓ Disconnect Handling Test PASSED!");
     println!("========================================");
+}
+
+
+/// Test that verifies the full action_request → action response → state_update flow
+/// for PlayCard actions with target zone selection.
+#[tokio::test]
+async fn test_action_request_play_card_response() {
+    let mut rules = GameRules::default();
+    rules.deck_size_range = (3, 60);
+    rules.initial_hand_size = 6; // Enough to afford all cards in test deck
+    let room_manager = Arc::new(RoomManager::new(rules));
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    drop(listener);
+
+    let server = WebSocketServer::new(room_manager, addr);
+    tokio::spawn(async move {
+        let _ = server.run().await;
+    });
+    tokio::time::sleep(Duration::from_millis(100)).await;
+
+    let url = format!("ws://{}", addr);
+    let (mut client1, _) = connect_async(&url).await.unwrap();
+    let (mut client2_ws, _) = connect_async(&url).await.unwrap();
+
+    // Join room
+    let join_msg = TestClientMessage::JoinRoom {
+        room_id: "play_card_test_room".to_string(),
+        player_name: "Alice".to_string(),
+    };
+    client1.send(Message::Text(Utf8Bytes::from(
+        serde_json::to_string(&join_msg).unwrap()
+    ))).await.unwrap();
+
+    let msg = recv_message(&mut client1).await;
+    assert!(matches!(msg, TestServerMessage::Joined { .. }), "Expected Joined, got {:?}", msg);
+
+    let join_msg = TestClientMessage::JoinRoom {
+        room_id: "play_card_test_room".to_string(),
+        player_name: "Bob".to_string(),
+    };
+    client2_ws.send(Message::Text(Utf8Bytes::from(
+        serde_json::to_string(&join_msg).unwrap()
+    ))).await.unwrap();
+
+    let msg = recv_message(&mut client2_ws).await;
+    assert!(matches!(msg, TestServerMessage::Joined { .. }), "Expected Joined, got {:?}", msg);
+
+    // Drain post-join messages
+    drain_messages(&mut client1).await;
+    drain_messages(&mut client2_ws).await;
+
+    // Submit decks (12 cards each to avoid deck-out)
+    let deck1 = vec![
+        "S000-C-001", "S000-C-002", "S000-C-003", "S000-C-004",
+        "S000-S-001", "S000-S-002", "S000-I-001", "S000-L-001",
+        "S000-C-005", "S000-C-006", "S000-S-003", "S000-I-002",
+    ];
+    let deck2 = vec![
+        "S000-C-007", "S000-C-008", "S000-C-009", "S000-C-010",
+        "S000-S-001", "S000-S-002", "S000-I-001", "S000-L-001",
+        "S000-C-001", "S000-C-002", "S000-S-003", "S000-I-002",
+    ];
+
+    let submit_msg = TestClientMessage::SubmitDeck {
+        deck_id: "deck1".to_string(),
+        cards: deck1.iter().map(|s| s.to_string()).collect(),
+    };
+    client1.send(Message::Text(Utf8Bytes::from(
+        serde_json::to_string(&submit_msg).unwrap()
+    ))).await.unwrap();
+
+    let submit_msg = TestClientMessage::SubmitDeck {
+        deck_id: "deck2".to_string(),
+        cards: deck2.iter().map(|s| s.to_string()).collect(),
+    };
+    client2_ws.send(Message::Text(Utf8Bytes::from(
+        serde_json::to_string(&submit_msg).unwrap()
+    ))).await.unwrap();
+
+    // Wait for GameStarted and initial StateUpdates
+    let buffered1 = wait_for_game_started(&mut client1).await;
+    let buffered2 = wait_for_game_started(&mut client2_ws).await;
+
+    // Spawn a background task for client2 to continuously read messages.
+    // This prevents client2's TCP receive buffer from filling up and blocking
+    // the server from sending messages to client1.
+    let (client2_in_tx, mut client2_in_rx) = tokio::sync::mpsc::unbounded_channel::<TestServerMessage>();
+    let (client2_out_tx, mut client2_out_rx) = tokio::sync::mpsc::unbounded_channel::<TestClientMessage>();
+    let (mut client2_ws_tx, mut client2_ws_rx) = client2_ws.split();
+    let client2_in_tx_bg = client2_in_tx.clone();
+
+    tokio::spawn(async move {
+        loop {
+            tokio::select! {
+                msg = client2_ws_rx.next() => {
+                    match msg {
+                        Some(Ok(Message::Text(text))) => {
+                            if let Ok(parsed) = serde_json::from_str::<TestServerMessage>(text.as_str()) {
+                                if client2_in_tx_bg.send(parsed).is_err() { break; }
+                            }
+                        }
+                        Some(Ok(Message::Close(_))) | None => break,
+                        Some(Err(_)) => break,
+                        _ => {}
+                    }
+                }
+                Some(msg) = client2_out_rx.recv() => {
+                    let json = serde_json::to_string(&msg).unwrap();
+                    if client2_ws_tx.send(Message::Text(Utf8Bytes::from(json))).await.is_err() {
+                        break;
+                    }
+                }
+            }
+        }
+    });
+
+    // Buffer any messages that arrived during wait_for_game_started
+    for msg in buffered2 {
+        let _ = client2_in_tx.send(msg);
+    }
+    drop(client2_in_tx);
+
+    // Look for ActionRequest in buffered messages first (messages may arrive out of order)
+    let (actions1, _timeout1) = if let Some((actions, timeout)) = buffered1.iter().find_map(|msg| {
+        if let TestServerMessage::ActionRequest { available_actions, timeout_secs } = msg {
+            Some((available_actions.clone(), *timeout_secs))
+        } else {
+            None
+        }
+    }) {
+        (actions, timeout)
+    } else {
+        // Drain state updates / recovery requests until we get ActionRequest
+        loop {
+            let msg = recv_message(&mut client1).await;
+            match msg {
+                TestServerMessage::ActionRequest { available_actions, timeout_secs } => {
+                    break (available_actions, timeout_secs);
+                }
+                TestServerMessage::RecoveryRequest { .. } => {
+                    let recovery_msg = TestClientMessage::Recovery { cards: vec![] };
+                    client1.send(Message::Text(Utf8Bytes::from(
+                        serde_json::to_string(&recovery_msg).unwrap()
+                    ))).await.unwrap();
+                    continue;
+                }
+                TestServerMessage::StateUpdate { .. } => continue,
+                _ => continue,
+            }
+        }
+    };
+
+    // Find a PlayCard action
+    let play_action = find_play_card_action(&actions1);
+    assert!(play_action.is_some(), "Expected at least one PlayCard action, got: {:?}", actions1);
+    let play_action = play_action.unwrap();
+    let instance_id = play_action.get("instance_id").and_then(|v| v.as_u64()).unwrap_or(0) as u32;
+    let target_zone = play_action.get("target_zone").cloned().unwrap_or(serde_json::Value::Null);
+
+    // Send PlayCard action from client1
+    let action_msg = TestClientMessage::Action {
+        action: TestAction::PlayCard {
+            instance_id,
+            target_zone,
+        },
+    };
+    client1.send(Message::Text(Utf8Bytes::from(
+        serde_json::to_string(&action_msg).unwrap()
+    ))).await.unwrap();
+
+    // Server may send additional action requests (e.g. second main action or battle).
+    // Pass through them until we get a real StateUpdate.
+    let state1 = loop {
+        let msg = recv_message(&mut client1).await;
+        match msg {
+            TestServerMessage::StateUpdate { state } if !state.is_null() => {
+                // Send Surrender to end the game promptly and allow the
+                // spawn_blocking engine task to finish.
+                let surrender_msg = TestClientMessage::Action {
+                    action: TestAction::Surrender,
+                };
+                client1.send(Message::Text(Utf8Bytes::from(
+                    serde_json::to_string(&surrender_msg).unwrap()
+                ))).await.unwrap();
+                break serde_json::from_value::<VisibleGameState>(state).unwrap();
+            }
+            TestServerMessage::ActionRequest { .. } => {
+                let surrender_msg = TestClientMessage::Action {
+                    action: TestAction::Surrender,
+                };
+                client1.send(Message::Text(Utf8Bytes::from(
+                    serde_json::to_string(&surrender_msg).unwrap()
+                ))).await.unwrap();
+                continue;
+            }
+            TestServerMessage::RecoveryRequest { .. } => {
+                let recovery_msg = TestClientMessage::Recovery { cards: vec![] };
+                client1.send(Message::Text(Utf8Bytes::from(
+                    serde_json::to_string(&recovery_msg).unwrap()
+                ))).await.unwrap();
+                continue;
+            }
+            _ => continue,
+        }
+    };
+
+    // Start a background task to drain client1 messages so its TCP recv buffer
+    // doesn't block the server from processing further messages.
+    tokio::spawn(async move {
+        loop {
+            match timeout(Duration::from_secs(1), client1.next()).await {
+                Ok(Some(Ok(_))) => {}
+                _ => break,
+            }
+        }
+    });
+
+    // Client 2: read from the buffered channel instead of WebSocket directly.
+    let state2 = loop {
+        match client2_in_rx.try_recv() {
+            Ok(msg) => {
+                match msg {
+                    TestServerMessage::StateUpdate { state } if !state.is_null() => {
+                        let parsed: VisibleGameState = serde_json::from_value(state).unwrap();
+                        // Accept any update that shows the played card on the opponent's front field
+                        if parsed.opponent_state.front.iter().any(|s| s.is_some()) {
+                            break parsed;
+                        }
+                        continue;
+                    }
+                    TestServerMessage::ActionRequest { .. } => {
+                        let surrender_msg = TestClientMessage::Action {
+                            action: TestAction::Surrender,
+                        };
+                        client2_out_tx.send(surrender_msg).unwrap();
+                        continue;
+                    }
+                    TestServerMessage::RecoveryRequest { .. } => {
+                        let recovery_msg = TestClientMessage::Recovery { cards: vec![] };
+                        client2_out_tx.send(recovery_msg).unwrap();
+                        continue;
+                    }
+                    _ => continue,
+                }
+            }
+            Err(tokio::sync::mpsc::error::TryRecvError::Empty) => {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+                continue;
+            }
+            Err(tokio::sync::mpsc::error::TryRecvError::Disconnected) => {
+                panic!("client2 channel closed");
+            }
+        }
+    };
+
+    // Verify state consistency (turn number should match; phase may differ slightly due to message ordering)
+    assert_eq!(state1.turn_number, state2.turn_number, "Turn number should match");
+
+    // Verify information hiding still works
+    assert!(!state1.your_state.hand.is_empty() || state1.opponent_state.hand_count > 0,
+        "At least one player should have cards");
+
+    // Verify the played card appears on the field (front zone for Character)
+    let front_count = state1.your_state.front.iter().filter(|s| s.is_some()).count();
+    let back_count = state1.your_state.back.iter().filter(|s| s.is_some()).count();
+    assert!(front_count + back_count > 0, "Played card should be on the field");
+}
+
+async fn drain_messages(ws: &mut WebSocketStream) {
+    while let Ok(Some(Ok(Message::Text(_)))) = timeout(Duration::from_millis(200), ws.next()).await {
+        // Drain
+    }
+}
+
+async fn wait_for_game_started(ws: &mut WebSocketStream) -> Vec<TestServerMessage> {
+    let mut buffered = Vec::new();
+    loop {
+        let msg = recv_message(ws).await;
+        match msg {
+            TestServerMessage::GameStarted => {
+                println!("[Test] Received GameStarted");
+                return buffered;
+            }
+            TestServerMessage::WaitingForDeck => {
+                println!("[Test] Received WaitingForDeck");
+                continue;
+            }
+            TestServerMessage::StateUpdate { .. }
+            | TestServerMessage::ActionRequest { .. }
+            | TestServerMessage::RecoveryRequest { .. }
+            | TestServerMessage::GameStarting => {
+                // Messages may arrive out of order; buffer until we see GameStarted
+                buffered.push(msg);
+            }
+            _ => panic!("Expected GameStarted or WaitingForDeck, got {:?}", msg),
+        }
+    }
+}
+
+async fn wait_for_action_request(ws: &mut WebSocketStream) -> (Vec<serde_json::Value>, u64) {
+    loop {
+        let msg = recv_message(ws).await;
+        match msg {
+            TestServerMessage::ActionRequest { available_actions, timeout_secs } => {
+                return (available_actions, timeout_secs);
+            }
+            TestServerMessage::StateUpdate { state } => {
+                if !state.is_null() {
+                    if let Ok(parsed) = serde_json::from_value::<VisibleGameState>(state) {
+                        println!("[Test]   (StateUpdate: Turn {}, Phase {:?})", parsed.turn_number, parsed.current_phase);
+                    }
+                }
+                continue;
+            }
+            _ => {
+                println!("[Test]   (Unexpected message: {:?})", msg);
+                continue;
+            }
+        }
+    }
+}
+
+async fn wait_for_state_update(ws: &mut WebSocketStream) -> VisibleGameState {
+    loop {
+        let msg = recv_message(ws).await;
+        match msg {
+            TestServerMessage::StateUpdate { state } => {
+                if !state.is_null() {
+                    return serde_json::from_value(state).unwrap();
+                }
+            }
+            _ => continue,
+        }
+    }
+}
+
+fn find_play_card_action(actions: &[serde_json::Value]) -> Option<&serde_json::Value> {
+    actions.iter().find(|a| {
+        a.get("action_type").and_then(|v| v.as_str()) == Some("play_card")
+    })
 }

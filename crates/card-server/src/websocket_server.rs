@@ -192,6 +192,17 @@ async fn handle_client(
     let ws = accept_async(stream).await?;
     let (mut ws_tx, mut ws_rx) = ws.split();
 
+    // Spawn a background task to drain the send queue so that room_rx
+    // handling never blocks on a full WebSocket send buffer.
+    let (send_tx, mut send_rx) = tokio::sync::mpsc::unbounded_channel::<String>();
+    let send_task = tokio::spawn(async move {
+        while let Some(json) = send_rx.recv().await {
+            if ws_tx.send(Message::Text(Utf8Bytes::from(json))).await.is_err() {
+                break;
+            }
+        }
+    });
+
     let mut state = ClientState {
         room_id: None,
         player_id: None,
@@ -201,7 +212,8 @@ async fn handle_client(
     // Main message loop
     loop {
         tokio::select! {
-            // WebSocket message from client
+            biased;
+            // WebSocket message from client (prioritized to prevent deadlocks)
             msg = ws_rx.next() => {
                 match msg {
                     Some(Ok(Message::Text(text))) => {
@@ -211,7 +223,7 @@ async fn handle_client(
                             text_str,
                             &mut state,
                             &room_manager,
-                            &mut ws_tx
+                            &send_tx
                         ).await {
                             Ok(true) => {}, // Continue
                             Ok(false) => break, // Disconnect
@@ -221,7 +233,7 @@ async fn handle_client(
                                     message: e.to_string(),
                                 };
                                 let json = serde_json::to_string(&error_msg)?;
-                                ws_tx.send(Message::Text(Utf8Bytes::from(json))).await?;
+                                let _ = send_tx.send(json);
                             }
                         }
                     }
@@ -244,10 +256,13 @@ async fn handle_client(
                 let server_msg = convert_room_message(room_msg, state.player_id);
                 let json = serde_json::to_string(&server_msg)?;
                 debug!("Sending to {}: {}", addr, json);
-                ws_tx.send(Message::Text(Utf8Bytes::from(json))).await?;
+                let _ = send_tx.send(json);
             }
         }
     }
+
+    drop(send_tx);
+    let _ = send_task.await;
 
     // Handle disconnect - notify room manager if player was in a room
     if let (Some(room_id), Some(player_id)) = (state.room_id, state.player_id) {
@@ -264,7 +279,7 @@ async fn handle_client_message(
     text: &str,
     state: &mut ClientState,
     room_manager: &RoomManager,
-    ws_tx: &mut futures::stream::SplitSink<tokio_tungstenite::WebSocketStream<TcpStream>, Message>,
+    send_tx: &tokio::sync::mpsc::UnboundedSender<String>,
 ) -> Result<bool> {
     let msg: ClientMessage = serde_json::from_str(text)?;
 
@@ -293,7 +308,7 @@ async fn handle_client_message(
                 room_state: format!("{:?}", result.room_state),
             };
             let json = serde_json::to_string(&response)?;
-            ws_tx.send(Message::Text(Utf8Bytes::from(json))).await?;
+            send_tx.send(json).map_err(|e| anyhow!("Send error: {}", e))?;
 
             // Send current room state so the player knows who else is in the room
             let (players, all_ready) = room_manager.query_room_state(&room_id, result.player_id).await?;
@@ -307,7 +322,7 @@ async fn handle_client_message(
                 all_ready,
             };
             let room_state_json = serde_json::to_string(&room_state_response)?;
-            ws_tx.send(Message::Text(Utf8Bytes::from(room_state_json))).await?;
+            send_tx.send(room_state_json).map_err(|e| anyhow!("Send error: {}", e))?;
         }
 
         ClientMessage::SubmitDeck { deck_id, cards } => {
@@ -365,7 +380,7 @@ async fn handle_client_message(
             // Send confirmation
             let response = ServerMessage::Left;
             let json = serde_json::to_string(&response)?;
-            ws_tx.send(Message::Text(Utf8Bytes::from(json))).await?;
+            send_tx.send(json).map_err(|e| anyhow!("Send error: {}", e))?;
         }
 
         ClientMessage::QueryRoomState => {
@@ -389,7 +404,7 @@ async fn handle_client_message(
                 all_ready,
             };
             let json = serde_json::to_string(&response)?;
-            ws_tx.send(Message::Text(Utf8Bytes::from(json))).await?;
+            send_tx.send(json).map_err(|e| anyhow!("Send error: {}", e))?;
         }
 
         ClientMessage::Action { action } => {

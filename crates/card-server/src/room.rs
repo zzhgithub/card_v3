@@ -43,13 +43,22 @@ impl RoomManager {
             return Ok(result);
         }
 
-        // Create new room
-        let (broadcast_tx, _) = mpsc::unbounded_channel();
+        // Create new room with broadcast relay
+        let (broadcast_tx, mut broadcast_rx) = mpsc::unbounded_channel();
         let room = Arc::new(Mutex::new(Room::new(
             room_id.clone(),
             self.rules.clone(),
             broadcast_tx,
         )));
+
+        // Spawn relay task to forward messages from broadcast_tx to subscribers
+        let room_for_relay = room.clone();
+        tokio::spawn(async move {
+            while let Some(msg) = broadcast_rx.recv().await {
+                let room_guard = room_for_relay.lock().await;
+                room_guard.broadcast_message(msg);
+            }
+        });
 
         let mut room_guard = room.lock().await;
         let result = room_guard.add_player(player_name).await?;
@@ -73,6 +82,20 @@ impl RoomManager {
         room_guard.submit_deck(player_id, deck).await?;
         // Mark player as ready with deck_id
         room_guard.set_ready(player_id, deck_id).await?;
+
+        // Check if both players are ready and start game using the original room Arc
+        if room_guard.ready_state[0].is_some() && room_guard.ready_state[1].is_some() {
+            info!("Both players ready in room {}, starting game", room_id);
+            let _ = room_guard.broadcast(RoomMessage::GameStarting);
+            drop(room_guard);
+
+            let rules = self.rules.clone();
+            tokio::spawn(async move {
+                if let Err(e) = crate::game_starter::start_game(room, rules).await {
+                    error!("Game start failed: {}", e);
+                }
+            });
+        }
 
         Ok(())
     }
@@ -391,22 +414,6 @@ impl Room {
             deck_id
         });
 
-        // Check if both players are ready
-        if self.ready_state[0].is_some() && self.ready_state[1].is_some() {
-            info!("Both players ready in room {}, starting game", self.id);
-            let _ = self.broadcast(RoomMessage::GameStarting);
-
-            // Start the game
-            let room_clone = Arc::new(Mutex::new(self.clone_room()));
-            let rules = self.rules.clone();
-
-            tokio::spawn(async move {
-                if let Err(e) = crate::game_starter::start_game(room_clone, rules).await {
-                    error!("Game start failed: {}", e);
-                }
-            });
-        }
-
         Ok(())
     }
 
@@ -524,7 +531,6 @@ impl Room {
     }
 
     fn broadcast(&self, msg: RoomMessage) {
-        let _ = self.broadcast_tx.send(msg.clone());
         for sub in &self.subscribers {
             let _ = sub.send(msg.clone());
         }
@@ -590,13 +596,17 @@ mod tests {
 
     #[tokio::test]
     async fn test_room_join() {
-        let (tx, mut rx) = mpsc::unbounded_channel();
+        let (tx, _rx) = mpsc::unbounded_channel();
         let mut room = Room::new("test".to_string(), GameRules::default(), tx);
+
+        // Add a subscriber to receive broadcast messages
+        let (sub_tx, mut sub_rx) = mpsc::unbounded_channel();
+        room.add_subscriber(sub_tx);
 
         let result = room.add_player("Alice".to_string()).await.unwrap();
         assert_eq!(result.player_id, PlayerId::Player1);
 
-        let msg = rx.try_recv().unwrap();
+        let msg = sub_rx.try_recv().unwrap();
         match msg {
             RoomMessage::PlayerJoined { player_id, player_name } => {
                 assert_eq!(player_id, PlayerId::Player1);
