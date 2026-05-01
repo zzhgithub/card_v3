@@ -7,7 +7,7 @@ use std::collections::HashSet;
 
 use crate::effect::evaluator::evaluate_condition;
 use crate::effect::{ActivationLimit, Effect, EventTrigger, Trigger};
-use crate::state::{CardInstance, CoreGameEvent, GameState, Phase};
+use crate::state::{CardInstance, CardRegistryImpl, CoreGameEvent, GameState, Phase};
 use crate::types::{EffectKey, InstanceId, PlayerId, PlayerRef};
 
 /// An effect that has been identified as ready to trigger.
@@ -32,6 +32,7 @@ impl TriggerChecker {
         state: &GameState,
         event: &CoreGameEvent,
         perspective: PlayerId,
+        registry: &CardRegistryImpl,
     ) -> Vec<TriggeredEffect> {
         let mut results = Vec::new();
         let mut seen: HashSet<(InstanceId, EffectKey)> = HashSet::new();
@@ -46,7 +47,7 @@ impl TriggerChecker {
                 .flatten()
                 .chain(player_state.zones.back.iter().flatten())
             {
-                for (effect_key, effect) in Self::effects_for_instance(state, card) {
+                for (effect_key, effect) in Self::effects_for_instance(card, registry) {
                     if !Self::trigger_matches(&effect.trigger, event, card.instance_id) {
                         continue;
                     }
@@ -87,10 +88,11 @@ impl TriggerChecker {
         state: &GameState,
         recent_events: &[CoreGameEvent],
         perspective: PlayerId,
+        registry: &CardRegistryImpl,
     ) -> Vec<TriggeredEffect> {
         let mut results = Vec::new();
         for event in recent_events.iter().rev().take(5) {
-            let triggered = Self::check_triggers(state, event, perspective);
+            let triggered = Self::check_triggers(state, event, perspective, registry);
             for t in triggered {
                 if !t.optional {
                     results.push(t);
@@ -197,8 +199,17 @@ impl TriggerChecker {
         }
     }
 
-    fn effects_for_instance(_state: &GameState, _card: &CardInstance) -> Vec<(EffectKey, Effect)> {
-        Vec::new()
+    fn effects_for_instance(card: &CardInstance, registry: &CardRegistryImpl) -> Vec<(EffectKey, Effect)> {
+        let Some(definition) = registry.get(&card.definition_id) else {
+            return Vec::new();
+        };
+        let mut effects = Vec::new();
+        for (effect_key, json_value) in &definition.effects {
+            if let Ok(effect) = serde_json::from_value::<Effect>(json_value.clone()) {
+                effects.push((effect_key.clone(), effect));
+            }
+        }
+        effects
     }
 }
 

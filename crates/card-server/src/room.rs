@@ -237,6 +237,8 @@ pub enum ActionOption {
     PlayCard { instance_id: u32, target_zone: ActionZone },
     #[serde(rename = "declare_attack")]
     DeclareAttack { attacker: u32, target: ActionTarget },
+    #[serde(rename = "activate_effect")]
+    ActivateEffect { instance_id: u32, effect_key: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -263,6 +265,14 @@ pub struct RecoveryOption {
     pub definition_id: String,
 }
 
+/// Effect option for chain action requests.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ChainEffectOption {
+    pub instance_id: u32,
+    pub effect_key: String,
+    pub definition_id: String,
+}
+
 /// Messages broadcasted to room participants.
 #[derive(Debug, Clone)]
 pub enum RoomMessage {
@@ -276,6 +286,7 @@ pub enum RoomMessage {
     StateUpdate { for_player: PlayerId, state: VisibleGameState },
     ActionRequested { player_id: PlayerId, available_actions: Vec<ActionOption>, timeout_secs: u64 },
     RecoveryRequested { player_id: PlayerId, count: usize, options: Vec<RecoveryOption> },
+    ChainActionRequested { player_id: PlayerId, chain_size: usize, available_effects: Vec<ChainEffectOption>, timeout_secs: u64 },
     GameOver { winner: Option<PlayerId>, reason: String },
     Error { message: String },
 }
@@ -306,6 +317,7 @@ pub struct PlayerSlot {
 pub enum PlayerAction {
     PhaseAction(PhaseAction),
     RecoverySelection(Vec<InstanceId>),
+    ChainResponse(card_core::engine::phase::ChainResponse),
 }
 
 /// Visible game state for a player.
@@ -316,6 +328,9 @@ pub struct VisibleGameState {
     pub current_player: PlayerId,
     pub your_state: PlayerVisibleState,
     pub opponent_state: OpponentVisibleState,
+    /// Recent game events since the last state update (for client animations).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub recent_events: Vec<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

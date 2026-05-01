@@ -42,6 +42,7 @@ impl GameEngine {
         let started_at = Instant::now();
 
         let initial_hand_size = self.state.rules.initial_hand_size;
+        let mut initial_draw_events = Vec::new();
         for player_idx in 0..2 {
             let player_id = if player_idx == 0 {
                 PlayerId::Player1
@@ -61,12 +62,18 @@ impl GameEngine {
                 let card = self.state.players[player_idx].zones.deck.remove(0);
                 let iid = card.instance_id;
                 self.state.players[player_idx].zones.hand.push(card);
-                event_log.push(CoreGameEvent::DrawCard {
+                let event = CoreGameEvent::DrawCard {
                     player: player_id,
                     instance_id: iid,
-                });
+                };
+                event_log.push(event.clone());
+                initial_draw_events.push(event);
             }
         }
+
+        // Notify clients about initial hand draw so they have DrawCard events
+        self.clients[0].on_events(&initial_draw_events, &self.state);
+        self.clients[1].on_events(&initial_draw_events, &self.state);
 
         loop {
             ModifierManager::decrement_turn_counts(&mut self.state);
@@ -120,7 +127,7 @@ impl GameEngine {
             }
 
             let triggered =
-                TriggerChecker::check_triggers(&self.state, event, self.state.turn_player);
+                TriggerChecker::check_triggers(&self.state, event, self.state.turn_player, &self.registry);
             if triggered.is_empty() {
                 continue;
             }
@@ -156,7 +163,16 @@ impl GameEngine {
                 effect_key: triggered.effect_key.clone(),
             });
 
-            let chain_events = ChainManager::resolve_chain(&mut self.state, entry);
+            let timeout = self.state.rules.operation_timeout;
+            let chain_events = ChainManager::open_chain_window(
+                &mut self.state,
+                &self.registry,
+                entry,
+                self.clients[0].as_ref(),
+                self.clients[1].as_ref(),
+                &|s, r, pid| crate::engine::PhaseRunner::build_chainable_effects(s, r, pid),
+                timeout,
+            );
             let is_game_over = Self::extract_game_over(&chain_events).is_some();
             events.extend(chain_events);
 

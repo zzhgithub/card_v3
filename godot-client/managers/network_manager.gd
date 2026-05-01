@@ -18,6 +18,8 @@ signal game_started(game_data: Dictionary)
 signal state_update(state: Dictionary)
 signal action_request(available_actions: Array, timeout_secs: int)
 signal recovery_request(count: int, options: Array)
+signal game_over(winner: String, reason: String)
+signal chain_action_request(chain_size: int, available_effects: Array, timeout_secs: int)
 
 const DEFAULT_SERVER_URL = "ws://localhost:8080/ws"
 const CONNECTION_TIMEOUT = 30.0
@@ -30,6 +32,7 @@ var current_username: String = ""
 var ws_connected: bool = false
 var connection_timer: Timer
 var room_state_timer: Timer  ## 房间状态轮询定时器
+var _waiting_first_state: bool = false  ## 防御性跟踪 game_started → state_update 的到达
 
 func _ready() -> void:
 	websocket = WebSocketPeer.new()
@@ -207,11 +210,16 @@ func _route_message(type: String, data: Dictionary) -> void:
 		"game_started":
 			_print("Game started!")
 			room_state_timer.stop()
+			_waiting_first_state = true
 			# GameStarted 是纯通知，不再携带 state（由后续的 state_update 推送）
 			game_started.emit({})
 
 		"state_update":
-			_print("State update received")
+			if _waiting_first_state:
+				_waiting_first_state = false
+				_print("State update received (first after game_started)")
+			else:
+				_print("State update received")
 			# 服务器发送的是 {"state": {...}}，提取 state 字段
 			var state = data.get("state", {})
 			state_update.emit(state)
@@ -227,7 +235,17 @@ func _route_message(type: String, data: Dictionary) -> void:
 			recovery_request.emit(count, options)
 
 		"game_over":
-			_print("Game over, winner: %s" % data.get("winner", "none"))
+			var winner = data.get("winner", "")
+			var reason = data.get("reason", "")
+			_print("Game over, winner: %s, reason: %s" % [winner, reason])
+			game_over.emit(winner, reason)
+
+		"chain_action_request":
+			var chain_size = data.get("chain_size", 0)
+			var available_effects = data.get("available_effects", [])
+			var timeout = data.get("timeout_secs", 60)
+			_print("Chain action request: chain_size=%d, effects=%d" % [chain_size, available_effects.size()])
+			chain_action_request.emit(chain_size, available_effects, timeout)
 
 		"error":
 			_print("Server error: %s" % data.get("message", "Unknown error"))
@@ -287,18 +305,34 @@ func send_action_pass() -> bool:
 func send_action_surrender() -> bool:
 	return send_message("action", {"action": {"action_type": "surrender"}})
 
-## 发送操作: PlayCard
-func send_action_play_card(instance_id: int, zone_type: String, slot: int) -> bool:
-	return send_message("action", {
-		"action": {
-			"action_type": "play_card",
-			"instance_id": instance_id,
-			"target_zone": {
-				"zone_type": zone_type,
-				"slot": slot
-			}
+## 发送操作: PlayCard (带费用支付)
+func send_action_play_card(instance_id: int, zone_type: String, slot: int, cost_hand_cards: Array = [], cost_real_point: int = 0) -> bool:
+	var action = {
+		"action_type": "play_card",
+		"instance_id": instance_id,
+		"target_zone": {
+			"zone_type": zone_type,
+			"slot": slot
+		},
+		"cost_payment": {
+			"hand_cards": cost_hand_cards,
+			"real_point": cost_real_point
 		}
-	})
+	}
+	return send_message("action", {"action": action})
+
+## 发送操作: ActivateEffect
+func send_activate_effect(instance_id: int, effect_key: String, cost_hand_cards: Array = [], cost_real_point: int = 0) -> bool:
+	var action = {
+		"action_type": "activate_effect",
+		"instance_id": instance_id,
+		"effect_key": effect_key,
+		"cost_payment": {
+			"hand_cards": cost_hand_cards,
+			"real_point": cost_real_point
+		}
+	}
+	return send_message("action", {"action": action})
 
 ## 发送操作: DeclareAttack
 func send_action_declare_attack(attacker_id: int, target_type: String, slot_index: int = -1) -> bool:
@@ -316,6 +350,22 @@ func send_action_declare_attack(attacker_id: int, target_type: String, slot_inde
 ## 发送回收选择
 func send_recovery_selection(cards: Array[int]) -> bool:
 	return send_message("recovery", {"cards": cards})
+
+## 发送连锁操作: 发动效果
+func send_chain_activate(instance_id: int, effect_key: String) -> bool:
+	return send_message("action", {
+		"action": {
+			"action_type": "chain_activate",
+			"instance_id": instance_id,
+			"effect_key": effect_key
+		}
+	})
+
+## 发送连锁操作: 跳过
+func send_chain_pass() -> bool:
+	return send_message("action", {
+		"action": {"action_type": "chain_pass"}
+	})
 
 ## 打印日志
 func _print(msg: String) -> void:

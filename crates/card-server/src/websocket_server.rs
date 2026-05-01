@@ -77,12 +77,36 @@ pub enum ClientAction {
     PlayCard {
         instance_id: u32,
         target_zone: ClientZone,
+        #[serde(default)]
+        cost_payment: ClientCostPayment,
     },
     #[serde(rename = "declare_attack")]
     DeclareAttack {
         attacker_id: u32,
         target: AttackTarget,
     },
+    #[serde(rename = "activate_effect")]
+    ActivateEffect {
+        instance_id: u32,
+        effect_key: String,
+        #[serde(default)]
+        cost_payment: ClientCostPayment,
+    },
+    #[serde(rename = "chain_activate")]
+    ChainActivate {
+        instance_id: u32,
+        effect_key: String,
+    },
+    #[serde(rename = "chain_pass")]
+    ChainPass,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ClientCostPayment {
+    #[serde(default)]
+    pub hand_cards: Vec<u32>,
+    #[serde(default)]
+    pub real_point: u8,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -149,6 +173,12 @@ pub enum ServerMessage {
     #[serde(rename = "action_request")]
     ActionRequest {
         available_actions: Vec<crate::room::ActionOption>,
+        timeout_secs: u64,
+    },
+    #[serde(rename = "chain_action_request")]
+    ChainActionRequest {
+        chain_size: usize,
+        available_effects: Vec<crate::room::ChainEffectOption>,
         timeout_secs: u64,
     },
     #[serde(rename = "recovery_request")]
@@ -253,10 +283,11 @@ async fn handle_client(
                     futures::future::pending().await
                 }
             } => {
-                let server_msg = convert_room_message(room_msg, state.player_id);
-                let json = serde_json::to_string(&server_msg)?;
-                debug!("Sending to {}: {}", addr, json);
-                let _ = send_tx.send(json);
+                if let Some(server_msg) = convert_room_message(room_msg, state.player_id) {
+                    let json = serde_json::to_string(&server_msg)?;
+                    debug!("Sending to {}: {}", addr, json);
+                    let _ = send_tx.send(json);
+                }
             }
         }
     }
@@ -416,6 +447,29 @@ async fn handle_client_message(
                 .player_id
                 .ok_or_else(|| anyhow!("Player ID not set"))?;
 
+            // Check for chain actions first
+            match &action {
+                ClientAction::ChainActivate { instance_id, effect_key } => {
+                    use card_core::engine::phase::ChainResponse;
+                    use card_core::types::{EffectKey as CoreEffectKey, InstanceId as CoreInstanceId};
+                    room_manager
+                        .submit_action(room_id, player_id, PlayerAction::ChainResponse(ChainResponse::ChainActivate {
+                            instance_id: CoreInstanceId(*instance_id),
+                            effect_key: CoreEffectKey(effect_key.clone()),
+                        }))
+                        .await?;
+                    return Ok(true);
+                }
+                ClientAction::ChainPass => {
+                    use card_core::engine::phase::ChainResponse;
+                    room_manager
+                        .submit_action(room_id, player_id, PlayerAction::ChainResponse(ChainResponse::ChainPass))
+                        .await?;
+                    return Ok(true);
+                }
+                _ => {}
+            }
+
             let phase_action = convert_client_action(action)?;
 
             debug!("Player {:?} sending action: {:?}", player_id, phase_action);
@@ -441,6 +495,7 @@ async fn handle_client_message(
                 .submit_action(room_id, player_id, PlayerAction::RecoverySelection(instance_ids))
                 .await?;
         }
+
     }
 
     Ok(true)
@@ -448,6 +503,7 @@ async fn handle_client_message(
 
 fn convert_client_action(action: ClientAction) -> Result<card_core::engine::phase::PhaseAction> {
     use card_core::engine::phase::PhaseAction;
+    use card_core::engine::phase::CostPayment as EngineCostPayment;
     use card_core::types::Zone;
 
     match action {
@@ -456,6 +512,7 @@ fn convert_client_action(action: ClientAction) -> Result<card_core::engine::phas
         ClientAction::PlayCard {
             instance_id,
             target_zone,
+            cost_payment,
         } => {
             let zone = match target_zone {
                 ClientZone::Front { slot } => Zone::Front(slot),
@@ -464,6 +521,10 @@ fn convert_client_action(action: ClientAction) -> Result<card_core::engine::phas
             Ok(PhaseAction::PlayCard {
                 instance_id: InstanceId(instance_id),
                 target_zone: zone,
+                cost_payment: EngineCostPayment {
+                    hand_cards: cost_payment.hand_cards.into_iter().map(InstanceId).collect(),
+                    real_point: cost_payment.real_point,
+                },
             })
         }
         ClientAction::DeclareAttack {
@@ -479,61 +540,80 @@ fn convert_client_action(action: ClientAction) -> Result<card_core::engine::phas
                 target_slot,
             })
         }
+        ClientAction::ActivateEffect {
+            instance_id,
+            effect_key,
+            cost_payment,
+        } => Ok(PhaseAction::ActivateEffect {
+            instance_id: InstanceId(instance_id),
+            effect_key: card_core::types::EffectKey(effect_key),
+            cost_payment: EngineCostPayment {
+                hand_cards: cost_payment.hand_cards.into_iter().map(InstanceId).collect(),
+                real_point: cost_payment.real_point,
+            },
+        }),
+        ClientAction::ChainActivate { .. } | ClientAction::ChainPass => {
+            Err(anyhow!("Chain actions must be submitted via the chain response path"))
+        }
     }
 }
 
-fn convert_room_message(msg: RoomMessage, my_player_id: Option<PlayerId>) -> ServerMessage {
+fn convert_room_message(msg: RoomMessage, my_player_id: Option<PlayerId>) -> Option<ServerMessage> {
     use crate::room::RoomMessage::*;
 
     match msg {
-        PlayerJoined { player_name, .. } => ServerMessage::OpponentJoined { player_name },
-        PlayerDisconnected { player_name, .. } => ServerMessage::PlayerDisconnected { player_name },
-        PlayerReady { player_name, deck_id, .. } => ServerMessage::PlayerReady { player_name, deck_id },
-        PlayerUnready { player_name, .. } => ServerMessage::PlayerUnready { player_name },
-        WaitingForDecks => ServerMessage::WaitingForDeck,
-        GameStarting => ServerMessage::GameStarting,
-        GameStarted => ServerMessage::GameStarted,
+        PlayerJoined { player_name, .. } => Some(ServerMessage::OpponentJoined { player_name }),
+        PlayerDisconnected { player_name, .. } => Some(ServerMessage::PlayerDisconnected { player_name }),
+        PlayerReady { player_name, deck_id, .. } => Some(ServerMessage::PlayerReady { player_name, deck_id }),
+        PlayerUnready { player_name, .. } => Some(ServerMessage::PlayerUnready { player_name }),
+        WaitingForDecks => Some(ServerMessage::WaitingForDeck),
+        GameStarting => Some(ServerMessage::GameStarting),
+        GameStarted => Some(ServerMessage::GameStarted),
         StateUpdate { for_player, state } => {
-            // Only send state intended for this player
+            // Only send state to the player it's intended for; skip for others
             if my_player_id == Some(for_player) {
-                ServerMessage::StateUpdate {
+                Some(ServerMessage::StateUpdate {
                     state: serde_json::to_value(state).unwrap_or_default(),
-                }
+                })
             } else {
-                ServerMessage::StateUpdate {
-                    state: serde_json::Value::Null,
-                }
+                None
             }
         }
         ActionRequested { player_id, available_actions, timeout_secs } => {
             if my_player_id == Some(player_id) {
-                ServerMessage::ActionRequest {
+                Some(ServerMessage::ActionRequest {
                     available_actions,
                     timeout_secs,
-                }
+                })
             } else {
-                ServerMessage::StateUpdate {
-                    state: serde_json::Value::Null,
-                }
+                None
             }
         }
         RecoveryRequested { player_id, count, options } => {
             if my_player_id == Some(player_id) {
-                ServerMessage::RecoveryRequest {
+                Some(ServerMessage::RecoveryRequest {
                     count,
                     options,
-                }
+                })
             } else {
-                ServerMessage::StateUpdate {
-                    state: serde_json::Value::Null,
-                }
+                None
             }
         }
-        GameOver { winner, reason } => ServerMessage::GameOver {
+        ChainActionRequested { player_id, chain_size, available_effects, timeout_secs } => {
+            if my_player_id == Some(player_id) {
+                Some(ServerMessage::ChainActionRequest {
+                    chain_size,
+                    available_effects,
+                    timeout_secs,
+                })
+            } else {
+                None
+            }
+        }
+        GameOver { winner, reason } => Some(ServerMessage::GameOver {
             winner: winner.map(|p| format!("{:?}", p)),
             reason,
-        },
-        Error { message } => ServerMessage::Error { message },
-
+        }),
+        Error { message } => Some(ServerMessage::Error { message }),
     }
 }

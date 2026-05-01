@@ -846,7 +846,7 @@ fn chain_resolution_executes_actions_and_completes() {
         controller: PlayerId::Player1,
     };
 
-    let events = ChainManager::resolve_chain(&mut state, entry);
+    let events = ChainManager::resolve_chain(&mut state, entry, &CardRegistryImpl::new());
 
     assert!(events
         .iter()
@@ -871,7 +871,7 @@ fn chain_resolution_stops_after_game_over() {
         controller: PlayerId::Player1,
     };
 
-    let events = ChainManager::resolve_chain(&mut state, entry);
+    let events = ChainManager::resolve_chain(&mut state, entry, &CardRegistryImpl::new());
 
     assert!(has_game_over(&events, GameOverReason::HpZero));
     assert!(events
@@ -912,7 +912,7 @@ fn chain_resolution_emits_resolving_index_zero() {
         controller: PlayerId::Player1,
     };
 
-    let events = ChainManager::resolve_chain(&mut state, entry);
+    let events = ChainManager::resolve_chain(&mut state, entry, &CardRegistryImpl::new());
 
     assert!(events
         .iter()
@@ -932,7 +932,7 @@ fn chain_resolution_draw_from_empty_deck_still_completes_chain() {
         controller: PlayerId::Player1,
     };
 
-    let events = ChainManager::resolve_chain(&mut state, entry);
+    let events = ChainManager::resolve_chain(&mut state, entry, &CardRegistryImpl::new());
 
     assert!(has_game_over(&events, GameOverReason::DeckOut));
     assert!(events

@@ -40,13 +40,13 @@ var opponent_state: Dictionary = {
 var card_cache: Dictionary = {}
 
 func _ready():
-	# Connect to network signals
-	var network = get_node_or_null("/root/Network")
+	# Connect to network signals (NetworkManager is the current main network autoload)
+	var network = get_node_or_null("/root/NetworkManager")
 	if network:
 		network.game_started.connect(_on_game_started)
 		network.state_update.connect(_on_state_update)
 	else:
-		push_warning("[GameState] Network autoload not found")
+		push_warning("[GameState] NetworkManager autoload not found")
 
 func update_from_server(state_data: Dictionary):
 	if state_data.is_empty():

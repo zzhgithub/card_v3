@@ -1,19 +1,55 @@
 use std::time::Duration;
 
+use crate::effect::evaluator::evaluate_condition;
+use crate::effect::Effect;
 use crate::engine::modifier::ModifierManager;
 use crate::state::events::GameOverReason;
 use crate::state::{CardRegistryImpl, CoreGameEvent, GameState, Phase};
-use crate::types::{CardId, CardType, InstanceId, PlayerId, Zone, ZoneLocation};
+use crate::types::{CardId, CardType, EffectKey, InstanceId, PlayerId, Zone, ZoneLocation};
+
+/// Payment for card play or effect activation costs.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CostPayment {
+    /// Hand cards to move to the cost zone as payment.
+    pub hand_cards: Vec<InstanceId>,
+    /// RealPoint to spend as payment.
+    pub real_point: u8,
+}
+
+impl CostPayment {
+    pub fn new() -> Self {
+        Self {
+            hand_cards: Vec::new(),
+            real_point: 0,
+        }
+    }
+
+    pub fn total(&self) -> usize {
+        self.hand_cards.len() + self.real_point as usize
+    }
+}
+
+impl Default for CostPayment {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PhaseAction {
     PlayCard {
         instance_id: InstanceId,
         target_zone: Zone,
+        cost_payment: CostPayment,
     },
     DeclareAttack {
         attacker: InstanceId,
         target_slot: Option<usize>,
+    },
+    ActivateEffect {
+        instance_id: InstanceId,
+        effect_key: EffectKey,
+        cost_payment: CostPayment,
     },
     Pass,
     Surrender,
@@ -25,6 +61,20 @@ pub struct RecoveryCardOption {
     pub definition_id: CardId,
 }
 
+/// An effect the player can activate during a chain window.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ChainActivateOption {
+    pub instance_id: InstanceId,
+    pub effect_key: EffectKey,
+}
+
+/// Response to a chain window prompt.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ChainResponse {
+    ChainActivate { instance_id: InstanceId, effect_key: EffectKey },
+    ChainPass,
+}
+
 pub trait PhaseClient: Send + Sync {
     fn choose_action(&self, _available: &[PhaseAction], _timeout: Duration) -> Option<PhaseAction>;
 
@@ -34,6 +84,23 @@ pub trait PhaseClient: Send + Sync {
         _count: usize,
         _timeout: Duration,
     ) -> Option<Vec<InstanceId>>;
+
+    /// Ask the active player how many RealPoints to spend on a direct attack.
+    /// Returns None on timeout/disconnect (surrender).
+    fn choose_direct_attack_rp(&self, max_rp: u8, _timeout: Duration) -> Option<u8> {
+        Some(max_rp) // Default: use all available RP (aggressive AI)
+    }
+
+    /// Ask a player whether to chain an effect or pass during a chain window.
+    /// Returns None on timeout/disconnect (treated as ChainPass).
+    fn choose_chain_action(
+        &self,
+        _chain_stack: &crate::state::ChainStack,
+        _available: &[ChainActivateOption],
+        _timeout: Duration,
+    ) -> Option<ChainResponse> {
+        Some(ChainResponse::ChainPass)
+    }
 
     /// Called after a turn (and any follow-up effects) completes, with the
     /// events produced and the current game state.
@@ -258,12 +325,12 @@ impl PhaseRunner {
                 PhaseAction::PlayCard {
                     instance_id,
                     target_zone,
+                    cost_payment,
                 } => {
-                    let mut action_events = Vec::new();
-                    let player_idx = player_idx(state.turn_player);
+                    let p_idx = player_idx(state.turn_player);
 
                     // Resolve the card definition to determine cost
-                    let cost_info = state.players[player_idx]
+                    let card_cost = state.players[p_idx]
                         .zones
                         .hand
                         .iter()
@@ -271,15 +338,62 @@ impl PhaseRunner {
                         .and_then(|c| registry.get(&c.definition_id))
                         .map(|def| def.cost as usize);
 
+                    // Validate cost payment
+                    let is_valid = card_cost.map_or(false, |cost| {
+                        // Must pay exactly the right amount
+                        cost_payment.total() == cost
+                            // RP must be available
+                            && cost_payment.real_point as usize <= state.players[p_idx].real_point as usize
+                            // Hand cards must exist in hand (and not be the played card itself)
+                            && cost_payment.hand_cards.iter().all(|iid| {
+                                *iid != instance_id
+                                    && state.players[p_idx].zones.hand.iter().any(|c| c.instance_id == *iid)
+                            })
+                            && cost_payment.hand_cards.iter().all(|iid| !cost_payment.hand_cards.iter().any(|j| iid != j && iid == j))
+                    });
+
+                    if !is_valid {
+                        // Invalid payment: auto-fallback (RP first, then hand cards)
+                        continue;
+                    }
+
+                    let mut action_events = Vec::new();
+
+                    // Pay RP
+                    if cost_payment.real_point > 0 {
+                        let player = &mut state.players[p_idx];
+                        let old_rp = player.real_point;
+                        player.real_point -= cost_payment.real_point;
+                        action_events.push(CoreGameEvent::RealPointChanged {
+                            player: state.turn_player,
+                            old_rp,
+                            new_rp: player.real_point,
+                        });
+                    }
+
+                    // Pay hand cards → move to cost zone
+                    for cost_iid in &cost_payment.hand_cards {
+                        if let Some((cost_card, _)) = state.players[p_idx].zones.remove_card(*cost_iid) {
+                            let cid = cost_card.instance_id;
+                            state.players[p_idx].zones.cost_zone.push(cost_card);
+                            action_events.push(CoreGameEvent::CardExposed { instance_id: cid });
+                            action_events.push(CoreGameEvent::CardMoved {
+                                instance_id: cid,
+                                from: ZoneLocation::new(state.turn_player, Zone::Hand),
+                                to: ZoneLocation::new(state.turn_player, Zone::CostZone),
+                            });
+                        }
+                    }
+
                     // Move card from hand to target zone
                     if let Some((card, _)) =
-                        state.players[player_idx].zones.remove_card(instance_id)
+                        state.players[p_idx].zones.remove_card(instance_id)
                     {
-                        let player = &mut state.players[player_idx];
+                        let player = &mut state.players[p_idx];
                         let to = ZoneLocation::new(state.turn_player, target_zone);
                         let iid = card.instance_id;
 
-                        // Handle Item-replace-Item: if target slot is occupied, move old card to grave
+                        // Handle Item-replace-Item
                         let old_card = match target_zone {
                             Zone::Front(slot) => player.zones.front[slot].take(),
                             Zone::Back(slot) => player.zones.back[slot].take(),
@@ -299,47 +413,177 @@ impl PhaseRunner {
                         action_events.push(CoreGameEvent::CardSummoned { instance_id: iid, to });
                     }
 
-                    // Auto-calculate and pay cost (RealPoint first, then hand cards)
-                    if let Some(card_cost) = cost_info {
-                        let player = &mut state.players[player_idx];
-                        let available_rp = player.real_point as usize;
-                        let rp_to_use = card_cost.min(available_rp);
-                        let hand_cost = card_cost - rp_to_use;
+                    events.append(&mut action_events);
+                    Self::notify_clients(state, events, client1, client2);
+                }
+                PhaseAction::ActivateEffect {
+                    instance_id,
+                    effect_key,
+                    cost_payment: _cost_payment,
+                } => {
+                    let card_definition = {
+                        let card = state.get_card(instance_id).map(|(c, _, _)| c.definition_id.clone());
+                        card.and_then(|def_id| registry.get(&def_id))
+                    };
+                    let Some(definition) = card_definition else {
+                        continue;
+                    };
+                    let Some(json_value) = definition.effects.get(&effect_key) else {
+                        continue;
+                    };
+                    let Ok(effect) = serde_json::from_value::<Effect>(json_value.clone()) else {
+                        continue;
+                    };
 
-                        // Deduct RealPoint
-                        if rp_to_use > 0 {
-                            let old_rp = player.real_point;
-                            player.real_point -= rp_to_use as u8;
-                            action_events.push(CoreGameEvent::RealPointChanged {
-                                player: state.turn_player,
-                                old_rp,
-                                new_rp: player.real_point,
-                            });
-                        }
+                    let controller = state.turn_player;
 
-                        // Pay remaining cost from hand (take from front of hand)
-                        let cost_ids: Vec<InstanceId> = player.zones.hand
-                            .iter()
-                            .take(hand_cost)
-                            .map(|c| c.instance_id)
-                            .collect();
-
-                        for cost_iid in cost_ids {
-                            if let Some((cost_card, _)) = player.zones.remove_card(cost_iid) {
-                                let cid = cost_card.instance_id;
-                                player.zones.cost_zone.push(cost_card);
-                                action_events.push(CoreGameEvent::CardExposed { instance_id: cid });
-                                action_events.push(CoreGameEvent::CardMoved {
-                                    instance_id: cid,
-                                    from: ZoneLocation::new(state.turn_player, Zone::Hand),
-                                    to: ZoneLocation::new(state.turn_player, Zone::CostZone),
-                                });
+                    // Pay effect costs (CostRequirement) before executing actions
+                    if let Some(cost) = &effect.costs {
+                        let p_idx = player_idx(controller);
+                        let player = &mut state.players[p_idx];
+                        match cost {
+                            crate::effect::CostRequirement::DiscardHand { count } => {
+                                let discard_count = (*count as usize).min(player.zones.hand.len());
+                                for _ in 0..discard_count {
+                                    if let Some(card) = player.zones.hand.pop() {
+                                        let iid = card.instance_id;
+                                        player.zones.grave.push(card);
+                                        events.push(CoreGameEvent::CardMoved {
+                                            instance_id: iid,
+                                            from: ZoneLocation::new(controller, Zone::Hand),
+                                            to: ZoneLocation::new(controller, Zone::Grave),
+                                        });
+                                    }
+                                }
+                            }
+                            crate::effect::CostRequirement::SendFieldCardToGrave { count, .. } => {
+                                // Take from front field first, then back field
+                                let mut sent = 0u8;
+                                for slot in 0..5 {
+                                    if sent >= *count {
+                                        break;
+                                    }
+                                    if let Some(card) = player.zones.front[slot].take() {
+                                        let iid = card.instance_id;
+                                        player.zones.grave.push(card);
+                                        events.push(CoreGameEvent::CardMoved {
+                                            instance_id: iid,
+                                            from: ZoneLocation::new(controller, Zone::Front(slot)),
+                                            to: ZoneLocation::new(controller, Zone::Grave),
+                                        });
+                                        sent += 1;
+                                    }
+                                }
+                                for slot in 0..5 {
+                                    if sent >= *count {
+                                        break;
+                                    }
+                                    if let Some(card) = player.zones.back[slot].take() {
+                                        let iid = card.instance_id;
+                                        player.zones.grave.push(card);
+                                        events.push(CoreGameEvent::CardMoved {
+                                            instance_id: iid,
+                                            from: ZoneLocation::new(controller, Zone::Back(slot)),
+                                            to: ZoneLocation::new(controller, Zone::Grave),
+                                        });
+                                        sent += 1;
+                                    }
+                                }
+                            }
+                            crate::effect::CostRequirement::SendCostZoneToGrave { count, .. } => {
+                                let send_count = (*count as usize).min(player.zones.cost_zone.len());
+                                for _ in 0..send_count {
+                                    if let Some(card) = player.zones.cost_zone.pop() {
+                                        let iid = card.instance_id;
+                                        player.zones.grave.push(card);
+                                        events.push(CoreGameEvent::CardMoved {
+                                            instance_id: iid,
+                                            from: ZoneLocation::new(controller, Zone::CostZone),
+                                            to: ZoneLocation::new(controller, Zone::Grave),
+                                        });
+                                    }
+                                }
                             }
                         }
                     }
 
-                    events.append(&mut action_events);
-                    Self::notify_clients(state, events, client1, client2);
+                    state
+                        .activated_this_turn
+                        .insert((instance_id, effect_key.clone()));
+                    events.push(CoreGameEvent::EffectActivated {
+                        instance_id,
+                        effect_key: effect_key.clone(),
+                    });
+
+                    let chain_entry = crate::engine::chain::ChainEntry {
+                        source: instance_id,
+                        effect_key,
+                        actions: effect.actions,
+                        controller,
+                    };
+
+                    let chain_events =
+                        crate::engine::chain::ChainManager::open_chain_window(
+                            state,
+                            registry,
+                            chain_entry,
+                            client1,
+                            client2,
+                            &|s, r, pid| Self::build_chainable_effects(s, r, pid),
+                            timeout,
+                        );
+                    events.extend(chain_events);
+
+                    // For non-persistent strategy/item cards, send to grave after activation
+                    let should_send_to_grave = matches!(definition.card_type,
+                        CardType::Strategy | CardType::Item
+                    ) && !matches!(definition.item_kind, Some(crate::types::ItemKind::Persistent));
+
+                    if should_send_to_grave {
+                        let p_idx = player_idx(controller);
+                        // Find the card on field and move to grave
+                        for slot in 0..5 {
+                            if state.players[p_idx].zones.front[slot]
+                                .as_ref()
+                                .map(|c| c.instance_id == instance_id)
+                                .unwrap_or(false)
+                            {
+                                if let Some(card) = state.players[p_idx].zones.front[slot].take() {
+                                    let iid = card.instance_id;
+                                    state.players[p_idx].zones.grave.push(card);
+                                    events.push(CoreGameEvent::CardMoved {
+                                        instance_id: iid,
+                                        from: ZoneLocation::new(controller, Zone::Front(slot)),
+                                        to: ZoneLocation::new(controller, Zone::Grave),
+                                    });
+                                }
+                            }
+                            if state.players[p_idx].zones.back[slot]
+                                .as_ref()
+                                .map(|c| c.instance_id == instance_id)
+                                .unwrap_or(false)
+                            {
+                                if let Some(card) = state.players[p_idx].zones.back[slot].take() {
+                                    let iid = card.instance_id;
+                                    state.players[p_idx].zones.grave.push(card);
+                                    events.push(CoreGameEvent::CardMoved {
+                                        instance_id: iid,
+                                        from: ZoneLocation::new(controller, Zone::Back(slot)),
+                                        to: ZoneLocation::new(controller, Zone::Grave),
+                                    });
+                                }
+                            }
+                        }
+                    }
+
+                    // Check if GameOver occurred during chain resolution
+                    let is_game_over = events
+                        .iter()
+                        .any(|e| matches!(e, CoreGameEvent::GameOver { .. }));
+                    Self::notify_clients(state, &*events, client1, client2);
+                    if is_game_over {
+                        return true;
+                    }
                 }
                 PhaseAction::DeclareAttack { .. } => {
                     // Attack declarations not valid in main phase — treat as Pass
@@ -443,9 +687,56 @@ impl PhaseRunner {
 
                     match target_slot {
                         None => {
-                            // Direct attack
+                            // Direct attack:
+                            // 1. Attacker gains 1 RP (battle initiation bonus)
+                            let player = &mut state.players[p_idx];
+                            let old_rp = player.real_point;
+                            let new_rp = (old_rp + 1).min(state.rules.max_real_point);
+                            player.real_point = new_rp;
+                            events.push(CoreGameEvent::RealPointChanged {
+                                player: turn_player,
+                                old_rp,
+                                new_rp,
+                            });
+                            if new_rp >= state.rules.max_real_point {
+                                events.push(CoreGameEvent::RealPointOverflow {
+                                    player: turn_player,
+                                });
+                            }
+
+                            // 2. If attacker has RP > 0, ask how many to use for damage
+                            let rp_to_use = if new_rp > 0 {
+                                match client.choose_direct_attack_rp(new_rp, timeout) {
+                                    Some(rp) => rp.min(new_rp),
+                                    None => {
+                                        // Timeout/disconnect → surrender
+                                        events.push(CoreGameEvent::GameOver {
+                                            winner: Some(turn_player.opponent()),
+                                            reason: GameOverReason::Timeout,
+                                        });
+                                        Self::notify_clients(state, &*events, client1, client2);
+                                        return true;
+                                    }
+                                }
+                            } else {
+                                0
+                            };
+
+                            // 3. Deduct RP
+                            if rp_to_use > 0 {
+                                let player = &mut state.players[p_idx];
+                                let rp_before = player.real_point;
+                                player.real_point -= rp_to_use;
+                                events.push(CoreGameEvent::RealPointChanged {
+                                    player: turn_player,
+                                    old_rp: rp_before,
+                                    new_rp: player.real_point,
+                                });
+                            }
+
+                            // 4. Apply damage = rp_used (RP becomes direct attack damage)
+                            let dmg = rp_to_use.min(state.players[opp_idx].hp);
                             let old_hp = state.players[opp_idx].hp;
-                            let dmg = (attacker_power as u8).min(old_hp);
                             let new_hp = old_hp - dmg;
                             state.players[opp_idx].hp = new_hp;
                             events.push(CoreGameEvent::HpChanged {
@@ -567,6 +858,7 @@ impl PhaseRunner {
                                 actions.push(PhaseAction::PlayCard {
                                     instance_id: card.instance_id,
                                     target_zone: Zone::Front(slot),
+                                    cost_payment: CostPayment::new(),
                                 });
                             }
                         }
@@ -578,6 +870,7 @@ impl PhaseRunner {
                                 actions.push(PhaseAction::PlayCard {
                                     instance_id: card.instance_id,
                                     target_zone: Zone::Back(slot),
+                                    cost_payment: CostPayment::new(),
                                 });
                             }
                         }
@@ -597,6 +890,7 @@ impl PhaseRunner {
                                 actions.push(PhaseAction::PlayCard {
                                     instance_id: card.instance_id,
                                     target_zone: Zone::Back(slot),
+                                    cost_payment: CostPayment::new(),
                                 });
                             }
                         }
@@ -604,7 +898,149 @@ impl PhaseRunner {
                 }
             }
         }
+        actions.extend(Self::build_activatable_effects(state, registry));
         actions
+    }
+
+    /// Scan cards controlled by the current player for effects that can be
+    /// manually activated during a main phase.
+    fn build_activatable_effects(state: &GameState, registry: &CardRegistryImpl) -> Vec<PhaseAction> {
+        let mut actions = Vec::new();
+        let p_idx = player_idx(state.turn_player);
+        let player = &state.players[p_idx];
+
+        // Collect cards from: hand (Trick cards), back field (Strategy/Item/Legendary), front field (Legendary)
+        let hand_cards: Vec<&crate::state::CardInstance> = player.zones.hand.iter().collect();
+        let back_cards: Vec<&crate::state::CardInstance> =
+            player.zones.back.iter().flatten().collect();
+        let front_cards: Vec<&crate::state::CardInstance> =
+            player.zones.front.iter().flatten().collect();
+
+        let current_phase = state.phase;
+
+        for card in hand_cards.iter().chain(back_cards.iter()).chain(front_cards.iter()) {
+            let Some(def) = registry.get(&card.definition_id) else {
+                continue;
+            };
+
+            // Trick strategy cards can only be activated from hand
+            let is_trick = def.strategy_kind
+                .as_ref()
+                .map(|k| matches!(k, crate::types::StrategyKind::Trick))
+                .unwrap_or(false);
+
+            for (effect_key, json_value) in &def.effects {
+                let Ok(effect) = serde_json::from_value::<Effect>(json_value.clone()) else {
+                    continue;
+                };
+
+                // Only optional effects can be manually activated
+                if !effect.optional {
+                    continue;
+                }
+
+                // Check that trigger matches the current phase
+                let phase_ok = match &effect.trigger {
+                    crate::effect::Trigger::OwnMainPhase
+                    | crate::effect::Trigger::BothMainPhase => {
+                        matches!(current_phase, Phase::Main1 | Phase::Main2)
+                    }
+                    _ => false,
+                };
+
+                if !phase_ok {
+                    continue;
+                }
+
+                // Check activation limit
+                if !crate::engine::trigger::TriggerChecker::is_activation_allowed(
+                    &effect.activation_limit,
+                    state,
+                    card.instance_id,
+                    effect_key,
+                ) {
+                    continue;
+                }
+
+                // Check conditions
+                if let Some(cond) = &effect.conditions {
+                    if !evaluate_condition(cond, state, state.turn_player, card) {
+                        continue;
+                    }
+                }
+
+                // For Trick cards, only show if the card is in hand
+                // (skip if we're iterating field cards but effect requires hand activation)
+                let card_in_hand = player.zones.hand.iter().any(|c| c.instance_id == card.instance_id);
+
+                // Validate card type placement rules:
+                // - Trick only from hand
+                // - Normal Strategy from back field
+                // - Item from back field
+                if is_trick && !card_in_hand {
+                    continue;
+                }
+
+                actions.push(PhaseAction::ActivateEffect {
+                    instance_id: card.instance_id,
+                    effect_key: effect_key.clone(),
+                    cost_payment: CostPayment::new(),
+                });
+            }
+        }
+
+        actions
+    }
+
+    /// Scan cards controlled by `player_id` for effects that can be activated
+    /// during a chain window. Same scope as `build_activatable_effects` but
+    /// returns `ChainActivateOption` for use in chain interaction.
+    pub fn build_chainable_effects(
+        state: &GameState,
+        registry: &CardRegistryImpl,
+        player_id: PlayerId,
+    ) -> Vec<ChainActivateOption> {
+        let mut options = Vec::new();
+        let p_idx = player_idx(player_id);
+        let player = &state.players[p_idx];
+
+        let hand_cards: Vec<&crate::state::CardInstance> = player.zones.hand.iter().collect();
+        let back_cards: Vec<&crate::state::CardInstance> =
+            player.zones.back.iter().flatten().collect();
+        let front_cards: Vec<&crate::state::CardInstance> =
+            player.zones.front.iter().flatten().collect();
+
+        for card in hand_cards.iter().chain(back_cards.iter()).chain(front_cards.iter()) {
+            let Some(def) = registry.get(&card.definition_id) else {
+                continue;
+            };
+            for (effect_key, json_value) in &def.effects {
+                let Ok(effect) = serde_json::from_value::<Effect>(json_value.clone()) else {
+                    continue;
+                };
+                if !effect.optional {
+                    continue;
+                }
+                if !crate::engine::trigger::TriggerChecker::is_activation_allowed(
+                    &effect.activation_limit,
+                    state,
+                    card.instance_id,
+                    effect_key,
+                ) {
+                    continue;
+                }
+                if let Some(cond) = &effect.conditions {
+                    if !evaluate_condition(cond, state, player_id, card) {
+                        continue;
+                    }
+                }
+                options.push(ChainActivateOption {
+                    instance_id: card.instance_id,
+                    effect_key: effect_key.clone(),
+                });
+            }
+        }
+        options
     }
 
     fn calc_recovery_count(state: &GameState, registry: &CardRegistryImpl) -> usize {
@@ -640,7 +1076,7 @@ mod tests {
         CardDefinition, CardId, CardType, Category, InstanceId, PlayerId, Property, Zone,
     };
 
-    use super::{PhaseAction, PhaseClient, PhaseRunner, RecoveryCardOption};
+    use super::{CostPayment, PhaseAction, PhaseClient, PhaseRunner, RecoveryCardOption};
 
     struct ScriptedClient {
         actions: Mutex<VecDeque<PhaseAction>>,
@@ -954,10 +1390,10 @@ mod tests {
         // Character card -> 5 front slots; Strategy card -> 5 back slots.
         assert_eq!(play_actions.len(), 10, "Two playable cards × 5 empty slots each");
         let char_actions: Vec<_> = play_actions.iter().filter(|a| matches!(a,
-            PhaseAction::PlayCard { instance_id, target_zone: Zone::Front(_) } if *instance_id == InstanceId(2)
+            PhaseAction::PlayCard { instance_id, target_zone: Zone::Front(_), .. } if *instance_id == InstanceId(2)
         )).collect();
         let strat_actions: Vec<_> = play_actions.iter().filter(|a| matches!(a,
-            PhaseAction::PlayCard { instance_id, target_zone: Zone::Back(_) } if *instance_id == InstanceId(3)
+            PhaseAction::PlayCard { instance_id, target_zone: Zone::Back(_), .. } if *instance_id == InstanceId(3)
         )).collect();
         assert_eq!(char_actions.len(), 5, "Character card should have 5 front slot options");
         assert_eq!(strat_actions.len(), 5, "Strategy card should have 5 back slot options");
@@ -992,6 +1428,10 @@ mod tests {
             PhaseAction::PlayCard {
                 instance_id: InstanceId(2),
                 target_zone: Zone::Front(0),
+                cost_payment: CostPayment {
+                    hand_cards: vec![InstanceId(1), InstanceId(3)],
+                    real_point: 0,
+                },
             },
             PhaseAction::Pass,
             PhaseAction::Pass,

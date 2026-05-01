@@ -62,6 +62,8 @@ func _ready():
 		network_manager.state_update.connect(_on_state_update)
 		network_manager.action_request.connect(_on_action_requested)
 		network_manager.recovery_request.connect(_on_recovery_requested)
+		network_manager.game_over.connect(_on_game_over)
+	network_manager.chain_action_request.connect(_on_chain_action_requested)
 
 	# 初始化战场
 	_initialize_fields()
@@ -129,6 +131,19 @@ func _on_game_started(game_data: Dictionary) -> void:
 	# Board 的初始化和状态更新由 state_update 信号驱动。
 
 
+## 游戏结束
+func _on_game_over(winner: String, reason: String) -> void:
+	_print("Game over! Winner: %s, Reason: %s" % [winner, reason])
+	_clear_action_ui()
+
+	var popup = AcceptDialog.new()
+	popup.title = "游戏结束"
+	popup.dialog_text = "胜者: %s\n原因: %s" % [winner, reason]
+	popup.confirmed.connect(_return_to_lobby)
+	add_child(popup)
+	popup.popup_centered()
+
+
 ## 状态更新
 func _on_state_update(state: Dictionary) -> void:
 	_update_from_state(state)
@@ -146,6 +161,10 @@ func _update_from_state(state: Dictionary) -> void:
 	# 获取玩家状态
 	var my_state = state.get("your_state", {})
 	var opponent_state = state.get("opponent_state", {})
+
+	# 处理近期事件（用于动画驱动）
+	var recent_events = _safe_array(state.get("recent_events", []))
+	_process_recent_events(recent_events)
 
 	# 更新自己状态
 	_update_player_state(my_state)
@@ -573,6 +592,82 @@ func _return_to_lobby() -> void:
 		scene_manager.change_scene("lobby", {})
 
 
+# ============================================================================
+# 事件处理 — 驱动动画
+# ============================================================================
+
+## 处理 StateUpdate 中携带的近期事件
+func _process_recent_events(events: Array) -> void:
+	if events.is_empty():
+		return
+	for event in events:
+		if typeof(event) != TYPE_DICTIONARY:
+			continue
+		# 每个 event 是 serde 序列化的 CoreGameEvent JSON，包含单个 variant key
+		for event_type in event.keys():
+			var event_data = event[event_type]
+			match event_type:
+				"DrawCard":
+					var player = event_data.get("player", "")
+					var iid = event_data.get("instance_id", 0)
+					_print("Event: %s draws card instance_id=%d" % [player, iid])
+					# 动画触发点：根据 player 判断是自己还是对手
+					# 自己抽卡 → 可以从 state.your_state.hand 找到该卡做动画
+					# 对手抽卡 → 通用"对手抽卡"动画
+
+				"CardSummoned":
+					var iid = event_data.get("instance_id", 0)
+					var to = event_data.get("to", {})
+					_print("Event: CardSummoned instance_id=%d to=%s" % [iid, str(to)])
+
+				"CardMoved":
+					var iid = event_data.get("instance_id", 0)
+					var from_zone = event_data.get("from", {})
+					var to_zone = event_data.get("to", {})
+					_print("Event: CardMoved instance_id=%d from=%s to=%s" % [iid, str(from_zone), str(to_zone)])
+
+				"CardExposed":
+					var iid = event_data.get("instance_id", 0)
+					_print("Event: CardExposed instance_id=%d (card turned face-up, entering cost zone)" % iid)
+
+				"CardDestroyed":
+					var iid = event_data.get("instance_id", 0)
+					_print("Event: CardDestroyed instance_id=%d" % iid)
+
+				"PhaseChanged":
+					var new_phase = event_data.get("new_phase", "")
+					_print("Event: PhaseChanged → %s" % new_phase)
+
+				"TurnChanged":
+					var new_player = event_data.get("new_active_player", "")
+					var turn = event_data.get("turn_number", 0)
+					_print("Event: TurnChanged → player=%s turn=%d" % [new_player, turn])
+
+				"HpChanged":
+					var player = event_data.get("player", "")
+					var old_hp = event_data.get("old_hp", 0)
+					var new_hp = event_data.get("new_hp", 0)
+					_print("Event: HpChanged player=%s %d→%d" % [player, old_hp, new_hp])
+
+				"RealPointChanged":
+					var player = event_data.get("player", "")
+					var old_rp = event_data.get("old_rp", 0)
+					var new_rp = event_data.get("new_rp", 0)
+					_print("Event: RealPointChanged player=%s %d→%d" % [player, old_rp, new_rp])
+
+				"EffectActivated":
+					var iid = event_data.get("instance_id", 0)
+					var ekey = event_data.get("effect_key", "")
+					_print("Event: EffectActivated instance_id=%d effect_key=%s" % [iid, str(ekey)])
+
+				"AttackDeclared":
+					var attacker = event_data.get("attacker", 0)
+					_print("Event: AttackDeclared attacker=%d" % attacker)
+
+				_:
+					_print("Event: %s data=%s" % [event_type, str(event_data)])
+
+
 ## 打印日志
 func _print(msg: String) -> void:
 	print("[GameBoard] %s" % msg)
@@ -607,6 +702,7 @@ func _on_action_requested(available_actions: Array, timeout_secs: int) -> void:
 	var has_surrender := false
 	var play_card_actions: Array = []
 	var declare_attack_actions: Array = []
+	var activate_effect_actions: Array = []
 
 	for action in available_actions:
 		if typeof(action) != TYPE_DICTIONARY:
@@ -621,6 +717,8 @@ func _on_action_requested(available_actions: Array, timeout_secs: int) -> void:
 				play_card_actions.append(action)
 			"declare_attack":
 				declare_attack_actions.append(action)
+			"activate_effect":
+				activate_effect_actions.append(action)
 
 	# 收集同一张卡的所有 play_card target_zones
 	var card_play_options: Dictionary = {}
@@ -630,7 +728,7 @@ func _on_action_requested(available_actions: Array, timeout_secs: int) -> void:
 			card_play_options[instance_id] = []
 		card_play_options[instance_id].append(action)
 
-	# 高亮可出的手牌
+	# 高亮可出的手牌（点击后弹出费用支付窗）
 	for instance_id in card_play_options.keys():
 		var card := _find_card_in_hand(instance_id)
 		if card:
@@ -652,8 +750,83 @@ func _on_action_requested(available_actions: Array, timeout_secs: int) -> void:
 			_highlight_card(card)
 			card.gui_input.connect(_on_declare_attack_clicked.bind(card, card_attack_options[attacker_id]))
 
+	# 高亮有可发动效果的卡
+	for action in activate_effect_actions:
+		var instance_id: int = action.get("instance_id", 0)
+		var effect_key: String = action.get("effect_key", "")
+		var card := _find_card_on_field_or_hand(instance_id)
+		if card:
+			_highlight_card(card)
+			card.gui_input.connect(_on_activate_effect_clicked.bind(card, instance_id, effect_key))
+
 	# 显示操作面板
 	_show_action_panel(has_pass, has_surrender)
+
+
+## chain_action_request 处理
+func _on_chain_action_requested(chain_size: int, available_effects: Array, timeout_secs: int) -> void:
+	_print("Chain action requested: chain_size=%d, effects=%d" % [chain_size, available_effects.size()])
+	_clear_action_ui()
+
+	# Highlight chainable cards
+	for effect in available_effects:
+		if typeof(effect) != TYPE_DICTIONARY:
+			continue
+		var instance_id: int = effect.get("instance_id", 0)
+		var effect_key: String = effect.get("effect_key", "")
+		var card := _find_card_on_field_or_hand(instance_id)
+		if card:
+			_highlight_card(card)
+			card.gui_input.connect(_on_chain_activate_clicked.bind(card, instance_id, effect_key))
+
+	# Show chain panel
+	_show_chain_panel(chain_size, timeout_secs)
+
+
+## 玩家点击可连锁的效果卡
+func _on_chain_activate_clicked(event: InputEvent, card: Card, instance_id: int, effect_key: String) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	_print("Sending chain_activate: instance_id=%d, effect_key=%s" % [instance_id, effect_key])
+	if network_manager:
+		network_manager.send_chain_activate(instance_id, effect_key)
+	_clear_action_ui()
+
+
+## 显示连锁面板
+func _show_chain_panel(chain_size: int, timeout_secs: int) -> void:
+	if _action_panel and is_instance_valid(_action_panel):
+		_action_panel.queue_free()
+
+	_action_panel = Panel.new()
+	_action_panel.size = Vector2(400, 120)
+	_action_panel.position = Vector2((size.x - _action_panel.size.x) / 2, size.y - _action_panel.size.y - 20)
+
+	var vbox = VBoxContainer.new()
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	var label = Label.new()
+	label.text = "连锁窗口 - 链栈: %d links (超时: %ds)" % [chain_size, timeout_secs]
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(label)
+
+	var hbox = HBoxContainer.new()
+	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	var pass_btn = Button.new()
+	pass_btn.text = "跳过 (Pass)"
+	pass_btn.pressed.connect(func():
+		if network_manager:
+			network_manager.send_chain_pass()
+		_clear_action_ui()
+	)
+	hbox.add_child(pass_btn)
+
+	vbox.add_child(hbox)
+	_action_panel.add_child(vbox)
+	add_child(_action_panel)
 
 
 ## recovery_request 处理
@@ -677,22 +850,22 @@ func _on_recovery_requested(count: int, options: Array) -> void:
 	_show_recovery_info(count)
 
 
-## 玩家点击可出的手牌
+## 玩家点击可出的手牌 → 弹出费用支付窗
+var _pending_play_card_data: Dictionary = {}
+
 func _on_play_card_clicked(event: InputEvent, card: Card, actions: Array) -> void:
 	if not _waiting_action:
 		return
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
 
-	# 如果只有一个 target_zone 选项，直接发送
+	# 如果只有一个 target_zone 选项，弹出费用窗
 	if actions.size() == 1:
 		var action: Dictionary = actions[0]
-		var instance_id: int = action.get("instance_id", 0)
-		var target_zone: Dictionary = action.get("target_zone", {})
-		_send_play_card(instance_id, target_zone)
+		_show_cost_payment_popup(action, "play_card")
 		return
 
-	# 多个 target_zone 选项：先清除其他格子高亮，再高亮该卡可用的格子
+	# 多个 target_zone 选项：先高亮格子，点击格子后弹费用窗
 	_clear_slot_highlights()
 	for action in actions:
 		var target_zone: Dictionary = action.get("target_zone", {})
@@ -707,23 +880,271 @@ func _on_play_card_clicked(event: InputEvent, card: Card, actions: Array) -> voi
 				slot_node.gui_input.connect(_on_target_slot_clicked.bind(slot_node, target_zone, instance_id))
 
 
-## 玩家点击目标格子
+## 玩家点击目标格子 → 弹出费用支付窗
 func _on_target_slot_clicked(event: InputEvent, slot: BattleFieldSlot, zone_data: Dictionary, instance_id: int) -> void:
 	if not _waiting_action:
 		return
 	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
 		return
-	_send_play_card(instance_id, zone_data)
+	# Build action data and show cost popup
+	var action_data = {
+		"instance_id": instance_id,
+		"target_zone": zone_data,
+	}
+	_show_cost_payment_popup(action_data, "play_card")
 
 
-## 发送 PlayCard action
-func _send_play_card(instance_id: int, zone_data: Dictionary) -> void:
+## 发送 PlayCard action（带费用）
+func _send_play_card_with_cost(instance_id: int, zone_data: Dictionary, cost_hand: Array, cost_rp: int) -> void:
 	var zone_type: String = zone_data.get("zone_type", "")
 	var slot: int = zone_data.get("slot", 0)
-	_print("Sending play_card: instance_id=%d, zone=%s, slot=%d" % [instance_id, zone_type, slot])
+	_print("Sending play_card: instance_id=%d, zone=%s, slot=%d, rp=%d, hand=%s" % [instance_id, zone_type, slot, cost_rp, str(cost_hand)])
 	if network_manager:
-		network_manager.send_action_play_card(instance_id, zone_type, slot)
+		network_manager.send_action_play_card(instance_id, zone_type, slot, cost_hand, cost_rp)
 	_clear_action_ui()
+
+
+## 玩家点击可发动效果的卡
+func _on_activate_effect_clicked(event: InputEvent, card: Card, instance_id: int, effect_key: String) -> void:
+	if not _waiting_action:
+		return
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	_print("Sending activate_effect: instance_id=%d, effect_key=%s" % [instance_id, effect_key])
+	if network_manager:
+		network_manager.send_activate_effect(instance_id, effect_key)
+	_clear_action_ui()
+
+
+## 在手牌或场上查找卡牌
+func _find_card_on_field_or_hand(instance_id: int) -> Card:
+	var card := _find_card_in_hand(instance_id)
+	if card:
+		return card
+	card = _find_card_on_field(instance_id)
+	if card:
+		return card
+	# Also search cost zone (for cost zone activations)
+	for child in player_cost.get_children():
+		if child is Card and child.get_meta("instance_id", 0) == instance_id:
+			return child
+	for child in opponent_cost.get_children():
+		if child is Card and child.get_meta("instance_id", 0) == instance_id:
+			return child
+	return null
+
+
+# ============================================================================
+# 费用支付弹窗
+# ============================================================================
+
+var _cost_popup: Panel = null
+var _cost_popup_action_data: Dictionary = {}
+var _cost_popup_action_type: String = ""
+
+func _show_cost_payment_popup(action_data: Dictionary, action_type: String) -> void:
+	# 先清除 slot 高亮
+	_clear_slot_highlights()
+
+	# 获取费用信息
+	var instance_id: int = action_data.get("instance_id", 0)
+	var card_cost: int = action_data.get("cost", 0)
+
+	# 尝试从卡牌缓存计算费用
+	if card_cost <= 0:
+		var card_info = card_cache.get(instance_id, {})
+		if card_info.is_empty():
+			card_info = _get_card_info_from_board(instance_id)
+		var def_id: String = card_info.get("definition_id", "")
+		if def_id != "":
+			var card_def = _load_card_definition(def_id)
+			card_cost = card_def.get("cost", 0)
+	# 安全兜底
+	if typeof(card_cost) != TYPE_INT or card_cost < 0:
+		card_cost = 0
+
+	# 0 费卡直接发送，不弹窗
+	if card_cost <= 0:
+		if action_type == "play_card":
+			_send_play_card_with_cost(instance_id, action_data.get("target_zone", {}), [], 0)
+		elif action_type == "activate_effect":
+			network_manager.send_activate_effect(instance_id, action_data.get("effect_key", ""))
+		return
+
+	_cost_popup_action_data = action_data
+	_cost_popup_action_type = action_type
+
+	var my_state = {}
+	if action_type == "play_card":
+		my_state = _get_my_state_dict()
+
+	var available_rp: int = my_state.get("real_point", 0)
+
+	# 可用来支付的手牌（排除正在登场的卡）
+	var payable_hand: Array = []
+	var hand_cards = _safe_array(my_state.get("hand", []))
+	for card_info in hand_cards:
+		if typeof(card_info) == TYPE_DICTIONARY:
+			var iid = card_info.get("instance_id", 0)
+			if iid != instance_id:
+				payable_hand.append(card_info)
+
+	# 移除旧弹窗
+	if _cost_popup and is_instance_valid(_cost_popup):
+		_cost_popup.queue_free()
+	_cost_popup = null
+
+	# 创建弹窗
+	var popup = Panel.new()
+	popup.size = Vector2(420, 320)
+	popup.position = Vector2((size.x - popup.size.x) / 2, (size.y - popup.size.y) / 2)
+	popup.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	var vbox = VBoxContainer.new()
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", 10)
+
+	# 标题
+	var title = Label.new()
+	title.text = "支付费用 — 卡费: %d" % card_cost
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	# RP 滑动条区域
+	var rp_label = Label.new()
+	rp_label.text = "使用 RealPoint: 0 (可用: %d)" % available_rp
+	rp_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	var rp_slider = HSlider.new()
+	rp_slider.min_value = 0
+	rp_slider.max_value = mini(card_cost, available_rp)
+	rp_slider.step = 1
+	rp_slider.value = mini(card_cost, available_rp)  # 默认全部用 RP
+	rp_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	vbox.add_child(rp_label)
+	vbox.add_child(rp_slider)
+
+	# 手牌支付区域
+	var hand_label = Label.new()
+	hand_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+	var hand_vbox = VBoxContainer.new()
+	var checkboxes: Array = []
+	var card_labels: Array = []
+
+	for card_info in payable_hand:
+		var hbox = HBoxContainer.new()
+		var cb = CheckBox.new()
+		var label = Label.new()
+		var def_id: String = card_info.get("definition_id", "")
+		label.text = "%s (Instance %d)" % [def_id, card_info.get("instance_id", 0)]
+		hbox.add_child(cb)
+		hbox.add_child(label)
+		hand_vbox.add_child(hbox)
+		checkboxes.append(cb)
+		card_labels.append({"cb": cb, "info": card_info})
+
+	vbox.add_child(hand_label)
+	vbox.add_child(hand_vbox)
+
+	# 按钮区域
+	var btn_hbox = HBoxContainer.new()
+	btn_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+
+	var cancel_btn = Button.new()
+	cancel_btn.text = "取消"
+	cancel_btn.pressed.connect(func():
+		if _cost_popup and is_instance_valid(_cost_popup):
+			_cost_popup.queue_free()
+		_cost_popup = null
+		_clear_action_ui()
+	)
+
+	var confirm_btn = Button.new()
+	confirm_btn.text = "确认支付"
+	confirm_btn.disabled = true
+
+	btn_hbox.add_child(cancel_btn)
+	btn_hbox.add_child(confirm_btn)
+	vbox.add_child(btn_hbox)
+
+	popup.add_child(vbox)
+	add_child(popup)
+	_cost_popup = popup
+
+	# 联动逻辑
+	var update_ui = func():
+		var rp_used: int = int(rp_slider.value)
+		rp_label.text = "使用 RealPoint: %d (可用: %d)" % [rp_used, available_rp]
+		var need_hand = card_cost - rp_used
+		hand_label.text = "还需选择: %d 张手牌" % need_hand
+
+		# 限制可勾选数量
+		var checked_count = 0
+		for i in range(checkboxes.size()):
+			var cb: CheckBox = checkboxes[i]
+			if cb.button_pressed:
+				checked_count += 1
+		for i in range(checkboxes.size()):
+			var cb: CheckBox = checkboxes[i]
+			if not cb.button_pressed and checked_count >= need_hand:
+				cb.disabled = true
+			else:
+				cb.disabled = false
+
+		# 确认按钮
+		confirm_btn.disabled = (rp_used + checked_count) != card_cost
+
+	# 连接信号
+	rp_slider.value_changed.connect(func(_v): update_ui.call())
+	for cb in checkboxes:
+		cb.toggled.connect(func(_pressed): update_ui.call())
+
+	confirm_btn.pressed.connect(func():
+		var rp_used: int = int(rp_slider.value)
+		var selected_hand: Array[int] = []
+		for item in card_labels:
+			if item["cb"].button_pressed:
+				selected_hand.append(item["info"].get("instance_id", 0))
+
+		if _cost_popup and is_instance_valid(_cost_popup):
+			_cost_popup.queue_free()
+		_cost_popup = null
+
+		if _cost_popup_action_type == "play_card":
+			var target_zone = _cost_popup_action_data.get("target_zone", {})
+			_send_play_card_with_cost(instance_id, target_zone, selected_hand, rp_used)
+	)
+
+	update_ui.call()
+
+
+## 从卡片缓存和手牌区域获取卡片信息
+func _get_card_info_from_board(instance_id: int) -> Dictionary:
+	# Check card_cache first
+	if card_cache.has(instance_id):
+		return card_cache.get(instance_id, {})
+	# Search hand
+	for card in player_hand._held_cards:
+		if card.get_meta("instance_id", 0) == instance_id:
+			return {
+				"instance_id": instance_id,
+				"definition_id": card.get_meta("definition_id", ""),
+				"current_attack": card.get_meta("current_attack", 0),
+			}
+	return {}
+
+func _get_my_state_dict() -> Dictionary:
+	var state = {}
+	if network_manager and network_manager.has_signal("state_update"):
+		pass  # We don't store the last state directly; extract from UI
+	# try from GameState autoload
+	var gs = get_node_or_null("/root/GameState")
+	if gs:
+		state = gs.my_state
+	return state
 
 
 ## 玩家点击可攻击的前场卡

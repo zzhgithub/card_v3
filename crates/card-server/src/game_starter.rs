@@ -227,8 +227,8 @@ pub async fn start_game(
     }
 
     // Send initial game state to both players using room's broadcast
-    let visible_p1 = build_visible_state(&state, PlayerId::Player1);
-    let visible_p2 = build_visible_state(&state, PlayerId::Player2);
+    let visible_p1 = build_visible_state(&state, PlayerId::Player1, &[]);
+    let visible_p2 = build_visible_state(&state, PlayerId::Player2, &[]);
 
     {
         let room_guard = room.lock().await;
@@ -346,6 +346,14 @@ impl PhaseClient for NetworkPhaseClient {
                         target,
                     }
                 }
+                PhaseAction::ActivateEffect {
+                    instance_id,
+                    effect_key,
+                    ..
+                } => ActionOption::ActivateEffect {
+                    instance_id: instance_id.0,
+                    effect_key: effect_key.0.clone(),
+                },
             })
             .collect();
 
@@ -363,6 +371,10 @@ impl PhaseClient for NetworkPhaseClient {
             }
             Some(PlayerAction::RecoverySelection(_)) => {
                 warn!("Player {:?} sent recovery selection instead of phase action", self.player_id);
+                Some(PhaseAction::Pass) // Fallback
+            }
+            Some(PlayerAction::ChainResponse(_)) => {
+                warn!("Player {:?} sent chain response instead of phase action", self.player_id);
                 Some(PhaseAction::Pass) // Fallback
             }
             None => {
@@ -411,6 +423,10 @@ impl PhaseClient for NetworkPhaseClient {
                 warn!("Player {:?} sent phase action instead of recovery", self.player_id);
                 Some(vec![]) // Fallback
             }
+            Some(PlayerAction::ChainResponse(_)) => {
+                warn!("Player {:?} sent chain response instead of recovery", self.player_id);
+                Some(vec![]) // Fallback
+            }
             None => {
                 warn!("Player {:?} recovery timeout", self.player_id);
                 Some(vec![]) // Timeout fallback
@@ -418,19 +434,12 @@ impl PhaseClient for NetworkPhaseClient {
         }
     }
 
-    fn on_events(&self, _events: &[CoreGameEvent], state: &GameState) {
-        let visible_p1 = build_visible_state(state, PlayerId::Player1);
-        let visible_p2 = build_visible_state(state, PlayerId::Player2);
-
-        let r1 = self.broadcast_tx.send(RoomMessage::StateUpdate {
-            for_player: PlayerId::Player1,
-            state: visible_p1,
+    fn on_events(&self, events: &[CoreGameEvent], state: &GameState) {
+        let visible = build_visible_state(state, self.player_id, events);
+        let _ = self.broadcast_tx.send(RoomMessage::StateUpdate {
+            for_player: self.player_id,
+            state: visible,
         });
-        let r2 = self.broadcast_tx.send(RoomMessage::StateUpdate {
-            for_player: PlayerId::Player2,
-            state: visible_p2,
-        });
-
     }
 }
 
@@ -470,7 +479,7 @@ fn find_scripts_path() -> std::path::PathBuf {
 }
 
 /// Build visible game state for a specific player (with information hiding).
-fn build_visible_state(state: &GameState, for_player: PlayerId) -> VisibleGameState {
+fn build_visible_state(state: &GameState, for_player: PlayerId, events: &[CoreGameEvent]) -> VisibleGameState {
     let my_idx = match for_player {
         PlayerId::Player1 => 0,
         PlayerId::Player2 => 1,
@@ -521,12 +530,18 @@ fn build_visible_state(state: &GameState, for_player: PlayerId) -> VisibleGameSt
         card_core::state::Phase::TurnEnd => card_protocol::message::Phase::TurnEnd,
     };
 
+    let recent_events: Vec<serde_json::Value> = events
+        .iter()
+        .filter_map(|e| serde_json::to_value(e).ok())
+        .collect();
+
     VisibleGameState {
         turn_number: state.turn_number,
         current_phase: phase,
         current_player: state.turn_player,
         your_state: my_state,
         opponent_state: opponent_state,
+        recent_events,
     }
 }
 
@@ -749,29 +764,18 @@ mod tests {
         }];
         client.on_events(&events, &state);
 
-        // Should receive StateUpdate for P1
-        let msg1 = rx.try_recv().expect("Expected StateUpdate for P1");
-        match msg1 {
+        // Now only sends StateUpdate for its own player (Player1)
+        let msg = rx.try_recv().expect("Expected StateUpdate for P1");
+        match msg {
             RoomMessage::StateUpdate { for_player, state } => {
                 assert_eq!(for_player, PlayerId::Player1);
                 assert_eq!(state.your_state.hand.len(), 2);
                 assert_eq!(state.opponent_state.hand_count, 1);
             }
-            _ => panic!("Expected StateUpdate for P1, got {:?}", msg1),
+            _ => panic!("Expected StateUpdate for P1, got {:?}", msg),
         }
 
-        // Should receive StateUpdate for P2
-        let msg2 = rx.try_recv().expect("Expected StateUpdate for P2");
-        match msg2 {
-            RoomMessage::StateUpdate { for_player, state } => {
-                assert_eq!(for_player, PlayerId::Player2);
-                assert_eq!(state.your_state.hand.len(), 1);
-                assert_eq!(state.opponent_state.hand_count, 2);
-            }
-            _ => panic!("Expected StateUpdate for P2, got {:?}", msg2),
-        }
-
-        // No more messages
+        // No more messages (no longer sends P2's perspective)
         assert!(rx.try_recv().is_err());
     }
 }
