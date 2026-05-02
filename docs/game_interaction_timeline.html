@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>对局端到端交互时间线 — 卡牌对战引擎</title>
+<style>
+:root {
+  --bg: #0d1117; --card: #161b22; --border: #30363d;
+  --text: #c9d1d9; --muted: #8b949e; --accent: #58a6ff;
+  --green: #3fb950; --orange: #d2991d; --red: #f85149; --purple: #a371f7;
+  --active-bg: #1a2332; --opp-bg: #1a1e24; --server-bg: #1c2128;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+header { background: linear-gradient(135deg, #1a2332 0%, #0d1117 100%); border-bottom: 1px solid var(--border); padding: 32px 24px; text-align: center; position: sticky; top: 0; z-index: 100; }
+header h1 { font-size: 24px; margin-bottom: 8px; }
+header p { color: var(--muted); font-size: 14px; }
+nav { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+nav a, nav label { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); color: var(--muted); text-decoration: none; font-size: 13px; cursor: pointer; transition: .2s; }
+nav a:hover, nav a.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+nav label { background: transparent; }
+nav select { display: none; }
+main { max-width: 1200px; margin: 0 auto; padding: 24px; }
+section { margin-bottom: 40px; }
+h2 { font-size: 18px; padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 8px 8px 0 0; display: flex; align-items: center; gap: 10px; }
+h2 .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.badge-p0 { background: var(--red); color: #fff; }
+.badge-p1 { background: var(--orange); color: #000; }
+.badge-p2 { background: var(--purple); color: #fff; }
+.badge-ok { background: var(--green); color: #000; }
+.badge-wip { background: var(--orange); color: #000; }
+.badge-defer { background: var(--purple); color: #fff; }
+.phase { border: 1px solid var(--border); border-radius: 0 0 8px 8px; overflow: hidden; background: var(--card); }
+.phase table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.phase th { background: #21262d; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+.phase th:nth-child(1) { width: 50px; text-align: center; }
+.phase th:nth-child(2) { background: var(--server-bg); }
+.phase th:nth-child(3) { background: var(--active-bg); }
+.phase th:nth-child(4) { background: var(--opp-bg); }
+.phase td { padding: 12px 14px; border-top: 1px solid var(--border); vertical-align: top; }
+.phase td:nth-child(1) { text-align: center; color: var(--muted); font-weight: 600; font-size: 12px; }
+.phase td:nth-child(2) { background: rgba(88,166,255,.03); font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace; font-size: 12.5px; }
+.phase td:nth-child(3) { background: rgba(63,185,80,.03); }
+.phase td:nth-child(4) { background: rgba(210,153,29,.03); }
+.phase td.empty { color: var(--muted); font-style: italic; text-align: center; }
+code { background: #21262d; padding: 1px 6px; border-radius: 3px; font-size: 12px; color: var(--accent); }
+.event-tag { display: inline-block; padding: 1px 8px; border-radius: 3px; font-size: 11px; margin: 2px 4px 2px 0; background: #1c283a; color: var(--accent); border: 1px solid #2d4a6e; white-space: nowrap; }
+.event-tag.move { color: #7ee787; border-color: #2d6e3c; background: #162818; }
+.event-tag.phase { color: #d2a8ff; border-color: #4e2d6e; background: #1e1628; }
+.event-tag.dmg { color: #f85149; border-color: #6e2d2d; background: #281616; }
+.event-tag.chain { color: #f0883e; border-color: #6e412d; background: #281c16; }
+.arrow { color: var(--muted); margin: 0 4px; }
+.issue-card { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px; background: var(--card); display: flex; gap: 12px; align-items: flex-start; }
+.issue-card .severity { min-width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; }
+.issue-card .body h4 { font-size: 14px; margin-bottom: 4px; }
+.issue-card .body p { font-size: 13px; color: var(--muted); }
+.sev-p0 { background: var(--red); color: #fff; }
+.sev-p1 { background: var(--orange); color: #000; }
+.sev-p2 { background: var(--purple); color: #fff; }
+.sev-p3 { background: #555; color: var(--muted); }
+.event-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.event-table th { background: #21262d; padding: 8px 12px; text-align: left; font-size: 12px; }
+.event-table td { padding: 8px 12px; border-top: 1px solid var(--border); }
+.event-table .done { color: var(--green); }
+.event-table .missing { color: var(--red); }
+.dataflow { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 20px; overflow-x: auto; }
+.dataflow pre { font-size: 12px; line-height: 1.8; color: var(--text); }
+.note { background: rgba(210,153,29,.1); border-left: 3px solid var(--orange); padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 16px 0; font-size: 13px; }
+.note strong { color: var(--orange); }
+.collapsible { cursor: pointer; user-select: none; }
+.collapsible:hover { background: #1c2128; }
+.collapsed { display: none; }
+.filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.filter-btn { padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; font-size: 13px; background: var(--card); color: var(--text); transition: .2s; }
+.filter-btn:hover, .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+.stat-card { flex: 1; min-width: 120px; background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+.stat-card .num { font-size: 32px; font-weight: 700; color: var(--accent); }
+.stat-card .label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.msg-bubble { display: inline-block; background: #1c283a; border: 1px solid #2d4a6e; border-radius: 4px; padding: 2px 8px; font-size: 12px; margin: 1px 0; white-space: nowrap; }
+.msg-bubble.server-msg { background: #1c2128; border-color: #3d4a5e; }
+.active-highlight { color: var(--green); }
+.opp-highlight { color: var(--orange); }
+@media (max-width: 768px) {
+  main { padding: 12px; }
+  .phase td { display: block; padding: 8px 12px; }
+  .phase th:nth-child(4), .phase td:nth-child(4) { border-left: none; }
+  nav { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>⏱ 对局端到端交互时间线</h1>
+  <p>卡牌对战引擎 — Server / Active / Opponent 三端交互全流程 &middot; 191 tests passing</p>
+  <nav>
+    <a href="#phases" class="active">阶段流程</a>
+    <a href="#issues">问题追踪</a>
+    <a href="#events">事件清单</a>
+    <a href="#dataflow">数据流</a>
+  </nav>
+</header>
+
+<main>
+
+<!-- ========== STATS ========== -->
+<div class="stat-row">
+  <div class="stat-card"><div class="num">10</div><div class="label">游戏阶段</div></div>
+  <div class="stat-card"><div class="num">17</div><div class="label">事件类型</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--green)">6</div><div class="label">已修复问题</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--orange)">2</div><div class="label">观察中</div></div>
+  <div class="stat-card"><div class="num" style="color:var(--purple)">1</div><div class="label">延后实现</div></div>
+</div>
+
+<!-- ========== DESIGN NOTES ========== -->
+<div class="note">
+  <strong>设计要点</strong><br>
+  <code>PhaseRunner::run_turn()</code> 的 <code>events</code> Vec <b>在整个回合内累积不清空</b>，每次 <code>notify_clients</code> 发送从 TurnStart 到当前的全部事件。<br>
+  <code>notify_clients</code> 调用两个 <code>NetworkPhaseClient::on_events()</code>（P1/P2 各一次），每个 client <b>只发自己视角的 StateUpdate</b>（通过 <code>self.player_id</code>），<code>convert_room_message</code> 按 <code>for_player</code> 过滤，每个玩家收到 1 条。
+</div>
+
+<!-- ========== PHASE 0: GAME START ========== -->
+<section id="phases">
+<h2 class="collapsible" onclick="toggleSection(this)">🚀 阶段 0：游戏启动 <span class="badge badge-ok">已稳定</span></h2>
+<div class="phase">
+<table>
+<tr><th>#</th><th>🖥 Server</th><th>🟢 Active</th><th>🟠 Opponent</th></tr>
+<tr>
+  <td>1</td>
+  <td><code>RoomManager::join_room</code> → 广播 <span class="msg-bubble">PlayerJoined{p1}</span></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td><code>RoomManager::join_room</code> → 广播 <span class="msg-bubble">PlayerJoined{p2}</span> + <span class="msg-bubble">WaitingForDecks</span></td>
+  <td>收到 <code>RoomState</code>，显示房间信息</td><td>同左</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>双方 <code>submit_deck</code>，都 Ready 后广播 <span class="msg-bubble server-msg">GameStarting</span></td>
+  <td>收到 <code>GameStarting</code></td><td>同左</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>game_starter::start_game()</code>：<br>① 加载双方牌库的卡定义<br>② 校验卡组合法性<br>③ 创建 <code>GameState</code>，分配 InstanceId<br>④ 创建 <code>NetworkPhaseClient</code> + <code>ActionRequestState</code></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>5</td>
+  <td>广播 <span class="msg-bubble server-msg">GameStarted</span>（纯通知，无状态数据）</td>
+  <td>收到 <code>game_started</code>，等待 StateUpdate</td><td>同左</td>
+</tr>
+<tr>
+  <td>6</td>
+  <td>广播 <span class="msg-bubble server-msg">StateUpdate{for_player: P1}</span> + <span class="msg-bubble server-msg">StateUpdate{for_player: P2}</span><br><small>各自视角，此时手牌为 0（初始抽卡在 GameEngine::run 中）</small></td>
+  <td>状态快照到达：手牌 0 张<br>等待引擎启动后首个 StateUpdate</td><td>同左</td>
+</tr>
+<tr>
+  <td>7</td>
+  <td><code>spawn_blocking(GameEngine::run)</code> 启动游戏主循环</td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>8</td>
+  <td><code>GameEngine::run()</code>：<br>① 双方各抽 5 张初始手牌 <span class="event-tag">DrawCard ×10</span><br>② <code>client.on_events(initial_draw_events, &state)</code><br>③ <code>on_events</code> 推 StateUpdate（含 <code>recent_events</code>）</td>
+  <td>收到 StateUpdate：手牌变成 5 张<br><code>recent_events</code> 含全部初始抽卡事件</td>
+  <td>同左，各自看到不同视角</td>
+</tr>
+</table>
+</div>
+</section>
+
+<!-- ========== PHASE 1: TurnStart ========== -->
+<section>
+<h2 class="collapsible" onclick="toggleSection(this)">🔄 阶段 1：TurnStart — 回合开始</h2>
+<div class="phase">
+<table>
+<tr><th>#</th><th>🖥 Server</th><th>🟢 Active</th><th>🟠 Opponent</th></tr>
+<tr>
+  <td>1</td><td>引擎：<code>state.phase = TurnStart</code>，清空 <code>activated_this_turn</code></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>2</td><td>引擎 push <span class="event-tag phase">PhaseChanged{TurnStart}</span> → <code>on_events()</code></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td><code>on_events()</code> 为双方各推 StateUpdate<br><small>recent_events 含 PhaseChanged{TurnStart}</small></td>
+  <td>收到状态 + 事件，可驱动阶段切换动画</td><td>同左</td>
+</tr>
+<tr>
+  <td>4</td><td>引擎自动推进到 Draw</td><td class="empty">—</td><td class="empty">—</td>
+</tr>
+</table>
+</div>
+</section>
+
+<!-- ========== PHASE 2: Draw ========== -->
+<section>
+<h2 class="collapsible" onclick="toggleSection(this)">🃏 阶段 2：Draw — 抽卡阶段</h2>
+<div class="phase">
+<table>
+<tr><th>#</th><th>🖥 Server</th><th>🟢 Active</th><th>🟠 Opponent</th></tr>
+<tr>
+  <td>1</td><td>引擎：<code>state.phase = Draw</code>，push <span class="event-tag phase">PhaseChanged{Draw}</span></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>2</td><td>若 Turn1 且 <code>first_player_draws = false</code>（默认），跳过抽卡</td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>3</td><td>引擎：从 Active 牌组顶移除 1 张，加入手牌<br>push <span class="event-tag">DrawCard{player: Active, instance_id}</span></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>4</td>
+  <td><code>notify_clients()</code> 为双方各推 StateUpdate<br><small>recent_events 含 PhaseChanged{Draw} + DrawCard</small></td>
+  <td>
+    ✅ 手牌 +1<br>
+    <code>recent_events</code> 含 <b>instance_id</b>，可驱动"从牌组飞来这张卡"动画
+  </td>
+  <td>
+    ✅ <code>hand_count</code> +1<br>
+    <code>recent_events</code> 含对手抽卡事件（仅 player + instance_id），驱动通用动画
+  </td>
+</tr>
+<tr>
+  <td>5</td><td>引擎自动推进到 Recovery</td><td class="empty">—</td><td class="empty">—</td>
+</tr>
+</table>
+</div>
+</section>
+
+<!-- ========== PHASE 3: Recovery ========== -->
+<section>
+<h2 class="collapsible" onclick="toggleSection(this)">♻️ 阶段 3：Recovery — 回收阶段</h2>
+<div class="phase">
+<table>
+<tr><th>#</th><th>🖥 Server</th><th>🟢 Active</th><th>🟠 Opponent</th></tr>
+<tr>
+  <td>1</td><td>引擎：<code>state.phase = Recovery</code>，push <span class="event-tag phase">PhaseChanged{Recovery}</span></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>2</td><td>引擎计算 <code>recovery_count</code> = 对手前场最大费用</td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>3a</td><td>若 <code>recovery_count == 0</code>：跳过回收，推进到 Main1</td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>3b</td>
+  <td>若 <code>recovery_count > 0</code>：<br>Server <span class="active-highlight">→ Active</span> 发 <span class="msg-bubble">RecoveryRequested{count, options}</span><br><small>✅ Opponent 不收到任何消息</small></td>
+  <td>收到 <code>RecoveryRequested</code><br>客户端高亮费用区的卡</td>
+  <td class="empty">—（无消息）</td>
+</tr>
+<tr>
+  <td>4</td><td>Server 阻塞等待 Active 的 <code>recovery</code> 响应</td>
+  <td>玩家选择 N 张卡，发送 <code>recovery{cards: [iid...]}</code></td>
+  <td class="empty">—</td>
+</tr>
+<tr>
+  <td>5</td><td>引擎：选中卡从 CostZone → Hand，push <span class="event-tag move">CardMoved{CostZone→Hand}</span> × N</td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>6</td><td><code>notify_clients()</code> 推 StateUpdate<br><small>recent_events 含 PhaseChanged + CardMoved×N</small></td>
+  <td>手牌多了回收的卡 + 事件</td>
+  <td><code>hand_count</code> 增加 + 事件</td>
+</tr>
+<tr>
+  <td>7</td><td>引擎推进到 Main1</td><td class="empty">—</td><td class="empty">—</td>
+</tr>
+</table>
+</div>
+</section>
+
+<!-- ========== PHASE 4: Main1 ========== -->
+<section>
+<h2 class="collapsible" onclick="toggleSection(this)">🎯 阶段 4：Main1 — 主要阶段 1 <span class="badge badge-p0">P0 已修复</span></h2>
+<div class="phase">
+<table>
+<tr><th>#</th><th>🖥 Server</th><th>🟢 Active</th><th>🟠 Opponent</th></tr>
+<tr>
+  <td>1</td><td>引擎：push <span class="event-tag phase">PhaseChanged{Main1}</span></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>2</td>
+  <td>引擎构建 <code>available_actions</code>：<br>
+    <span class="msg-bubble">Pass</span>
+    <span class="msg-bubble">Surrender</span>
+    <span class="msg-bubble">PlayCard{id,zone}</span>
+    <span class="msg-bubble">ActivateEffect{id,key}</span><br>
+    <small>ActivateEffect 扫描：手牌 Trick + 后场全部 + 前场全部<br>⚠️ PlayCard ActionOption 不含费用（Godot 端读取 JSON）</small>
+  </td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>3</td><td>Server <span class="active-highlight">→ Active</span> 发 <span class="msg-bubble">ActionRequested{actions, timeout}</span><br><small>✅ Opponent 不收到任何消息</small></td>
+  <td>高亮可出手牌 + 可发动效果的卡<br>显示 Pass / Surrender 面板</td>
+  <td class="empty">—</td>
+</tr>
+<tr>
+  <td>4a</td><td>Active 选择 <b>Pass</b>：结束 Main1 → Battle</td>
+  <td>发 <code>action{pass}</code></td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>4b</td><td>Active 选择 <b>Surrender</b>：游戏结束</td>
+  <td>发 <code>action{surrender}</code></td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>4c</td>
+  <td>Active 选择 <b>PlayCard</b>（含 <code>cost_payment</code>）<br>
+    <b>事件顺序：</b><br>
+    ① <span class="event-tag">RealPointChanged</span>（若 RP 支付）<br>
+    ② <span class="event-tag move">CardExposed</span> + <span class="event-tag move">CardMoved{Hand→CostZone}</span> × 费用数<br>
+    ③ <span class="event-tag move">CardMoved{slot→Grave}</span>（仅物品替换时）<br>
+    ④ <span class="event-tag">CardSummoned{to: target_zone}</span>
+  </td>
+  <td>收到 StateUpdate：场上多了卡，手牌/费用区变化</td>
+  <td>对手场上新卡 + hand_count / cost_zone 变化</td>
+</tr>
+<tr>
+  <td>4d</td>
+  <td>Active 选择 <b>ActivateEffect</b>：<br>
+    <b>事件顺序：</b><br>
+    ① 费用 <span class="event-tag move">CardMoved</span>（CostRequirement 支付）<br>
+    ② <span class="event-tag">EffectActivated{id, key}</span><br>
+    ③ 链事件：<span class="event-tag chain">ChainStarted</span> → <span class="event-tag chain">ChainLink</span> → <span class="event-tag chain">ChainResolving</span>×N → <span class="event-tag chain">ChainComplete</span><br>
+    ④ <span class="event-tag move">CardMoved{→Grave}</span>（非存留策略/物品卡）
+  </td>
+  <td>效果结算后的状态 + 完整事件序列</td>
+  <td>可见变化 + 事件</td>
+</tr>
+<tr>
+  <td>5</td><td><code>notify_clients</code> → 推 StateUpdate → 回到步骤 2 循环</td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+</table>
+</div>
+</section>
+
+<!-- ========== PHASE 5: Battle ========== -->
+<section>
+<h2 class="collapsible" onclick="toggleSection(this)">⚔️ 阶段 5：Battle — 战斗阶段 <span class="badge badge-p2">P2 已修复</span></h2>
+<div class="phase">
+<table>
+<tr><th>#</th><th>🖥 Server</th><th>🟢 Active</th><th>🟠 Opponent</th></tr>
+<tr>
+  <td>1</td><td>引擎：push <span class="event-tag phase">PhaseChanged{Battle}</span></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>2</td><td>引擎收集 Active 前场未攻击的卡（<code>attacked_this_turn == false</code>），逐个询问<br><small>注：不显式检查 CardType::Character，由登场规则保证</small></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>3</td>
+  <td>每张可攻击卡<b>单独一次</b> <span class="msg-bubble">ActionRequested</span>：<br>
+    <code>DeclareAttack</code>（每个对方前场有卡的目标 slot）+ Pass<br>
+    若对方前场无卡：<code>DeclareAttack{direct}</code> + Pass<br>
+    <small>✅ Opponent 不收到消息</small>
+  </td>
+  <td>收到 <code>action_request</code></td>
+  <td class="empty">—</td>
+</tr>
+<tr>
+  <td>4a</td>
+  <td>Active 选择 <b>DeclareAttack（打前场卡）</b>：<br>
+    push <span class="event-tag">AttackDeclared{attacker}</span><br>
+    <b>比攻击力：</b><br>
+    &nbsp;&nbsp;• 攻击方 &gt; 对方：<span class="event-tag dmg">CardDestroyed{defender}</span> + <span class="event-tag">RealPointChanged</span>（RP+1）<br>
+    &nbsp;&nbsp;• 攻击方 &lt; 对方：<span class="event-tag dmg">CardDestroyed{attacker}</span>（<b>不</b>获 RP）<br>
+    &nbsp;&nbsp;• 平局：双 <span class="event-tag dmg">CardDestroyed</span>（都不获 RP）
+  </td>
+  <td>发 <code>action{declare_attack}</code> → 收到 StateUpdate</td>
+  <td>收到 StateUpdate</td>
+</tr>
+<tr>
+  <td>4b</td>
+  <td>Active 选择 <b>DeclareAttack（直接攻击）✅</b>：<br>
+    ① 攻击方获得 1 RP <span class="event-tag">RealPointChanged</span><br>
+    ② 若 RP &gt; 0 → <code>client.choose_direct_attack_rp(max_rp)</code>（默认全用）<br>
+    ③ RP -= selected <span class="event-tag">RealPointChanged</span><br>
+    ④ 对手 HP -= selected <span class="event-tag dmg">HpChanged</span><br>
+    ⑤ HP=0 → <span class="event-tag dmg">GameOver</span>
+  </td>
+  <td>发 <code>action{declare_attack}</code> → RP 选择 → 收到 StateUpdate</td>
+  <td>收到 StateUpdate</td>
+</tr>
+<tr>
+  <td>4c</td><td>Pass：跳过该卡，进入 <code>for</code> 循环的下一个 attacker</td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>5</td><td>每次攻击结算后 <code>notify_clients</code> 推 StateUpdate（累积整回合事件）</td>
+  <td>状态 + 事件</td><td>对手可见变化 + 事件</td>
+</tr>
+<tr>
+  <td>6</td><td>所有攻击卡处理完毕，推进到 Main2</td><td class="empty">—</td><td class="empty">—</td>
+</tr>
+</table>
+</div>
+</section>
+
+<!-- ========== PHASES 6-8 ========== -->
+<section>
+<h2 class="collapsible" onclick="toggleSection(this)">📋 阶段 6-8：Main2 / TurnEnd / 游戏结束</h2>
+<div class="phase">
+<table>
+<tr><th>#</th><th>🖥 Server</th><th>🟢 Active</th><th>🟠 Opponent</th></tr>
+<tr><td colspan="4" style="text-align:center; font-weight:600; background:#1a1e24;">阶段 6 — Main2（主要阶段 2）</td></tr>
+<tr><td colspan="4">与 Main1 完全相同的流程（调用同一个 <code>run_main_phase</code> 函数），循环直到选择 Pass 或 Surrender。</td></tr>
+<tr><td colspan="4" style="text-align:center; font-weight:600; background:#1a1e24;">阶段 7 — TurnEnd（回合结束）</td></tr>
+<tr>
+  <td>1</td><td>push <span class="event-tag phase">PhaseChanged{TurnEnd}</span></td><td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>2</td><td><code>cleanup_expired(state)</code> 移除 UntilEndOfTurn 修饰器<br>重置所有场地卡 <code>attacked_this_turn = false</code></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>3</td><td>回合切换：先 <code>turn_player = next</code>，再 <code>turn_number += 1</code><br>push <span class="event-tag phase">TurnChanged{new_active_player, turn_number}</span></td>
+  <td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>4</td><td><code>notify_clients()</code> 推 StateUpdate（累积整回合事件）</td>
+  <td><code>current_player</code> 变为 Opponent，角色互换</td>
+  <td>变为新 Active</td>
+</tr>
+<tr><td colspan="4" style="text-align:center; font-weight:600; background:#1a1e24;">阶段 8 — 游戏结束</td></tr>
+<tr>
+  <td>1</td><td>引擎返回 <code>GameResult{winner, reason}</code></td><td class="empty">—</td><td class="empty">—</td>
+</tr>
+<tr>
+  <td>2</td><td><code>broadcast_tx.send(GameOver{winner, reason})</code> → 双方都收到<br>Godot <code>NetworkManager</code> emit <code>game_over</code> 信号 → 弹窗显示胜负 + "返回大厅"</td>
+  <td>弹窗显示结果</td><td>同左</td>
+</tr>
+<tr>
+  <td>3</td><td>房间状态 → <code>Finished</code></td><td class="empty">—</td><td class="empty">—</td>
+</tr>
+</table>
+</div>
+</section>
+
+<!-- ========== PHASE 9: Chain ========== -->
+<section>
+<h2 class="collapsible" onclick="toggleSection(this)">🔗 阶段 9：连锁流程（FILO）<span class="badge badge-defer">交互部分延后</span></h2>
+<div class="phase">
+<div style="padding:16px">
+  <h4>✅ 已实现</h4>
+  <ul style="margin:8px 0 16px 20px; font-size:13px;">
+    <li><code>ChainManager::open_chain_window</code> — 回合玩家优先 → 交替询问 → Instant 不入栈 → FILO 结算</li>
+    <li><code>PhaseClient</code> trait 已有 <code>choose_chain_action</code> 回调（默认返回 <code>ChainPass</code>）</li>
+    <li><code>PhaseRunner::build_chainable_effects</code> 扫描所有区域的可连锁效果</li>
+    <li>服务端 <code>ChainActionRequested</code> + Godot <code>chain_action_request</code> 信号 + 连锁面板 UI</li>
+  </ul>
+
+  <h4>⏸️ 待实现</h4>
+  <p style="font-size:13px; color:var(--muted);"><code>NetworkPhaseClient</code> 尚未覆盖 <code>choose_chain_action</code>，当前所有连锁窗口<b>自动跳过交互</b>直接进入 FILO 结算。<br>需在 <code>game_starter.rs</code> 中通过 <code>ActionRequestState</code> 桥接 WebSocket 的 ChainActivate/ChainPass 响应。</p>
+
+  <h4 style="margin-top:16px;">连锁窗口流程</h4>
+  <div class="dataflow" style="margin-top:8px;"><pre>效果发动 → ChainStarted → ChainLink{initial}
+    │
+    ▼
+┌─ 连锁窗口 LOOP ─────────────────────────┐
+│ 当前询问玩家 = 回合玩家（始终先问）      │
+│                                         │
+│ 扫描该玩家可连锁效果                     │
+│   ├─ 无可连锁 → 自动 Pass               │
+│   └─ 有可连锁 → 询问 choose_chain_action│
+│       ├─ ChainActivate → 入栈（Instant 则立即结算，权交对手）│
+│       └─ ChainPass → last_passed = 当前玩家│
+│                                         │
+│ last_passed == 对手？→ 跳出 LOOP          │
+│ 否则 权利交给对手，continue               │
+└─────────────────────────────────────────┘
+    │
+    ▼
+FILO 结算：逐一 pop 出栈 → ChainResolving → ActionExecutor → ChainComplete</pre></div>
+</div>
+</div>
+</section>
+
+<!-- ========== ISSUES ========== -->
+<section id="issues">
+<h2>📊 问题状态汇总</h2>
+
+<h3 style="margin:16px 0 8px; color:var(--green)">✅ 已修复（6 项）</h3>
+<div class="issue-card"><div class="severity sev-p0">P0</div><div class="body"><h4>#5 主阶段不支持效果发动</h4><p>修复：PhaseAction::ActivateEffect + build_activatable_effects</p></div></div>
+<div class="issue-card"><div class="severity sev-p1">P1</div><div class="body"><h4>#2 CoreGameEvent 不推送到客户端</h4><p>修复：VisibleGameState 新增 recent_events；on_events 传入事件并序列化</p></div></div>
+<div class="issue-card"><div class="severity sev-p1">P1</div><div class="body"><h4>#3 抽卡后客户端不知道具体卡</h4><p>随 #2 修复：DrawCard{player, instance_id} 在 recent_events 中</p></div></div>
+<div class="issue-card"><div class="severity sev-p1">P1</div><div class="body"><h4>#9 初始手牌 DrawCard 事件未到达客户端</h4><p>修复：GameEngine::run() 初始抽卡后调用 on_events</p></div></div>
+<div class="issue-card"><div class="severity sev-p2">P2</div><div class="body"><h4>#4 非行动方收到 null StateUpdate</h4><p>修复：convert_room_message 返回 Option，非目标方 None 不发送</p></div></div>
+<div class="issue-card"><div class="severity sev-p2">P2</div><div class="body"><h4>#7 直接攻击未实现 RP 策略选择</h4><p>修复：PhaseClient::choose_direct_attack_rp，默认使用全部 RP</p></div></div>
+<div class="issue-card"><div class="severity sev-p3">P3</div><div class="body"><h4>#8 GameState 连到旧 Network autoload</h4><p>修复：/root/Network → /root/NetworkManager</p></div></div>
+
+<h3 style="margin:24px 0 8px; color:var(--orange)">⚠️ 保留观察（2 项）</h3>
+<div class="issue-card"><div class="severity sev-p3">P3</div><div class="body"><h4>#1 game_started 与首个 StateUpdate 间消息空洞</h4><p>同 broadcast 通道保证顺序；Godot 客户端已加 _waiting_first_state 标志</p></div></div>
+<div class="issue-card"><div class="severity sev-p3">P3</div><div class="body"><h4>PlayCard ActionOption 不含费用信息</h4><p>cost_payment 在 build_main_actions 中始终为空；Godot 端从本地 JSON 读取费用</p></div></div>
+
+<h3 style="margin:24px 0 8px; color:var(--purple)">⏸️ 延后实现（1 项）</h3>
+<div class="issue-card"><div class="severity sev-p0">P0</div><div class="body"><h4>#6 玩家主动连锁（交互式）</h4><p>框架已完成（open_chain_window + choose_chain_action trait + 协议 + Godot UI）。NetworkPhaseClient 尚未覆盖 choose_chain_action，当前自动走 ChainPass 默认实现。</p></div></div>
+</section>
+
+<!-- ========== EVENT INVENTORY ========== -->
+<section id="events">
+<h2>📋 完整事件类型清单</h2>
+<div class="phase">
+<table class="event-table">
+<tr><th>CoreGameEvent</th><th>JSON Key</th><th>触发时机</th><th>Godot 处理</th></tr>
+<tr><td><code>DrawCard</code></td><td><code>"DrawCard"</code></td><td>初始抽卡、Draw 阶段</td><td class="done">✅</td></tr>
+<tr><td><code>CardSummoned</code></td><td><code>"CardSummoned"</code></td><td>PlayCard 登场、SummonFromZone</td><td class="done">✅</td></tr>
+<tr><td><code>CardMoved</code></td><td><code>"CardMoved"</code></td><td>费用支付、回收、送墓</td><td class="done">✅</td></tr>
+<tr><td><code>CardDestroyed</code></td><td><code>"CardDestroyed"</code></td><td>战斗破坏、Destroy 动作</td><td class="done">✅</td></tr>
+<tr><td><code>CardExposed</code></td><td><code>"CardExposed"</code></td><td>手牌进入费用区</td><td class="done">✅</td></tr>
+<tr><td><code>HpChanged</code></td><td><code>"HpChanged"</code></td><td>伤害、治疗</td><td class="done">✅</td></tr>
+<tr><td><code>RealPointChanged</code></td><td><code>"RealPointChanged"</code></td><td>RP 增减</td><td class="done">✅</td></tr>
+<tr><td><code>RealPointOverflow</code></td><td><code>"RealPointOverflow"</code></td><td>RP 达上限</td><td class="done">✅</td></tr>
+<tr><td><code>PhaseChanged</code></td><td><code>"PhaseChanged"</code></td><td>每个阶段切换</td><td class="done">✅</td></tr>
+<tr><td><code>TurnChanged</code></td><td><code>"TurnChanged"</code></td><td>回合结束切换玩家</td><td class="done">✅</td></tr>
+<tr><td><code>EffectActivated</code></td><td><code>"EffectActivated"</code></td><td>效果发动、被动触发</td><td class="done">✅</td></tr>
+<tr><td><code>AttackDeclared</code></td><td><code>"AttackDeclared"</code></td><td>战斗宣言</td><td class="done">✅</td></tr>
+<tr><td><code>ChainStarted</code></td><td><code>"ChainStarted"</code></td><td>连锁开始</td><td class="missing">⏸️ 延后</td></tr>
+<tr><td><code>ChainLink</code></td><td><code>"ChainLink"</code></td><td>链入栈</td><td class="missing">⏸️ 延后</td></tr>
+<tr><td><code>ChainResolving</code></td><td><code>"ChainResolving"</code></td><td>链结算</td><td class="missing">⏸️ 延后</td></tr>
+<tr><td><code>ChainComplete</code></td><td><code>"ChainComplete"</code></td><td>链完成</td><td class="missing">⏸️ 延后</td></tr>
+<tr><td><code>GameOver</code></td><td><code>"GameOver"</code></td><td>游戏结束</td><td class="done">✅</td></tr>
+</table>
+</div>
+</section>
+
+<!-- ========== DATA FLOW ========== -->
+<section id="dataflow">
+<h2>🔀 数据流总览</h2>
+<div class="dataflow">
+<pre>
+<span style="color:#8b949e">┌─ 客户端上行 ────────────────────────────────────────────┐</span>
+<span style="color:#58a6ff">Client → WebSocket</span> → <span style="color:#d2a8ff">ClientMessage { type, action: ClientAction }</span>
+                              │
+                  <span style="color:#7ee787">convert_client_action(ClientAction)</span> → PhaseAction
+                              │
+                  <span style="color:#d2a8ff">PlayerAction::PhaseAction(phase_action)</span>
+                              │
+                  <span style="color:#f0883e">submit_action</span> → ActionRequestState.respond()
+                              │
+                  NetworkPhaseClient::choose_action() 阻塞等待 → 返回 PhaseAction
+                              │
+                  PhaseRunner::run_main_phase / run_battle_phase
+<span style="color:#8b949e">└──────────────────────────────────────────────────────────┘</span>
+                              │
+                              ▼
+<span style="color:#f85149">┌─ GameEngine ─────────────────────────────────────────────┐</span>
+│   PhaseRunner::run_turn()                                │
+│      ├─ TurnStart → Draw → Recovery → Main1              │
+│      │     → Battle → Main2 → TurnEnd                    │
+│      └─ notify_clients(state, events, c1, c2)            │
+<span style="color:#8b949e">└──────────────────────────────────────────────────────────┘</span>
+                              │
+<span style="color:#8b949e">┌─ 服务端下行 ────────────────────────────────────────────┐</span>
+            c1.on_events → build_visible_state(state, P1, events)
+                              → StateUpdate{for_player: P1}
+            c2.on_events → build_visible_state(state, P2, events)
+                              → StateUpdate{for_player: P2}
+                              │
+            <span style="color:#d2a8ff">convert_room_message</span> → Option&lt;ServerMessage&gt;
+              非目标方 None 过滤 / 目标方 ServerMessage::StateUpdate
+                              │
+            <span style="color:#58a6ff">Godot: _on_state_update</span>
+              → _update_from_state + _process_recent_events
+<span style="color:#8b949e">└──────────────────────────────────────────────────────────┘</span>
+
+<span style="color:#d2991d">关键过滤点</span>：convert_room_message 对 StateUpdate、ActionRequested、
+RecoveryRequested、ChainActionRequested 按 for_player/player_id 过滤，
+非目标方返回 None 不发送。PlayerJoined、GameOver、GameStarted 不过滤，双方都收到。
+</pre>
+</div>
+</section>
+
+</main>
+
+<script>
+function toggleSection(el) {
+  const phase = el.nextElementSibling;
+  if (phase.style.display === 'none') {
+    phase.style.display = '';
+    el.style.opacity = '1';
+  } else {
+    phase.style.display = 'none';
+    el.style.opacity = '0.6';
+  }
+}
+
+// Smooth scroll to anchors
+document.querySelectorAll('nav a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelectorAll('nav a').forEach(x => x.classList.remove('active'));
+    a.classList.add('active');
+  });
+});
+
+// Highlight active nav on scroll
+window.addEventListener('scroll', () => {
+  const sections = ['phases','issues','events','dataflow'];
+  let current = '';
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && window.scrollY >= el.offsetTop - 200) current = id;
+  });
+  document.querySelectorAll('nav a').forEach(a => {
+    a.classList.toggle('active', a.getAttribute('href') === '#' + current);
+  });
+});
+</script>
+
+</body>
+</html>
