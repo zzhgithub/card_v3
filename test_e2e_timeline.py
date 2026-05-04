@@ -22,22 +22,14 @@ SERVER_URL = "ws://127.0.0.1:8080/ws"  # use IPv4 to avoid Java IPv6 conflict
 ROOM_ID = f"e2e_test_{random.randint(1000,9999)}"
 SCRIPTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts_json")
 
-# 40-card deck：确保起手至少1张费用2的卡（S000-C-002），用于登场测试
+# 40-card deck：5 种链测试卡 ×3，其他卡均不超过3张
 BASE_40 = (
-    ["S000-C-002"] * 3      # cost=2, attack=800 — 最便宜的登场测试卡
-    + ["S000-C-001"] * 3    # cost=3, attack=1500
-    + ["S000-C-003"] * 3    # cost=4, attack=1200
-    + ["S000-C-004"] * 3    # cost=5, attack=1500
-    + ["S000-C-005"] * 3    # cost=2, attack=600
-    + ["S000-C-006"] * 3    # cost=3, attack=1400
-    + ["S000-C-007"] * 3    # cost=2, attack=700
-    + ["S000-C-008"] * 3    # cost=4, attack=1600
-    + ["S000-C-009"] * 3    # cost=5, attack=2000
-    + ["S000-C-010"] * 3    # cost=1, attack=500 — 费用1的最便宜卡
-    + ["S000-S-001"] * 3
-    + ["S000-S-002"] * 3
-    + ["S000-I-001"] * 2
-    + ["S000-I-002"] * 2
+    ["S000-S-004"] * 3 + ["S000-S-005"] * 3 + ["S000-S-006"] * 3
+    + ["S000-I-003"] * 3 + ["S000-C-011"] * 3                          # 15 链测试卡
+    + ["S000-C-002"] * 3 + ["S000-C-001"] * 3 + ["S000-C-010"] * 3    # 9
+    + ["S000-S-001"] * 3 + ["S000-S-002"] * 3 + ["S000-I-001"] * 3    # 9
+    + ["S000-C-003"] * 2 + ["S000-C-004"] * 2                          # 4
+    + ["S000-C-005"] * 1 + ["S000-C-006"] * 1 + ["S000-C-007"] * 1    # 3 → total 40
 )
 
 # ---------------------------------------------------------------------------
@@ -239,11 +231,13 @@ class PlayerClient:
         action_types = {}
         has_play_card = False
         has_attack = False
+        has_activate_effect = False
         for a in available_actions:
             at = a.get("action_type", "?")
             action_types[at] = action_types.get(at, 0) + 1
             if at == "play_card": has_play_card = True
             if at == "declare_attack": has_attack = True
+            if at == "activate_effect": has_activate_effect = True
         turn_count = self.role.get("turn_count", 0)
 
         self.add_log("RECV", "action_request",
@@ -280,7 +274,27 @@ class PlayerClient:
                         }
                     }))
                     return
-            # 不登场 → Pass
+            # 不登场 → 检查是否有可发动的效果（链测试）
+            if has_activate_effect:
+                # 找一个 activate_effect 动作
+                for a in available_actions:
+                    if a.get("action_type") == "activate_effect":
+                        iid = a.get("instance_id", 0)
+                        ekey = a.get("effect_key", "")
+                        self.add_log("SEND", "action",
+                                      {"action_type": "activate_effect", "instance_id": iid,
+                                       "effect_key": ekey},
+                                      f"发动效果: instance_id={iid}, effect_key={ekey}")
+                        await self.ws.send(json.dumps({
+                            "type": "action", "action": {
+                                "action_type": "activate_effect",
+                                "instance_id": iid,
+                                "effect_key": ekey,
+                                "cost_payment": {"hand_cards": [], "real_point": 0},
+                            }
+                        }))
+                        return
+            # 真的没有可做的 → Pass
             self.add_log("SEND", "action", {"action_type": "pass"}, "跳过主要阶段")
             await self.ws.send(json.dumps(
                 {"type": "action", "action": {"action_type": "pass"}}))
@@ -382,6 +396,20 @@ class PlayerClient:
                 elif msg_type == "game_started":
                     self.add_log("RECV", "game_started", {}, "游戏开始通知（纯通知）")
 
+                elif msg_type == "chain_action_request":
+                    chain_size = data.get("chain_size", 0)
+                    effects = data.get("available_effects", [])
+                    timeout = data.get("timeout_secs", 0)
+                    self.add_log("RECV", "chain_action_request",
+                                  {"chain_size": chain_size, "available_effects": effects,
+                                   "timeout_secs": timeout},
+                                  f"连锁窗口请求: chain_size={chain_size}, effects={len(effects)}")
+                    # Auto-pass for test (no chaining needed)
+                    await self.ws.send(json.dumps({
+                        "type": "action",
+                        "action": {"action_type": "chain_pass"}
+                    }))
+
                 elif msg_type == "game_starting":
                     self.add_log("RECV", "game_starting", {}, "游戏即将开始")
 
@@ -439,16 +467,14 @@ async def main():
 
     # Player1 的计划：T1 Main1 登场最便宜的卡，Battle 不攻击；T2 Recovery 回收卡 + Battle 攻击，Main2 后断开
     p1_plan = {
-        # T1 (turn 1): P1
-        1: {"play_card": True, "attack": False, "stop_after": "", "stop_turn": 99},
-        # T2 (turn 3, after P2): P1 again
-        3: {"play_card": False, "attack": True, "stop_after": "Main2", "stop_turn": 3},
+        1: {"play_card": True, "attack": False, "chain_test": True, "stop_after": "", "stop_turn": 99},
+        3: {"play_card": False, "attack": True, "chain_test": False, "stop_after": "Main2", "stop_turn": 3},
     }
-    p1_role = {"turn_plan": {}, "turn_count": 0, "should_stop": False, "game_over": False}
+    p1_role = {"plan_map": p1_plan, "turn_count": 0, "should_stop": False, "game_over": False}
     p2_plan = {
-        2: {"play_card": True, "attack": False, "stop_after": "", "stop_turn": 99},
+        2: {"play_card": True, "attack": False, "chain_test": True, "stop_after": "", "stop_turn": 99},
     }
-    p2_role = {"turn_plan": {}, "turn_count": 0, "should_stop": False, "game_over": False}
+    p2_role = {"plan_map": p2_plan, "turn_count": 0, "should_stop": False, "game_over": False}
 
     # 根据回合动态更新计划
     # 我们在 state_update 中检测回合变化来更新 turn_plan

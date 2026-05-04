@@ -1,0 +1,25 @@
+{
+  "id": "S000-C-011",
+  "name": "链测试卡",
+  "card_type": "Character",
+  "property": "Rational",
+  "category": "Science",
+  "cost": 1,
+  "tags": [
+    "测试"
+  ],
+  "effects": {
+    "e1": {
+      "trigger": "OwnMainPhase",
+      "optional": true,
+      "actions": [
+        {
+          "type": "Draw",
+          "player": "Self_",
+          "count": 1
+        }
+      ]
+    }
+  },
+  "attack": 500
+}

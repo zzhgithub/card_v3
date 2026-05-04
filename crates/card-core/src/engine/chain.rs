@@ -145,6 +145,8 @@ impl ChainManager {
         loop {
             let available = build_options(state, registry, current_ask);
 
+            let prev_passed = state.chain.last_passed;
+
             if available.is_empty() {
                 // No chainable effects → auto-pass
                 state.chain.last_passed = Some(current_ask);
@@ -163,7 +165,6 @@ impl ChainManager {
                     }) => {
                         // Check if Instant → resolve immediately, don't push to stack
                         if Self::is_instant(state, registry, instance_id) {
-                            // Build entry and execute actions immediately
                             if let Some(entry) = Self::build_entry(state, registry, instance_id, &effect_key)
                             {
                                 let link_idx = state.chain.links.len();
@@ -212,6 +213,9 @@ impl ChainManager {
                             });
                             state.chain.last_passed = None;
                         }
+                        // ChainActivate → continue asking (don't check pass condition)
+                        current_ask = current_ask.opponent();
+                        continue;
                     }
                     _ => {
                         // Pass or timeout
@@ -220,10 +224,12 @@ impl ChainManager {
                 }
             }
 
-            // Check if both players have passed consecutively
+            // Check if both players have passed consecutively:
+            // The OTHER player passed before, and THIS player just passed
             let opponent = current_ask.opponent();
-            if state.chain.last_passed == Some(opponent) {
-                // Opponent was the last to pass before us → both passed → resolve
+            if prev_passed == Some(opponent)
+                && state.chain.last_passed == Some(current_ask)
+            {
                 break;
             }
 

@@ -1,0 +1,19 @@
+{
+  "id": "S000-S-006",
+  "name": "链测试卡",
+  "card_type": "Strategy",
+  "strategy_kind": "Normal",
+  "property": "Rational",
+  "category": "Science",
+  "cost": 1,
+  "tags": ["测试"],
+  "effects": {
+    "e1": {
+      "trigger": "OwnMainPhase",
+      "optional": true,
+      "actions": [
+        { "type": "Draw", "player": "Self_", "count": 1 }
+      ]
+    }
+  }
+}
