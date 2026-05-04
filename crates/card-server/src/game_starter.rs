@@ -7,7 +7,7 @@ use std::sync::{Arc, Condvar, Mutex as StdMutex};
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Result};
-use card_core::engine::phase::{PhaseAction, PhaseClient, RecoveryCardOption};
+use card_core::engine::phase::{ChainActivateOption, PhaseAction, PhaseClient, RecoveryCardOption};
 use card_core::engine::GameEngine;
 use card_core::rules::{validate_deck, GameRules};
 use card_core::state::{CardInstance, CardRegistryImpl, CoreGameEvent, GameState};
@@ -16,7 +16,7 @@ use card_core::types::{CardId, CardType, Category, InstanceId, ItemKind, PlayerI
 use tokio::sync::{mpsc, Mutex};
 use tracing::{debug, error, info, warn};
 
-use crate::room::{ActionOption, ActionTarget, ActionZone, PlayerAction, RecoveryOption, Room, RoomMessage, VisibleGameState};
+use crate::room::{ActionOption, ActionTarget, ActionZone, ChainEffectOption, PlayerAction, RecoveryOption, Room, RoomMessage, VisibleGameState};
 
 /// Shared state for sync/async bridge between game engine and network clients.
 #[derive(Debug)]
@@ -430,6 +430,54 @@ impl PhaseClient for NetworkPhaseClient {
             None => {
                 warn!("Player {:?} recovery timeout", self.player_id);
                 Some(vec![]) // Timeout fallback
+            }
+        }
+    }
+
+    fn choose_chain_action(
+        &self,
+        chain_stack: &card_core::state::ChainStack,
+        available: &[ChainActivateOption],
+        timeout: Duration,
+    ) -> Option<card_core::engine::phase::ChainResponse> {
+        // Reset state for new request
+        self.action_state.reset();
+
+        // Build chain effect options for the player
+        let effect_options: Vec<ChainEffectOption> = available
+            .iter()
+            .map(|opt| ChainEffectOption {
+                instance_id: opt.instance_id.0,
+                effect_key: opt.effect_key.0.clone(),
+                definition_id: String::new(), // client can look up from card cache
+            })
+            .collect();
+
+        let _ = self.broadcast_tx.send(RoomMessage::ChainActionRequested {
+            player_id: self.player_id,
+            chain_size: chain_stack.links.len(),
+            available_effects: effect_options,
+            timeout_secs: timeout.as_secs(),
+        });
+
+        // Block waiting for response
+        match self.action_state.wait_response(timeout) {
+            Some(PlayerAction::ChainResponse(response)) => {
+                debug!("Player {:?} chain response: {:?}", self.player_id, response);
+                Some(response)
+            }
+            Some(PlayerAction::PhaseAction(_)) | Some(PlayerAction::RecoverySelection(_)) => {
+                warn!("Player {:?} sent wrong action type instead of chain response", self.player_id);
+                Some(card_core::engine::phase::ChainResponse::ChainPass)
+            }
+            None => {
+                if self.action_state.is_cancelled() {
+                    warn!("Chain action cancelled for {:?} (disconnected)", self.player_id);
+                    None // treat as disconnect — engine will handle
+                } else {
+                    warn!("Player {:?} chain action timeout, using Pass", self.player_id);
+                    Some(card_core::engine::phase::ChainResponse::ChainPass)
+                }
             }
         }
     }
