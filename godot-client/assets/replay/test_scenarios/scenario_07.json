@@ -1,0 +1,119 @@
+{
+  "scenario": "7. 自己被攻击 — 卡破坏 + HP下降",
+  "description": "P2 用 iid=48(ATK=2000) 攻击 P1 iid=1(ATK=1500)，P1卡破坏，HP 5→3",
+  "messages": [
+    {
+      "type": "state_update",
+      "data": {
+        "turn_number": 2,
+        "current_phase": "Battle",
+        "current_player": "Player2",
+        "recent_events": [
+          {
+            "AttackDeclared": {
+              "attacker": 48
+            }
+          },
+          {
+            "HpChanged": {
+              "player": "Player1",
+              "old_hp": 5,
+              "new_hp": 3
+            }
+          },
+          {
+            "CardDestroyed": {
+              "instance_id": 1
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 3,
+          "real_point": 1,
+          "deck_count": 33,
+          "hand": [
+            {
+              "instance_id": 7,
+              "definition_id": "S000-S-002"
+            }
+          ],
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001"
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            },
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            }
+          ]
+        },
+        "opponent_state": {
+          "hp": 4,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            {
+              "instance_id": 48,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "delay_ms": 0
+    }
+  ],
+  "verification": {
+    "expected_checks": [
+      "FRONT self REMOVE[1] slot=0",
+      "GRAVE self ADD[1]",
+      "HP self: 3"
+    ]
+  }
+}

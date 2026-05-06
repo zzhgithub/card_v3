@@ -80,20 +80,17 @@ func _update_target_positions() -> void:
 		return
 
 	var card = _held_cards[0]
-	var card_size = card_manager.card_size if card_manager else Vector2(180, 252)
-
-	# 计算居中位置
-	var center_x = (size.x - card_size.x) / 2.0
-	var center_y = (size.y - card_size.y) / 2.0
-
+	var csize = card_manager.card_size if card_manager else Vector2(79, 110)
+	var center_x = (size.x - csize.x) / 2.0
+	var center_y = (size.y - csize.y) / 2.0
 	var target_pos = global_position + Vector2(center_x, center_y)
-	card.move(target_pos, 0)
+	card.global_position = target_pos
 	card.show_front = true
 	card.can_be_interacted_with = true
 
-	# 更新攻击力标签全局位置：卡片左上角 + 向上偏移，显示在卡片上方
+	# 更新攻击力标签位置
 	if attack_label:
-		attack_label.global_position = global_position + Vector2(center_x + 4, center_y + ATTACK_LABEL_OFFSET_Y)
+		attack_label.position = Vector2(center_x + 4, center_y + ATTACK_LABEL_OFFSET_Y)
 
 	_update_attack_display()
 

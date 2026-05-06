@@ -532,6 +532,18 @@ async def main():
     # 生成 HTML 报告
     generate_html(all_logs, p1.state, p2.state)
 
+    # 生成回放 JSON
+    p1_name = "Alice(P1)"
+    p2_name = "Bob(P2)"
+    exporter = ReplayExporter(all_logs, ROOM_ID, p1_name, p2_name)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # 输出到 docs/ 和 godot-client/assets/replay/
+    replay_docs = os.path.join(script_dir, "docs", "e2e_replay.json")
+    exporter.export_json(replay_docs)
+    replay_godot = os.path.join(script_dir, "godot-client", "assets", "replay", "e2e_replay.json")
+    os.makedirs(os.path.dirname(replay_godot), exist_ok=True)
+    exporter.export_json(replay_godot)
+
 
 # ---------------------------------------------------------------------------
 # HTML 报告生成
@@ -666,6 +678,52 @@ function filterAll(){{ filter('all'); }}
         f.write(html)
     print(f"\n[Report] HTML report written to: {html_path}")
     return html_path
+
+
+# ---------------------------------------------------------------------------
+# 回放数据导出
+# ---------------------------------------------------------------------------
+class ReplayExporter:
+    """将 MessageLog 列表导出为标准回放 JSON 格式。"""
+    def __init__(self, logs: list, room_id: str, p1_name: str, p2_name: str):
+        self.logs = logs
+        self.room_id = room_id
+        self.p1_name = p1_name
+        self.p2_name = p2_name
+
+    def export_json(self, path: str):
+        messages = []
+        prev_ts = None
+        for m in self.logs:
+            d = m.to_dict()
+            entry = {
+                "player": d["player"],
+                "direction": d["direction"],
+                "type": d["msg_type"],
+                "data": d["data"],
+                "note": d["note"],
+                "delay_ms": 0,
+            }
+            if prev_ts is not None:
+                entry["delay_ms"] = int((d["ts"] - prev_ts) * 1000)
+            else:
+                entry["delay_ms"] = 0
+            prev_ts = d["ts"]
+            messages.append(entry)
+
+        replay = {
+            "version": "1.0",
+            "generated_at": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime()),
+            "room_id": self.room_id,
+            "player1_name": self.p1_name,
+            "player2_name": self.p2_name,
+            "total_messages": len(messages),
+            "messages": messages,
+        }
+
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(replay, f, ensure_ascii=False, indent=2)
+        print(f"[Replay] JSON replay written to: {path} ({len(messages)} messages)")
 
 
 if __name__ == "__main__":

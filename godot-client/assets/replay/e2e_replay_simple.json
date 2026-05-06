@@ -1,0 +1,1421 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-05-05T00:00:00",
+  "room_id": "simple_test",
+  "player1_name": "Player1",
+  "player2_name": "Player2",
+  "total_messages": 14,
+  "messages": [
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "game_started",
+      "data": {},
+      "note": "Game started",
+      "delay_ms": 0
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "TurnStart",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "DrawCard": {
+              "player": "Player1",
+              "instance_id": 1
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player1",
+              "instance_id": 2
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player1",
+              "instance_id": 3
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player1",
+              "instance_id": 4
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player1",
+              "instance_id": 5
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player2",
+              "instance_id": 41
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player2",
+              "instance_id": 42
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player2",
+              "instance_id": 43
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player2",
+              "instance_id": 44
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player2",
+              "instance_id": 45
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            },
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            }
+          ],
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        },
+        "opponent_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "初始状态：双方各5手牌",
+      "delay_ms": 0
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "Draw",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "PhaseChanged": {
+              "new_phase": "TurnStart"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Draw"
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player1",
+              "instance_id": 6
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            },
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        },
+        "opponent_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "抽卡阶段：P1 抽到 S000-C-011 (ATK=500)",
+      "delay_ms": 0
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "Main1",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "PhaseChanged": {
+              "new_phase": "Recovery"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Main1"
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            },
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        },
+        "opponent_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "主要阶段1：等待玩家操作",
+      "delay_ms": 500
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "Main1",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "CardExposed": {
+              "instance_id": 2
+            }
+          },
+          {
+            "CardMoved": {
+              "instance_id": 2,
+              "from": {
+                "player": "Player1",
+                "zone": "Hand"
+              },
+              "to": {
+                "player": "Player1",
+                "zone": "CostZone"
+              }
+            }
+          },
+          {
+            "CardSummoned": {
+              "instance_id": 1,
+              "to": {
+                "player": "Player1",
+                "zone": {
+                  "Front": 0
+                }
+              }
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            },
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            }
+          ],
+          "grave": []
+        },
+        "opponent_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "P1 登场 S000-C-001 到前场[0]，费用支付 S000-C-002 → 费用区",
+      "delay_ms": 1000
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "Main1",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "CardExposed": {
+              "instance_id": 3
+            }
+          },
+          {
+            "CardMoved": {
+              "instance_id": 3,
+              "from": {
+                "player": "Player1",
+                "zone": "Hand"
+              },
+              "to": {
+                "player": "Player1",
+                "zone": "CostZone"
+              }
+            }
+          },
+          {
+            "CardSummoned": {
+              "instance_id": 4,
+              "to": {
+                "player": "Player1",
+                "zone": {
+                  "Back": 1
+                }
+              }
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": []
+        },
+        "opponent_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "P1 伏击 S000-S-001 到后场[1]，费用支付 S000-C-003(iid=3) → 费用区",
+      "delay_ms": 500
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "Battle",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "PhaseChanged": {
+              "new_phase": "Main2"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Battle"
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": []
+        },
+        "opponent_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "战斗阶段：对手前场[0]有 S000-C-011 (ATK=500)",
+      "delay_ms": 500
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "Battle",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "AttackDeclared": {
+              "attacker": 1
+            }
+          },
+          {
+            "HpChanged": {
+              "player": "Player2",
+              "old_hp": 5,
+              "new_hp": 4
+            }
+          },
+          {
+            "CardDestroyed": {
+              "instance_id": 46
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ]
+        },
+        "opponent_state": {
+          "hp": 4,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "P1 用 S000-C-001 (ATK=1500) 攻击 对手 S000-C-011 (ATK=500) → 破坏 + 对手HP-1",
+      "delay_ms": 1000
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "TurnEnd",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "PhaseChanged": {
+              "new_phase": "Main2"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "TurnEnd"
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 1,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ]
+        },
+        "opponent_state": {
+          "hp": 4,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "回合结束：P1 RP+1，进入对手回合",
+      "delay_ms": 500
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 2,
+        "current_phase": "Main1",
+        "current_player": "Player2",
+        "recent_events": [
+          {
+            "TurnChanged": {
+              "new_active_player": "Player2",
+              "turn_number": 2
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "TurnStart"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Draw"
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player2",
+              "instance_id": 47
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Recovery"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Main1"
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 1,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ]
+        },
+        "opponent_state": {
+          "hp": 4,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 6,
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "P2 回合开始：对手抽卡 (hand_count=6)",
+      "delay_ms": 500
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 2,
+        "current_phase": "Battle",
+        "current_player": "Player2",
+        "recent_events": [
+          {
+            "PhaseChanged": {
+              "new_phase": "Main2"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Battle"
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 1,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ]
+        },
+        "opponent_state": {
+          "hp": 4,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 6,
+          "front": [
+            {
+              "instance_id": 48,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "P2 在前场[0] 登场 S000-C-010 (ATK=2000)",
+      "delay_ms": 500
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 2,
+        "current_phase": "Battle",
+        "current_player": "Player2",
+        "recent_events": [
+          {
+            "AttackDeclared": {
+              "attacker": 48
+            }
+          },
+          {
+            "HpChanged": {
+              "player": "Player1",
+              "old_hp": 5,
+              "new_hp": 3
+            }
+          },
+          {
+            "CardDestroyed": {
+              "instance_id": 1
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 3,
+          "real_point": 1,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            },
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            }
+          ]
+        },
+        "opponent_state": {
+          "hp": 4,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 6,
+          "front": [
+            {
+              "instance_id": 48,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "P2 用 S000-C-010 (ATK=2000) 攻击 P1 S000-C-001 (ATK=1500) → P1卡破坏 + P1 HP-2",
+      "delay_ms": 1000
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "state_update",
+      "data": {
+        "turn_number": 3,
+        "current_phase": "Main1",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "PhaseChanged": {
+              "new_phase": "TurnEnd"
+            }
+          },
+          {
+            "TurnChanged": {
+              "new_active_player": "Player1",
+              "turn_number": 3
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "TurnStart"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Draw"
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player1",
+              "instance_id": 7
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Recovery"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Main1"
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 3,
+          "real_point": 2,
+          "deck_count": 33,
+          "hand": [
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            },
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            },
+            {
+              "instance_id": 7,
+              "definition_id": "S000-S-002",
+              "current_attack": null
+            }
+          ],
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001",
+              "current_attack": null
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            }
+          ],
+          "grave": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            },
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            }
+          ]
+        },
+        "opponent_state": {
+          "hp": 4,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 6,
+          "front": [
+            {
+              "instance_id": 48,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "note": "P1 第3回合开始：抽卡 S000-S-002，RP=2",
+      "delay_ms": 500
+    },
+    {
+      "player": "Player1",
+      "direction": "RECV",
+      "type": "game_over",
+      "data": {
+        "type": "game_over",
+        "winner": "Player2",
+        "reason": "DeckOut"
+      },
+      "note": "游戏结束",
+      "delay_ms": 500
+    }
+  ]
+}

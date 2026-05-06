@@ -1,0 +1,150 @@
+{
+  "scenario": "11. 多事件混合",
+  "description": "单次 state_update 同时包含 PhaseChanged + DrawCard + CardSummoned 三种事件",
+  "messages": [
+    {
+      "type": "state_update",
+      "data": {
+        "turn_number": 3,
+        "current_phase": "Main1",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "PhaseChanged": {
+              "new_phase": "TurnStart"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Draw"
+            }
+          },
+          {
+            "DrawCard": {
+              "player": "Player1",
+              "instance_id": 8
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Recovery"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "Main1"
+            }
+          },
+          {
+            "CardSummoned": {
+              "instance_id": 9,
+              "to": {
+                "player": "Player1",
+                "zone": {
+                  "Front": 0
+                }
+              }
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 3,
+          "real_point": 2,
+          "deck_count": 32,
+          "hand": [
+            {
+              "instance_id": 7,
+              "definition_id": "S000-S-002"
+            },
+            {
+              "instance_id": 8,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 9,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001"
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            },
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            }
+          ]
+        },
+        "opponent_state": {
+          "hp": 3,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 4,
+          "front": [
+            {
+              "instance_id": 48,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "delay_ms": 0
+    }
+  ],
+  "verification": {
+    "expected_checks": [
+      "HAND self ADD[8]",
+      "FRONT self ADD[9] slot=0",
+      "TURN: 3, PHASE: Main1",
+      "DECK self: 32",
+      "RP self: 2"
+    ]
+  }
+}

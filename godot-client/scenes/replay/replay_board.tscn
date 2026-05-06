@@ -1,0 +1,202 @@
+[gd_scene load_steps=2 format=3 uid="uid://replay_board"]
+
+[ext_resource type="Script" path="res://scenes/replay/replay_board.gd" id="1_script"]
+
+[node name="ReplayBoard" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 10
+
+# ── 对手区域 ──
+[node name="OppArea" type="VBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HPRow" type="HBoxContainer" parent="VBox/OppArea"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="VBox/OppArea/HPRow"]
+layout_mode = 2
+text = "对手"
+theme_override_colors/font_color = Color(1, 0.5, 0.5, 1)
+
+[node name="HPValue" type="Label" parent="VBox/OppArea/HPRow"]
+layout_mode = 2
+text = "HP:5"
+
+[node name="RPValue" type="Label" parent="VBox/OppArea/HPRow"]
+layout_mode = 2
+text = "RP:0"
+
+[node name="DeckValue" type="Label" parent="VBox/OppArea/HPRow"]
+layout_mode = 2
+text = "卡组:35"
+
+[node name="HandRow" type="HBoxContainer" parent="VBox/OppArea"]
+layout_mode = 2
+
+[node name="HandLabel" type="Label" parent="VBox/OppArea/HandRow"]
+layout_mode = 2
+text = "手牌:"
+
+[node name="Cards" type="HFlowContainer" parent="VBox/OppArea/HandRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FieldRow" type="VBoxContainer" parent="VBox/OppArea"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="FrontRow" type="HBoxContainer" parent="VBox/OppArea/FieldRow"]
+layout_mode = 2
+
+[node name="FrontLabel" type="Label" parent="VBox/OppArea/FieldRow/FrontRow"]
+layout_mode = 2
+text = "前场:"
+
+[node name="FrontSlots" type="HBoxContainer" parent="VBox/OppArea/FieldRow/FrontRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="BackRow" type="HBoxContainer" parent="VBox/OppArea/FieldRow"]
+layout_mode = 2
+
+[node name="BackLabel" type="Label" parent="VBox/OppArea/FieldRow/BackRow"]
+layout_mode = 2
+text = "后场:"
+
+[node name="BackSlots" type="HBoxContainer" parent="VBox/OppArea/FieldRow/BackRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="CostRow" type="HBoxContainer" parent="VBox/OppArea"]
+layout_mode = 2
+
+[node name="CostLabel" type="Label" parent="VBox/OppArea/CostRow"]
+layout_mode = 2
+text = "费用区:"
+
+[node name="Cards" type="HFlowContainer" parent="VBox/OppArea/CostRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GraveRow" type="HBoxContainer" parent="VBox/OppArea"]
+layout_mode = 2
+
+[node name="GraveLabel" type="Label" parent="VBox/OppArea/GraveRow"]
+layout_mode = 2
+text = "墓地:"
+
+[node name="Cards" type="HFlowContainer" parent="VBox/OppArea/GraveRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSep" type="HSeparator" parent="VBox"]
+layout_mode = 2
+
+# ── 自己区域 ──
+[node name="SelfArea" type="VBoxContainer" parent="VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="HPRow" type="HBoxContainer" parent="VBox/SelfArea"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Title" type="Label" parent="VBox/SelfArea/HPRow"]
+layout_mode = 2
+text = "自己"
+theme_override_colors/font_color = Color(0.5, 0.8, 1, 1)
+
+[node name="HPValue" type="Label" parent="VBox/SelfArea/HPRow"]
+layout_mode = 2
+text = "HP:5"
+
+[node name="RPValue" type="Label" parent="VBox/SelfArea/HPRow"]
+layout_mode = 2
+text = "RP:0"
+
+[node name="DeckValue" type="Label" parent="VBox/SelfArea/HPRow"]
+layout_mode = 2
+text = "卡组:35"
+
+[node name="HandRow" type="HBoxContainer" parent="VBox/SelfArea"]
+layout_mode = 2
+
+[node name="HandLabel" type="Label" parent="VBox/SelfArea/HandRow"]
+layout_mode = 2
+text = "手牌:"
+
+[node name="Cards" type="HFlowContainer" parent="VBox/SelfArea/HandRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FieldRow" type="VBoxContainer" parent="VBox/SelfArea"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="FrontRow" type="HBoxContainer" parent="VBox/SelfArea/FieldRow"]
+layout_mode = 2
+
+[node name="FrontLabel" type="Label" parent="VBox/SelfArea/FieldRow/FrontRow"]
+layout_mode = 2
+text = "前场:"
+
+[node name="FrontSlots" type="HBoxContainer" parent="VBox/SelfArea/FieldRow/FrontRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="BackRow" type="HBoxContainer" parent="VBox/SelfArea/FieldRow"]
+layout_mode = 2
+
+[node name="BackLabel" type="Label" parent="VBox/SelfArea/FieldRow/BackRow"]
+layout_mode = 2
+text = "后场:"
+
+[node name="BackSlots" type="HBoxContainer" parent="VBox/SelfArea/FieldRow/BackRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="CostRow" type="HBoxContainer" parent="VBox/SelfArea"]
+layout_mode = 2
+
+[node name="CostLabel" type="Label" parent="VBox/SelfArea/CostRow"]
+layout_mode = 2
+text = "费用区:"
+
+[node name="Cards" type="HFlowContainer" parent="VBox/SelfArea/CostRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GraveRow" type="HBoxContainer" parent="VBox/SelfArea"]
+layout_mode = 2
+
+[node name="GraveLabel" type="Label" parent="VBox/SelfArea/GraveRow"]
+layout_mode = 2
+text = "墓地:"
+
+[node name="Cards" type="HFlowContainer" parent="VBox/SelfArea/GraveRow"]
+layout_mode = 2
+size_flags_horizontal = 3

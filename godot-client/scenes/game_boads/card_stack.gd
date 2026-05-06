@@ -35,6 +35,9 @@ const BACKGROUND_COLOR = Color(0.2, 0.2, 0.2, 0.5)
 const BORDER_COLOR = Color(0.5, 0.5, 0.5, 0.8)
 
 func _ready() -> void:
+	# 确保标签不被裁剪
+	clip_contents = false
+
 	# 创建背景
 	background = ColorRect.new()
 	background.name = "Background"

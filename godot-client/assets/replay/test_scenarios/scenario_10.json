@@ -1,0 +1,20 @@
+{
+  "scenario": "10. GameOver — DeckOut",
+  "description": "DeckOut 触发 game_over，回放循环回开头",
+  "messages": [
+    {
+      "type": "game_over",
+      "data": {
+        "type": "game_over",
+        "winner": "Player2",
+        "reason": "DeckOut"
+      },
+      "delay_ms": 0
+    }
+  ],
+  "verification": {
+    "expected_checks": [
+      "GAME_OVER: winner=Player2, reason=DeckOut"
+    ]
+  }
+}

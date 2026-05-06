@@ -1,0 +1,102 @@
+[gd_scene load_steps=4 format=3 uid="uid://replay_full"]
+
+[ext_resource type="Script" path="res://scenes/replay/replay_full.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/game_boads/game_board.tscn" id="2_board"]
+
+[sub_resource type="StyleBoxFlat" id="bar_bg"]
+bg_color = Color(0.08, 0.10, 0.16, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.30, 0.35, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+
+[node name="ReplayFull" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="GameBoard" parent="." instance=ExtResource("2_board")]
+layout_mode = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ControlBar" type="Panel" parent="."]
+layout_mode = 0
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -50.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+z_index = 10
+theme_override_styles/panel = SubResource("bar_bg")
+
+[node name="HBox" type="HBoxContainer" parent="ControlBar"]
+layout_mode = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 10.0
+offset_right = -8.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 6
+
+[node name="FileSelector" type="OptionButton" parent="ControlBar/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(160, 30)
+
+[node name="PlayPauseBtn" type="Button" parent="ControlBar/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(40, 30)
+text = "▶"
+
+[node name="StepBtn" type="Button" parent="ControlBar/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(40, 30)
+text = "⏭"
+
+[node name="SpeedBtn" type="Button" parent="ControlBar/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(46, 30)
+text = "1x"
+
+[node name="ProgressSlider" type="HSlider" parent="ControlBar/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(80, 30)
+min_value = 0.0
+max_value = 100.0
+step = 1.0
+
+[node name="MessageLabel" type="Label" parent="ControlBar/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(180, 30)
+text = "[0/0] --"
+horizontal_alignment = 1
+vertical_alignment = 1
+clip_text = true
+
+[node name="JumpInput" type="LineEdit" parent="ControlBar/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(40, 30)
+placeholder_text = "#"
+
+[node name="JumpBtn" type="Button" parent="ControlBar/HBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(44, 30)
+text = "跳转"

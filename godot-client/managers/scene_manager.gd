@@ -9,7 +9,8 @@ const SCENES = {
 	"lobby": "res://scenes/game_boads/game_lobby.tscn",
 	"connecting": "res://scenes/game_boads/connecting.tscn",
 	"room_waiting": "res://scenes/game_boads/room_waiting.tscn",
-	"game_board": "res://scenes/game_boads/game_board.tscn"
+	"game_board": "res://scenes/game_boads/game_board.tscn",
+	"replay": "res://scenes/replay/replay_controller.tscn"
 }
 
 var current_scene: Node = null

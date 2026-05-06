@@ -87,7 +87,7 @@ tr.p2 td { background:var(--p2-bg); }
           <td class="type">join_room</td>
           <td class="note">加入房间</td>
           <td class="data"><pre>{
-  "room_id": "e2e_test_1822",
+  "room_id": "e2e_test_9262",
   "player_name": "Alice(P1)"
 }</pre></td>
         </tr>
@@ -99,13 +99,13 @@ tr.p2 td { background:var(--p2-bg); }
           <td class="type">join_room</td>
           <td class="note">加入房间</td>
           <td class="data"><pre>{
-  "room_id": "e2e_test_1822",
+  "room_id": "e2e_test_9262",
   "player_name": "Bob(P2)"
 }</pre></td>
         </tr>
         <tr class="p1">
           <td class="idx">3</td>
-          <td class="ts">1.302s</td>
+          <td class="ts">1.303s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">joined</td>
@@ -118,7 +118,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">4</td>
-          <td class="ts">1.302s</td>
+          <td class="ts">1.303s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">submit_deck</td>
@@ -130,7 +130,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">5</td>
-          <td class="ts">1.302s</td>
+          <td class="ts">1.303s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">room_state</td>
@@ -149,7 +149,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">6</td>
-          <td class="ts">1.302s</td>
+          <td class="ts">1.303s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">opponent_joined</td>
@@ -183,7 +183,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">9</td>
-          <td class="ts">1.802s</td>
+          <td class="ts">1.803s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">joined</td>
@@ -196,7 +196,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">10</td>
-          <td class="ts">1.802s</td>
+          <td class="ts">1.803s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir send">SEND</td>
           <td class="type">submit_deck</td>
@@ -289,7 +289,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">17</td>
-          <td class="ts">1.810s</td>
+          <td class="ts">1.805s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">game_started</td>
@@ -298,7 +298,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">18</td>
-          <td class="ts">1.810s</td>
+          <td class="ts">1.805s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -355,7 +355,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">19</td>
-          <td class="ts">1.811s</td>
+          <td class="ts">1.805s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">game_started</td>
@@ -364,7 +364,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">20</td>
-          <td class="ts">1.811s</td>
+          <td class="ts">1.805s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -419,10 +419,10 @@ tr.p2 td { background:var(--p2-bg); }
   }
 }</pre></td>
         </tr>
-        <tr class="p2">
+        <tr class="p1">
           <td class="idx">21</td>
-          <td class="ts">1.811s</td>
-          <td class="player">Bob(P2)</td>
+          <td class="ts">1.805s</td>
+          <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
           <td class="note">状态更新 (阶段=TurnStart, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
@@ -536,27 +536,27 @@ tr.p2 td { background:var(--p2-bg); }
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 41
+        "instance_id": 1
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 42
+        "instance_id": 2
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 43
+        "instance_id": 3
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-005",
-        "instance_id": 44
+        "instance_id": 4
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-005",
-        "instance_id": 45
+        "instance_id": 5
       }
     ],
     "hp": 5,
@@ -564,10 +564,10 @@ tr.p2 td { background:var(--p2-bg); }
   }
 }</pre></td>
         </tr>
-        <tr class="p2">
+        <tr class="p1">
           <td class="idx">22</td>
-          <td class="ts">1.811s</td>
-          <td class="player">Bob(P2)</td>
+          <td class="ts">1.805s</td>
+          <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
           <td class="note">状态更新 (阶段=TurnStart, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
@@ -626,27 +626,27 @@ tr.p2 td { background:var(--p2-bg); }
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 41
+        "instance_id": 1
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 42
+        "instance_id": 2
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 43
+        "instance_id": 3
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-005",
-        "instance_id": 44
+        "instance_id": 4
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-005",
-        "instance_id": 45
+        "instance_id": 5
       }
     ],
     "hp": 5,
@@ -654,10 +654,10 @@ tr.p2 td { background:var(--p2-bg); }
   }
 }</pre></td>
         </tr>
-        <tr class="p2">
+        <tr class="p1">
           <td class="idx">23</td>
-          <td class="ts">1.811s</td>
-          <td class="player">Bob(P2)</td>
+          <td class="ts">1.805s</td>
+          <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
           <td class="note">状态更新 (阶段=Draw, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
@@ -721,27 +721,27 @@ tr.p2 td { background:var(--p2-bg); }
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 41
+        "instance_id": 1
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 42
+        "instance_id": 2
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 43
+        "instance_id": 3
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-005",
-        "instance_id": 44
+        "instance_id": 4
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-005",
-        "instance_id": 45
+        "instance_id": 5
       }
     ],
     "hp": 5,
@@ -749,10 +749,10 @@ tr.p2 td { background:var(--p2-bg); }
   }
 }</pre></td>
         </tr>
-        <tr class="p2">
+        <tr class="p1">
           <td class="idx">24</td>
-          <td class="ts">1.811s</td>
-          <td class="player">Bob(P2)</td>
+          <td class="ts">1.805s</td>
+          <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
           <td class="note">状态更新 (阶段=Recovery, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
@@ -821,27 +821,27 @@ tr.p2 td { background:var(--p2-bg); }
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 41
+        "instance_id": 1
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 42
+        "instance_id": 2
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 43
+        "instance_id": 3
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-005",
-        "instance_id": 44
+        "instance_id": 4
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-005",
-        "instance_id": 45
+        "instance_id": 5
       }
     ],
     "hp": 5,
@@ -851,437 +851,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">25</td>
-          <td class="ts">1.811s</td>
-          <td class="player">Alice(P1)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=TurnStart, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
-          <td class="data"><pre>{
-  "current_phase": "TurnStart",
-  "current_player": "Player1",
-  "opponent_state": {
-    "back": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [],
-    "deck_count": 35,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand_count": 5,
-    "hp": 5,
-    "real_point": 0
-  },
-  "recent_events": [
-    {
-      "DrawCard": {
-        "instance_id": 1,
-        "player": "Player1"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 2,
-        "player": "Player1"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 3,
-        "player": "Player1"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 4,
-        "player": "Player1"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 5,
-        "player": "Player1"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 41,
-        "player": "Player2"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 42,
-        "player": "Player2"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 43,
-        "player": "Player2"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 44,
-        "player": "Player2"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 45,
-        "player": "Player2"
-      }
-    }
-  ],
-  "turn_number": 1,
-  "your_state": {
-    "back": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [],
-    "deck_count": 35,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 3
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 4
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 5
-      }
-    ],
-    "hp": 5,
-    "real_point": 0
-  }
-}</pre></td>
-        </tr>
-        <tr class="p1">
-          <td class="idx">26</td>
-          <td class="ts">1.811s</td>
-          <td class="player">Alice(P1)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=TurnStart, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
-          <td class="data"><pre>{
-  "current_phase": "TurnStart",
-  "current_player": "Player1",
-  "opponent_state": {
-    "back": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [],
-    "deck_count": 35,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand_count": 5,
-    "hp": 5,
-    "real_point": 0
-  },
-  "recent_events": [
-    {
-      "PhaseChanged": {
-        "new_phase": "TurnStart"
-      }
-    }
-  ],
-  "turn_number": 1,
-  "your_state": {
-    "back": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [],
-    "deck_count": 35,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 3
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 4
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 5
-      }
-    ],
-    "hp": 5,
-    "real_point": 0
-  }
-}</pre></td>
-        </tr>
-        <tr class="p1">
-          <td class="idx">27</td>
-          <td class="ts">1.811s</td>
-          <td class="player">Alice(P1)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=Draw, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
-          <td class="data"><pre>{
-  "current_phase": "Draw",
-  "current_player": "Player1",
-  "opponent_state": {
-    "back": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [],
-    "deck_count": 35,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand_count": 5,
-    "hp": 5,
-    "real_point": 0
-  },
-  "recent_events": [
-    {
-      "PhaseChanged": {
-        "new_phase": "TurnStart"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Draw"
-      }
-    }
-  ],
-  "turn_number": 1,
-  "your_state": {
-    "back": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [],
-    "deck_count": 35,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 3
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 4
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 5
-      }
-    ],
-    "hp": 5,
-    "real_point": 0
-  }
-}</pre></td>
-        </tr>
-        <tr class="p1">
-          <td class="idx">28</td>
-          <td class="ts">1.811s</td>
-          <td class="player">Alice(P1)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=Recovery, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
-          <td class="data"><pre>{
-  "current_phase": "Recovery",
-  "current_player": "Player1",
-  "opponent_state": {
-    "back": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [],
-    "deck_count": 35,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand_count": 5,
-    "hp": 5,
-    "real_point": 0
-  },
-  "recent_events": [
-    {
-      "PhaseChanged": {
-        "new_phase": "TurnStart"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Draw"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Recovery"
-      }
-    }
-  ],
-  "turn_number": 1,
-  "your_state": {
-    "back": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [],
-    "deck_count": 35,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 3
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 4
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 5
-      }
-    ],
-    "hp": 5,
-    "real_point": 0
-  }
-}</pre></td>
-        </tr>
-        <tr class="p1">
-          <td class="idx">29</td>
-          <td class="ts">1.811s</td>
+          <td class="ts">1.806s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -1526,8 +1096,8 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">30</td>
-          <td class="ts">1.811s</td>
+          <td class="idx">26</td>
+          <td class="ts">1.806s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -1549,15 +1119,345 @@ tr.p2 td { background:var(--p2-bg); }
   "card_cost": 1
 }</pre></td>
         </tr>
-        <tr class="p1">
-          <td class="idx">31</td>
-          <td class="ts">1.812s</td>
-          <td class="player">Alice(P1)</td>
+        <tr class="p2">
+          <td class="idx">27</td>
+          <td class="ts">1.806s</td>
+          <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=Main1, 手牌=3张=['S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
+          <td class="note">状态更新 (阶段=TurnStart, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
           <td class="data"><pre>{
-  "current_phase": "Main1",
+  "current_phase": "TurnStart",
+  "current_player": "Player1",
+  "opponent_state": {
+    "back": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [],
+    "deck_count": 35,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand_count": 5,
+    "hp": 5,
+    "real_point": 0
+  },
+  "recent_events": [
+    {
+      "DrawCard": {
+        "instance_id": 1,
+        "player": "Player1"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 2,
+        "player": "Player1"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 3,
+        "player": "Player1"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 4,
+        "player": "Player1"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 5,
+        "player": "Player1"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 41,
+        "player": "Player2"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 42,
+        "player": "Player2"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 43,
+        "player": "Player2"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 44,
+        "player": "Player2"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 45,
+        "player": "Player2"
+      }
+    }
+  ],
+  "turn_number": 1,
+  "your_state": {
+    "back": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [],
+    "deck_count": 35,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 41
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 42
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 43
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 44
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 45
+      }
+    ],
+    "hp": 5,
+    "real_point": 0
+  }
+}</pre></td>
+        </tr>
+        <tr class="p2">
+          <td class="idx">28</td>
+          <td class="ts">1.806s</td>
+          <td class="player">Bob(P2)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">state_update</td>
+          <td class="note">状态更新 (阶段=TurnStart, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
+          <td class="data"><pre>{
+  "current_phase": "TurnStart",
+  "current_player": "Player1",
+  "opponent_state": {
+    "back": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [],
+    "deck_count": 35,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand_count": 5,
+    "hp": 5,
+    "real_point": 0
+  },
+  "recent_events": [
+    {
+      "PhaseChanged": {
+        "new_phase": "TurnStart"
+      }
+    }
+  ],
+  "turn_number": 1,
+  "your_state": {
+    "back": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [],
+    "deck_count": 35,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 41
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 42
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 43
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 44
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 45
+      }
+    ],
+    "hp": 5,
+    "real_point": 0
+  }
+}</pre></td>
+        </tr>
+        <tr class="p2">
+          <td class="idx">29</td>
+          <td class="ts">1.806s</td>
+          <td class="player">Bob(P2)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">state_update</td>
+          <td class="note">状态更新 (阶段=Draw, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
+          <td class="data"><pre>{
+  "current_phase": "Draw",
+  "current_player": "Player1",
+  "opponent_state": {
+    "back": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [],
+    "deck_count": 35,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand_count": 5,
+    "hp": 5,
+    "real_point": 0
+  },
+  "recent_events": [
+    {
+      "PhaseChanged": {
+        "new_phase": "TurnStart"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Draw"
+      }
+    }
+  ],
+  "turn_number": 1,
+  "your_state": {
+    "back": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [],
+    "deck_count": 35,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 41
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 42
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 43
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 44
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 45
+      }
+    ],
+    "hp": 5,
+    "real_point": 0
+  }
+}</pre></td>
+        </tr>
+        <tr class="p2">
+          <td class="idx">30</td>
+          <td class="ts">1.806s</td>
+          <td class="player">Bob(P2)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">state_update</td>
+          <td class="note">状态更新 (阶段=Recovery, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
+          <td class="data"><pre>{
+  "current_phase": "Recovery",
   "current_player": "Player1",
   "opponent_state": {
     "back": [
@@ -1596,62 +1496,18 @@ tr.p2 td { background:var(--p2-bg); }
       "PhaseChanged": {
         "new_phase": "Recovery"
       }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Main1"
-      }
-    },
-    {
-      "CardExposed": {
-        "instance_id": 2
-      }
-    },
-    {
-      "CardMoved": {
-        "from": {
-          "player": "Player1",
-          "zone": "Hand"
-        },
-        "instance_id": 2,
-        "to": {
-          "player": "Player1",
-          "zone": "CostZone"
-        }
-      }
-    },
-    {
-      "CardSummoned": {
-        "instance_id": 1,
-        "to": {
-          "player": "Player1",
-          "zone": {
-            "Back": 0
-          }
-        }
-      }
     }
   ],
   "turn_number": 1,
   "your_state": {
     "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
+      null,
       null,
       null,
       null,
       null
     ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      }
-    ],
+    "cost_zone": [],
     "deck_count": 35,
     "front": [
       null,
@@ -1665,17 +1521,27 @@ tr.p2 td { background:var(--p2-bg); }
       {
         "current_attack": null,
         "definition_id": "S000-S-004",
-        "instance_id": 3
+        "instance_id": 41
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 42
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 43
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-005",
-        "instance_id": 4
+        "instance_id": 44
       },
       {
         "current_attack": null,
         "definition_id": "S000-S-005",
-        "instance_id": 5
+        "instance_id": 45
       }
     ],
     "hp": 5,
@@ -1683,170 +1549,9 @@ tr.p2 td { background:var(--p2-bg); }
   }
 }</pre></td>
         </tr>
-        <tr class="p1">
-          <td class="idx">32</td>
-          <td class="ts">1.812s</td>
-          <td class="player">Alice(P1)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">action_request</td>
-          <td class="note">收到行动请求 (阶段=Main1, 回合=1)</td>
-          <td class="data"><pre>{
-  "available_actions": [
-    {
-      "action_type": "pass"
-    },
-    {
-      "action_type": "surrender"
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 3,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 1
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 3,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 2
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 3,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 3
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 3,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 4
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 4,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 1
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 4,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 2
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 4,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 3
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 4,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 4
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 5,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 1
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 5,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 2
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 5,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 3
-      }
-    },
-    {
-      "action_type": "play_card",
-      "instance_id": 5,
-      "target_zone": {
-        "zone_type": "back",
-        "slot": 4
-      }
-    },
-    {
-      "action_type": "activate_effect",
-      "instance_id": 3,
-      "effect_key": "e1"
-    },
-    {
-      "action_type": "activate_effect",
-      "instance_id": 4,
-      "effect_key": "e1"
-    },
-    {
-      "action_type": "activate_effect",
-      "instance_id": 5,
-      "effect_key": "e1"
-    },
-    {
-      "action_type": "activate_effect",
-      "instance_id": 1,
-      "effect_key": "e1"
-    }
-  ],
-  "timeout_secs": 30,
-  "phase": "Main1",
-  "turn": 1
-}</pre></td>
-        </tr>
-        <tr class="p1">
-          <td class="idx">33</td>
-          <td class="ts">1.812s</td>
-          <td class="player">Alice(P1)</td>
-          <td class="dir send">SEND</td>
-          <td class="type">action</td>
-          <td class="note">登场 链测试策略 (费用=1, RP=0, 手牌=[4])</td>
-          <td class="data"><pre>{
-  "action_type": "play_card",
-  "instance_id": 3,
-  "target_zone": {
-    "zone_type": "back",
-    "slot": 1
-  },
-  "cost_payment": {
-    "hand_cards": [
-      4
-    ],
-    "real_point": 0
-  },
-  "card_name": "链测试策略",
-  "card_cost": 1
-}</pre></td>
-        </tr>
         <tr class="p2">
-          <td class="idx">34</td>
-          <td class="ts">1.812s</td>
+          <td class="idx">31</td>
+          <td class="ts">1.806s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -1989,8 +1694,303 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
+          <td class="idx">32</td>
+          <td class="ts">1.806s</td>
+          <td class="player">Alice(P1)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">state_update</td>
+          <td class="note">状态更新 (阶段=Main1, 手牌=3张=['S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=5张, RP=0)</td>
+          <td class="data"><pre>{
+  "current_phase": "Main1",
+  "current_player": "Player1",
+  "opponent_state": {
+    "back": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [],
+    "deck_count": 35,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand_count": 5,
+    "hp": 5,
+    "real_point": 0
+  },
+  "recent_events": [
+    {
+      "PhaseChanged": {
+        "new_phase": "TurnStart"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Draw"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Recovery"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Main1"
+      }
+    },
+    {
+      "CardExposed": {
+        "instance_id": 2
+      }
+    },
+    {
+      "CardMoved": {
+        "from": {
+          "player": "Player1",
+          "zone": "Hand"
+        },
+        "instance_id": 2,
+        "to": {
+          "player": "Player1",
+          "zone": "CostZone"
+        }
+      }
+    },
+    {
+      "CardSummoned": {
+        "instance_id": 1,
+        "to": {
+          "player": "Player1",
+          "zone": {
+            "Back": 0
+          }
+        }
+      }
+    }
+  ],
+  "turn_number": 1,
+  "your_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 1
+      },
+      null,
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 2
+      }
+    ],
+    "deck_count": 35,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 3
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 4
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 5
+      }
+    ],
+    "hp": 5,
+    "real_point": 0
+  }
+}</pre></td>
+        </tr>
+        <tr class="p1">
+          <td class="idx">33</td>
+          <td class="ts">1.807s</td>
+          <td class="player">Alice(P1)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">action_request</td>
+          <td class="note">收到行动请求 (阶段=Main1, 回合=1)</td>
+          <td class="data"><pre>{
+  "available_actions": [
+    {
+      "action_type": "pass"
+    },
+    {
+      "action_type": "surrender"
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 3,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 1
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 3,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 2
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 3,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 3
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 3,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 4
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 4,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 1
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 4,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 2
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 4,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 3
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 4,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 4
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 5,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 1
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 5,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 2
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 5,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 3
+      }
+    },
+    {
+      "action_type": "play_card",
+      "instance_id": 5,
+      "target_zone": {
+        "zone_type": "back",
+        "slot": 4
+      }
+    },
+    {
+      "action_type": "activate_effect",
+      "instance_id": 3,
+      "effect_key": "e1"
+    },
+    {
+      "action_type": "activate_effect",
+      "instance_id": 4,
+      "effect_key": "e1"
+    },
+    {
+      "action_type": "activate_effect",
+      "instance_id": 5,
+      "effect_key": "e1"
+    },
+    {
+      "action_type": "activate_effect",
+      "instance_id": 1,
+      "effect_key": "e1"
+    }
+  ],
+  "timeout_secs": 30,
+  "phase": "Main1",
+  "turn": 1
+}</pre></td>
+        </tr>
+        <tr class="p1">
+          <td class="idx">34</td>
+          <td class="ts">1.807s</td>
+          <td class="player">Alice(P1)</td>
+          <td class="dir send">SEND</td>
+          <td class="type">action</td>
+          <td class="note">登场 链测试策略 (费用=1, RP=0, 手牌=[4])</td>
+          <td class="data"><pre>{
+  "action_type": "play_card",
+  "instance_id": 3,
+  "target_zone": {
+    "zone_type": "back",
+    "slot": 1
+  },
+  "cost_payment": {
+    "hand_cards": [
+      4
+    ],
+    "real_point": 0
+  },
+  "card_name": "链测试策略",
+  "card_cost": 1
+}</pre></td>
+        </tr>
+        <tr class="p1">
           <td class="idx">35</td>
-          <td class="ts">1.812s</td>
+          <td class="ts">1.807s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -2152,7 +2152,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">36</td>
-          <td class="ts">1.812s</td>
+          <td class="ts">1.807s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -2188,7 +2188,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">37</td>
-          <td class="ts">1.812s</td>
+          <td class="ts">1.807s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -2199,189 +2199,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">38</td>
-          <td class="ts">1.813s</td>
-          <td class="player">Bob(P2)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=Main1, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=1张, RP=0)</td>
-          <td class="data"><pre>{
-  "current_phase": "Main1",
-  "current_player": "Player1",
-  "opponent_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 3
-      },
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 4
-      }
-    ],
-    "deck_count": 35,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand_count": 1,
-    "hp": 5,
-    "real_point": 0
-  },
-  "recent_events": [
-    {
-      "PhaseChanged": {
-        "new_phase": "TurnStart"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Draw"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Recovery"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Main1"
-      }
-    },
-    {
-      "CardExposed": {
-        "instance_id": 2
-      }
-    },
-    {
-      "CardMoved": {
-        "from": {
-          "player": "Player1",
-          "zone": "Hand"
-        },
-        "instance_id": 2,
-        "to": {
-          "player": "Player1",
-          "zone": "CostZone"
-        }
-      }
-    },
-    {
-      "CardSummoned": {
-        "instance_id": 1,
-        "to": {
-          "player": "Player1",
-          "zone": {
-            "Back": 0
-          }
-        }
-      }
-    },
-    {
-      "CardExposed": {
-        "instance_id": 4
-      }
-    },
-    {
-      "CardMoved": {
-        "from": {
-          "player": "Player1",
-          "zone": "Hand"
-        },
-        "instance_id": 4,
-        "to": {
-          "player": "Player1",
-          "zone": "CostZone"
-        }
-      }
-    },
-    {
-      "CardSummoned": {
-        "instance_id": 3,
-        "to": {
-          "player": "Player1",
-          "zone": {
-            "Back": 1
-          }
-        }
-      }
-    }
-  ],
-  "turn_number": 1,
-  "your_state": {
-    "back": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [],
-    "deck_count": 35,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 41
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 42
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 43
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 44
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 45
-      }
-    ],
-    "hp": 5,
-    "real_point": 0
-  }
-}</pre></td>
-        </tr>
-        <tr class="p2">
-          <td class="idx">39</td>
-          <td class="ts">1.813s</td>
+          <td class="ts">1.808s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -2562,8 +2380,8 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">40</td>
-          <td class="ts">1.813s</td>
+          <td class="idx">39</td>
+          <td class="ts">1.808s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -2724,8 +2542,8 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">41</td>
-          <td class="ts">1.813s</td>
+          <td class="idx">40</td>
+          <td class="ts">1.808s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -2891,8 +2709,8 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">42</td>
-          <td class="ts">1.813s</td>
+          <td class="idx">41</td>
+          <td class="ts">1.808s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -2927,8 +2745,8 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">43</td>
-          <td class="ts">1.813s</td>
+          <td class="idx">42</td>
+          <td class="ts">1.808s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -2938,8 +2756,190 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p2">
+          <td class="idx">43</td>
+          <td class="ts">1.809s</td>
+          <td class="player">Bob(P2)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">state_update</td>
+          <td class="note">状态更新 (阶段=Main1, 手牌=5张=['S000-S-004', 'S000-S-004', 'S000-S-004', 'S000-S-005', 'S000-S-005'], 对手手牌=1张, RP=0)</td>
+          <td class="data"><pre>{
+  "current_phase": "Main1",
+  "current_player": "Player1",
+  "opponent_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 1
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 3
+      },
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 2
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 4
+      }
+    ],
+    "deck_count": 35,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand_count": 1,
+    "hp": 5,
+    "real_point": 0
+  },
+  "recent_events": [
+    {
+      "PhaseChanged": {
+        "new_phase": "TurnStart"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Draw"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Recovery"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Main1"
+      }
+    },
+    {
+      "CardExposed": {
+        "instance_id": 2
+      }
+    },
+    {
+      "CardMoved": {
+        "from": {
+          "player": "Player1",
+          "zone": "Hand"
+        },
+        "instance_id": 2,
+        "to": {
+          "player": "Player1",
+          "zone": "CostZone"
+        }
+      }
+    },
+    {
+      "CardSummoned": {
+        "instance_id": 1,
+        "to": {
+          "player": "Player1",
+          "zone": {
+            "Back": 0
+          }
+        }
+      }
+    },
+    {
+      "CardExposed": {
+        "instance_id": 4
+      }
+    },
+    {
+      "CardMoved": {
+        "from": {
+          "player": "Player1",
+          "zone": "Hand"
+        },
+        "instance_id": 4,
+        "to": {
+          "player": "Player1",
+          "zone": "CostZone"
+        }
+      }
+    },
+    {
+      "CardSummoned": {
+        "instance_id": 3,
+        "to": {
+          "player": "Player1",
+          "zone": {
+            "Back": 1
+          }
+        }
+      }
+    }
+  ],
+  "turn_number": 1,
+  "your_state": {
+    "back": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [],
+    "deck_count": 35,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 41
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 42
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 43
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 44
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 45
+      }
+    ],
+    "hp": 5,
+    "real_point": 0
+  }
+}</pre></td>
+        </tr>
+        <tr class="p2">
           <td class="idx">44</td>
-          <td class="ts">1.813s</td>
+          <td class="ts">1.809s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -3126,7 +3126,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">45</td>
-          <td class="ts">1.814s</td>
+          <td class="ts">1.809s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -3298,7 +3298,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">46</td>
-          <td class="ts">1.814s</td>
+          <td class="ts">1.809s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -3481,7 +3481,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">47</td>
-          <td class="ts">1.814s</td>
+          <td class="ts">1.809s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -3673,7 +3673,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">48</td>
-          <td class="ts">1.814s</td>
+          <td class="ts">1.810s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -3876,7 +3876,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">49</td>
-          <td class="ts">1.814s</td>
+          <td class="ts">1.810s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -3915,7 +3915,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">50</td>
-          <td class="ts">1.814s</td>
+          <td class="ts">1.810s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -3944,7 +3944,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">51</td>
-          <td class="ts">1.814s</td>
+          <td class="ts">1.811s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -3983,7 +3983,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">52</td>
-          <td class="ts">1.815s</td>
+          <td class="ts">1.811s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -4017,7 +4017,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">53</td>
-          <td class="ts">1.815s</td>
+          <td class="ts">1.812s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -4056,7 +4056,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">54</td>
-          <td class="ts">1.815s</td>
+          <td class="ts">1.813s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -4095,7 +4095,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">55</td>
-          <td class="ts">1.815s</td>
+          <td class="ts">1.813s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -4134,7 +4134,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">56</td>
-          <td class="ts">1.816s</td>
+          <td class="ts">1.814s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -4178,7 +4178,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">57</td>
-          <td class="ts">1.816s</td>
+          <td class="ts">1.814s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -4766,7 +4766,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">62</td>
-          <td class="ts">1.818s</td>
+          <td class="ts">1.817s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -4896,7 +4896,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">63</td>
-          <td class="ts">1.818s</td>
+          <td class="ts">1.817s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -5187,7 +5187,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">64</td>
-          <td class="ts">1.818s</td>
+          <td class="ts">1.817s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -6254,7 +6254,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">73</td>
-          <td class="ts">1.819s</td>
+          <td class="ts">1.820s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -6499,7 +6499,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">74</td>
-          <td class="ts">1.819s</td>
+          <td class="ts">1.820s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -6765,7 +6765,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">77</td>
-          <td class="ts">1.820s</td>
+          <td class="ts">1.821s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -7010,7 +7010,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">78</td>
-          <td class="ts">1.820s</td>
+          <td class="ts">1.821s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -7260,7 +7260,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">79</td>
-          <td class="ts">1.820s</td>
+          <td class="ts">1.821s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -7750,7 +7750,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">83</td>
-          <td class="ts">1.821s</td>
+          <td class="ts">1.822s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -8003,478 +8003,9 @@ tr.p2 td { background:var(--p2-bg); }
   }
 }</pre></td>
         </tr>
-        <tr class="p2">
-          <td class="idx">84</td>
-          <td class="ts">1.821s</td>
-          <td class="player">Bob(P2)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=Main2, 手牌=0张=[], 对手手牌=5张, RP=0)</td>
-          <td class="data"><pre>{
-  "current_phase": "Main2",
-  "current_player": "Player2",
-  "opponent_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 3
-      },
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 4
-      }
-    ],
-    "deck_count": 31,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand_count": 5,
-    "hp": 5,
-    "real_point": 0
-  },
-  "recent_events": [
-    {
-      "PhaseChanged": {
-        "new_phase": "TurnStart"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Draw"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 46,
-        "player": "Player2"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Recovery"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Main1"
-      }
-    },
-    {
-      "CardExposed": {
-        "instance_id": 42
-      }
-    },
-    {
-      "CardMoved": {
-        "from": {
-          "player": "Player2",
-          "zone": "Hand"
-        },
-        "instance_id": 42,
-        "to": {
-          "player": "Player2",
-          "zone": "CostZone"
-        }
-      }
-    },
-    {
-      "CardSummoned": {
-        "instance_id": 41,
-        "to": {
-          "player": "Player2",
-          "zone": {
-            "Back": 0
-          }
-        }
-      }
-    },
-    {
-      "CardExposed": {
-        "instance_id": 44
-      }
-    },
-    {
-      "CardMoved": {
-        "from": {
-          "player": "Player2",
-          "zone": "Hand"
-        },
-        "instance_id": 44,
-        "to": {
-          "player": "Player2",
-          "zone": "CostZone"
-        }
-      }
-    },
-    {
-      "CardSummoned": {
-        "instance_id": 43,
-        "to": {
-          "player": "Player2",
-          "zone": {
-            "Back": 1
-          }
-        }
-      }
-    },
-    {
-      "CardExposed": {
-        "instance_id": 46
-      }
-    },
-    {
-      "CardMoved": {
-        "from": {
-          "player": "Player2",
-          "zone": "Hand"
-        },
-        "instance_id": 46,
-        "to": {
-          "player": "Player2",
-          "zone": "CostZone"
-        }
-      }
-    },
-    {
-      "CardSummoned": {
-        "instance_id": 45,
-        "to": {
-          "player": "Player2",
-          "zone": {
-            "Back": 2
-          }
-        }
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Battle"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Main2"
-      }
-    }
-  ],
-  "turn_number": 2,
-  "your_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 41
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 43
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 45
-      },
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 42
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 44
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 46
-      }
-    ],
-    "deck_count": 34,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand": [],
-    "hp": 5,
-    "real_point": 0
-  }
-}</pre></td>
-        </tr>
-        <tr class="p2">
-          <td class="idx">85</td>
-          <td class="ts">1.821s</td>
-          <td class="player">Bob(P2)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=TurnEnd, 手牌=0张=[], 对手手牌=5张, RP=0)</td>
-          <td class="data"><pre>{
-  "current_phase": "TurnEnd",
-  "current_player": "Player1",
-  "opponent_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 3
-      },
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 4
-      }
-    ],
-    "deck_count": 31,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand_count": 5,
-    "hp": 5,
-    "real_point": 0
-  },
-  "recent_events": [
-    {
-      "PhaseChanged": {
-        "new_phase": "TurnStart"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Draw"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 46,
-        "player": "Player2"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Recovery"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Main1"
-      }
-    },
-    {
-      "CardExposed": {
-        "instance_id": 42
-      }
-    },
-    {
-      "CardMoved": {
-        "from": {
-          "player": "Player2",
-          "zone": "Hand"
-        },
-        "instance_id": 42,
-        "to": {
-          "player": "Player2",
-          "zone": "CostZone"
-        }
-      }
-    },
-    {
-      "CardSummoned": {
-        "instance_id": 41,
-        "to": {
-          "player": "Player2",
-          "zone": {
-            "Back": 0
-          }
-        }
-      }
-    },
-    {
-      "CardExposed": {
-        "instance_id": 44
-      }
-    },
-    {
-      "CardMoved": {
-        "from": {
-          "player": "Player2",
-          "zone": "Hand"
-        },
-        "instance_id": 44,
-        "to": {
-          "player": "Player2",
-          "zone": "CostZone"
-        }
-      }
-    },
-    {
-      "CardSummoned": {
-        "instance_id": 43,
-        "to": {
-          "player": "Player2",
-          "zone": {
-            "Back": 1
-          }
-        }
-      }
-    },
-    {
-      "CardExposed": {
-        "instance_id": 46
-      }
-    },
-    {
-      "CardMoved": {
-        "from": {
-          "player": "Player2",
-          "zone": "Hand"
-        },
-        "instance_id": 46,
-        "to": {
-          "player": "Player2",
-          "zone": "CostZone"
-        }
-      }
-    },
-    {
-      "CardSummoned": {
-        "instance_id": 45,
-        "to": {
-          "player": "Player2",
-          "zone": {
-            "Back": 2
-          }
-        }
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Battle"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Main2"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "TurnEnd"
-      }
-    },
-    {
-      "TurnChanged": {
-        "new_active_player": "Player1",
-        "turn_number": 3
-      }
-    }
-  ],
-  "turn_number": 3,
-  "your_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 41
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 43
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 45
-      },
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 42
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 44
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 46
-      }
-    ],
-    "deck_count": 34,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand": [],
-    "hp": 5,
-    "real_point": 0
-  }
-}</pre></td>
-        </tr>
         <tr class="p1">
-          <td class="idx">86</td>
-          <td class="ts">1.821s</td>
+          <td class="idx">84</td>
+          <td class="ts">1.822s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -8739,7 +8270,7 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">87</td>
+          <td class="idx">85</td>
           <td class="ts">1.822s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
@@ -8788,8 +8319,477 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p2">
+          <td class="idx">86</td>
+          <td class="ts">1.823s</td>
+          <td class="player">Bob(P2)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">state_update</td>
+          <td class="note">状态更新 (阶段=Main2, 手牌=0张=[], 对手手牌=5张, RP=0)</td>
+          <td class="data"><pre>{
+  "current_phase": "Main2",
+  "current_player": "Player2",
+  "opponent_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 1
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 3
+      },
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 2
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 4
+      }
+    ],
+    "deck_count": 31,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand_count": 5,
+    "hp": 5,
+    "real_point": 0
+  },
+  "recent_events": [
+    {
+      "PhaseChanged": {
+        "new_phase": "TurnStart"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Draw"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 46,
+        "player": "Player2"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Recovery"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Main1"
+      }
+    },
+    {
+      "CardExposed": {
+        "instance_id": 42
+      }
+    },
+    {
+      "CardMoved": {
+        "from": {
+          "player": "Player2",
+          "zone": "Hand"
+        },
+        "instance_id": 42,
+        "to": {
+          "player": "Player2",
+          "zone": "CostZone"
+        }
+      }
+    },
+    {
+      "CardSummoned": {
+        "instance_id": 41,
+        "to": {
+          "player": "Player2",
+          "zone": {
+            "Back": 0
+          }
+        }
+      }
+    },
+    {
+      "CardExposed": {
+        "instance_id": 44
+      }
+    },
+    {
+      "CardMoved": {
+        "from": {
+          "player": "Player2",
+          "zone": "Hand"
+        },
+        "instance_id": 44,
+        "to": {
+          "player": "Player2",
+          "zone": "CostZone"
+        }
+      }
+    },
+    {
+      "CardSummoned": {
+        "instance_id": 43,
+        "to": {
+          "player": "Player2",
+          "zone": {
+            "Back": 1
+          }
+        }
+      }
+    },
+    {
+      "CardExposed": {
+        "instance_id": 46
+      }
+    },
+    {
+      "CardMoved": {
+        "from": {
+          "player": "Player2",
+          "zone": "Hand"
+        },
+        "instance_id": 46,
+        "to": {
+          "player": "Player2",
+          "zone": "CostZone"
+        }
+      }
+    },
+    {
+      "CardSummoned": {
+        "instance_id": 45,
+        "to": {
+          "player": "Player2",
+          "zone": {
+            "Back": 2
+          }
+        }
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Battle"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Main2"
+      }
+    }
+  ],
+  "turn_number": 2,
+  "your_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 41
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 43
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 45
+      },
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 42
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 44
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 46
+      }
+    ],
+    "deck_count": 34,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand": [],
+    "hp": 5,
+    "real_point": 0
+  }
+}</pre></td>
+        </tr>
+        <tr class="p2">
+          <td class="idx">87</td>
+          <td class="ts">1.823s</td>
+          <td class="player">Bob(P2)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">state_update</td>
+          <td class="note">状态更新 (阶段=TurnEnd, 手牌=0张=[], 对手手牌=5张, RP=0)</td>
+          <td class="data"><pre>{
+  "current_phase": "TurnEnd",
+  "current_player": "Player1",
+  "opponent_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 1
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 3
+      },
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 2
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 4
+      }
+    ],
+    "deck_count": 31,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand_count": 5,
+    "hp": 5,
+    "real_point": 0
+  },
+  "recent_events": [
+    {
+      "PhaseChanged": {
+        "new_phase": "TurnStart"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Draw"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 46,
+        "player": "Player2"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Recovery"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Main1"
+      }
+    },
+    {
+      "CardExposed": {
+        "instance_id": 42
+      }
+    },
+    {
+      "CardMoved": {
+        "from": {
+          "player": "Player2",
+          "zone": "Hand"
+        },
+        "instance_id": 42,
+        "to": {
+          "player": "Player2",
+          "zone": "CostZone"
+        }
+      }
+    },
+    {
+      "CardSummoned": {
+        "instance_id": 41,
+        "to": {
+          "player": "Player2",
+          "zone": {
+            "Back": 0
+          }
+        }
+      }
+    },
+    {
+      "CardExposed": {
+        "instance_id": 44
+      }
+    },
+    {
+      "CardMoved": {
+        "from": {
+          "player": "Player2",
+          "zone": "Hand"
+        },
+        "instance_id": 44,
+        "to": {
+          "player": "Player2",
+          "zone": "CostZone"
+        }
+      }
+    },
+    {
+      "CardSummoned": {
+        "instance_id": 43,
+        "to": {
+          "player": "Player2",
+          "zone": {
+            "Back": 1
+          }
+        }
+      }
+    },
+    {
+      "CardExposed": {
+        "instance_id": 46
+      }
+    },
+    {
+      "CardMoved": {
+        "from": {
+          "player": "Player2",
+          "zone": "Hand"
+        },
+        "instance_id": 46,
+        "to": {
+          "player": "Player2",
+          "zone": "CostZone"
+        }
+      }
+    },
+    {
+      "CardSummoned": {
+        "instance_id": 45,
+        "to": {
+          "player": "Player2",
+          "zone": {
+            "Back": 2
+          }
+        }
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Battle"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Main2"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "TurnEnd"
+      }
+    },
+    {
+      "TurnChanged": {
+        "new_active_player": "Player1",
+        "turn_number": 3
+      }
+    }
+  ],
+  "turn_number": 3,
+  "your_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 41
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 43
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 45
+      },
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 42
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 44
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 46
+      }
+    ],
+    "deck_count": 34,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand": [],
+    "hp": 5,
+    "real_point": 0
+  }
+}</pre></td>
+        </tr>
+        <tr class="p2">
           <td class="idx">88</td>
-          <td class="ts">1.822s</td>
+          <td class="ts">1.823s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -8818,7 +8818,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">89</td>
-          <td class="ts">1.822s</td>
+          <td class="ts">1.823s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -8872,7 +8872,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">90</td>
-          <td class="ts">1.822s</td>
+          <td class="ts">1.823s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -8901,7 +8901,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">91</td>
-          <td class="ts">1.822s</td>
+          <td class="ts">1.824s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -8960,7 +8960,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">92</td>
-          <td class="ts">1.823s</td>
+          <td class="ts">1.824s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -8989,7 +8989,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">93</td>
-          <td class="ts">1.823s</td>
+          <td class="ts">1.825s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9048,7 +9048,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">94</td>
-          <td class="ts">1.823s</td>
+          <td class="ts">1.825s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9082,7 +9082,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">95</td>
-          <td class="ts">1.823s</td>
+          <td class="ts">1.825s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9141,7 +9141,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">96</td>
-          <td class="ts">1.824s</td>
+          <td class="ts">1.825s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9180,7 +9180,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">97</td>
-          <td class="ts">1.824s</td>
+          <td class="ts">1.826s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9239,7 +9239,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">98</td>
-          <td class="ts">1.824s</td>
+          <td class="ts">1.826s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9283,7 +9283,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">99</td>
-          <td class="ts">1.824s</td>
+          <td class="ts">1.826s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9347,7 +9347,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">100</td>
-          <td class="ts">1.825s</td>
+          <td class="ts">1.826s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9391,7 +9391,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">101</td>
-          <td class="ts">1.825s</td>
+          <td class="ts">1.827s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9460,7 +9460,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">102</td>
-          <td class="ts">1.825s</td>
+          <td class="ts">1.827s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9504,7 +9504,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">103</td>
-          <td class="ts">1.825s</td>
+          <td class="ts">1.827s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9573,7 +9573,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">104</td>
-          <td class="ts">1.826s</td>
+          <td class="ts">1.827s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9622,7 +9622,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">105</td>
-          <td class="ts">1.826s</td>
+          <td class="ts">1.828s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9691,7 +9691,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">106</td>
-          <td class="ts">1.826s</td>
+          <td class="ts">1.828s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -9745,7 +9745,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">107</td>
-          <td class="ts">1.827s</td>
+          <td class="ts">1.828s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -9902,7 +9902,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">108</td>
-          <td class="ts">1.827s</td>
+          <td class="ts">1.828s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -10075,7 +10075,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">109</td>
-          <td class="ts">1.827s</td>
+          <td class="ts">1.829s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -10253,7 +10253,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">110</td>
-          <td class="ts">1.827s</td>
+          <td class="ts">1.829s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -10606,7 +10606,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">111</td>
-          <td class="ts">1.827s</td>
+          <td class="ts">1.829s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -10619,7 +10619,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">112</td>
-          <td class="ts">1.827s</td>
+          <td class="ts">1.829s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -10761,7 +10761,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">113</td>
-          <td class="ts">1.827s</td>
+          <td class="ts">1.829s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -10914,7 +10914,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">114</td>
-          <td class="ts">1.827s</td>
+          <td class="ts">1.829s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -11072,7 +11072,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">115</td>
-          <td class="ts">1.827s</td>
+          <td class="ts">1.829s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -11146,7 +11146,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">116</td>
-          <td class="ts">1.828s</td>
+          <td class="ts">1.829s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -11205,7 +11205,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">117</td>
-          <td class="ts">1.828s</td>
+          <td class="ts">1.830s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -11416,9 +11416,197 @@ tr.p2 td { background:var(--p2-bg); }
   }
 }</pre></td>
         </tr>
-        <tr class="p1">
+        <tr class="p2">
           <td class="idx">118</td>
-          <td class="ts">1.828s</td>
+          <td class="ts">1.830s</td>
+          <td class="player">Bob(P2)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">state_update</td>
+          <td class="note">状态更新 (阶段=Main1, 手牌=6张=['S000-S-006', 'S000-S-006', 'S000-S-006', 'S000-I-003', 'S000-I-003', 'S000-I-003'], 对手手牌=11张, RP=0)</td>
+          <td class="data"><pre>{
+  "current_phase": "Main1",
+  "current_player": "Player1",
+  "opponent_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 1
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 3
+      },
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 2
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 4
+      }
+    ],
+    "deck_count": 25,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand_count": 11,
+    "hp": 5,
+    "real_point": 0
+  },
+  "recent_events": [
+    {
+      "PhaseChanged": {
+        "new_phase": "TurnStart"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Draw"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 14,
+        "player": "Player1"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Recovery"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Main1"
+      }
+    },
+    {
+      "EffectActivated": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    "ChainStarted",
+    {
+      "ChainLink": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    {
+      "ChainResolving": {
+        "link_index": 0
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 15,
+        "player": "Player1"
+      }
+    },
+    "ChainComplete"
+  ],
+  "turn_number": 3,
+  "your_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 41
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 43
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 45
+      },
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 42
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 44
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 46
+      }
+    ],
+    "deck_count": 28,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-006",
+        "instance_id": 47
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-006",
+        "instance_id": 48
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-006",
+        "instance_id": 49
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-I-003",
+        "instance_id": 50
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-I-003",
+        "instance_id": 51
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-I-003",
+        "instance_id": 52
+      }
+    ],
+    "hp": 5,
+    "real_point": 0
+  }
+}</pre></td>
+        </tr>
+        <tr class="p1">
+          <td class="idx">119</td>
+          <td class="ts">1.830s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -11815,8 +12003,8 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">119</td>
-          <td class="ts">1.828s</td>
+          <td class="idx">120</td>
+          <td class="ts">1.830s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -11827,197 +12015,9 @@ tr.p2 td { background:var(--p2-bg); }
   "effect_key": "e1"
 }</pre></td>
         </tr>
-        <tr class="p2">
-          <td class="idx">120</td>
-          <td class="ts">1.828s</td>
-          <td class="player">Bob(P2)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=Main1, 手牌=6张=['S000-S-006', 'S000-S-006', 'S000-S-006', 'S000-I-003', 'S000-I-003', 'S000-I-003'], 对手手牌=11张, RP=0)</td>
-          <td class="data"><pre>{
-  "current_phase": "Main1",
-  "current_player": "Player1",
-  "opponent_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 3
-      },
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 4
-      }
-    ],
-    "deck_count": 25,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand_count": 11,
-    "hp": 5,
-    "real_point": 0
-  },
-  "recent_events": [
-    {
-      "PhaseChanged": {
-        "new_phase": "TurnStart"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Draw"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 14,
-        "player": "Player1"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Recovery"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Main1"
-      }
-    },
-    {
-      "EffectActivated": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    "ChainStarted",
-    {
-      "ChainLink": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    {
-      "ChainResolving": {
-        "link_index": 0
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 15,
-        "player": "Player1"
-      }
-    },
-    "ChainComplete"
-  ],
-  "turn_number": 3,
-  "your_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 41
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 43
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 45
-      },
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 42
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 44
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 46
-      }
-    ],
-    "deck_count": 28,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-006",
-        "instance_id": 47
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-006",
-        "instance_id": 48
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-006",
-        "instance_id": 49
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-I-003",
-        "instance_id": 50
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-I-003",
-        "instance_id": 51
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-I-003",
-        "instance_id": 52
-      }
-    ],
-    "hp": 5,
-    "real_point": 0
-  }
-}</pre></td>
-        </tr>
         <tr class="p1">
           <td class="idx">121</td>
-          <td class="ts">1.828s</td>
+          <td class="ts">1.830s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -12096,7 +12096,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">122</td>
-          <td class="ts">1.829s</td>
+          <td class="ts">1.831s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -12155,7 +12155,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">123</td>
-          <td class="ts">1.829s</td>
+          <td class="ts">1.831s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -12398,7 +12398,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">124</td>
-          <td class="ts">1.829s</td>
+          <td class="ts">1.832s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -12836,7 +12836,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">125</td>
-          <td class="ts">1.829s</td>
+          <td class="ts">1.832s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -12849,7 +12849,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">126</td>
-          <td class="ts">1.830s</td>
+          <td class="ts">1.832s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -13062,7 +13062,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">127</td>
-          <td class="ts">1.830s</td>
+          <td class="ts">1.832s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -13141,7 +13141,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">128</td>
-          <td class="ts">1.830s</td>
+          <td class="ts">1.832s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -13198,247 +13198,9 @@ tr.p2 td { background:var(--p2-bg); }
   "timeout_secs": 30
 }</pre></td>
         </tr>
-        <tr class="p2">
-          <td class="idx">129</td>
-          <td class="ts">1.831s</td>
-          <td class="player">Bob(P2)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=Main1, 手牌=6张=['S000-S-006', 'S000-S-006', 'S000-S-006', 'S000-I-003', 'S000-I-003', 'S000-I-003'], 对手手牌=13张, RP=0)</td>
-          <td class="data"><pre>{
-  "current_phase": "Main1",
-  "current_player": "Player1",
-  "opponent_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 3
-      },
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 4
-      }
-    ],
-    "deck_count": 23,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand_count": 13,
-    "hp": 5,
-    "real_point": 0
-  },
-  "recent_events": [
-    {
-      "PhaseChanged": {
-        "new_phase": "TurnStart"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Draw"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 14,
-        "player": "Player1"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Recovery"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Main1"
-      }
-    },
-    {
-      "EffectActivated": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    "ChainStarted",
-    {
-      "ChainLink": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    {
-      "ChainResolving": {
-        "link_index": 0
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 15,
-        "player": "Player1"
-      }
-    },
-    "ChainComplete",
-    {
-      "EffectActivated": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    "ChainStarted",
-    {
-      "ChainLink": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    {
-      "ChainResolving": {
-        "link_index": 0
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 16,
-        "player": "Player1"
-      }
-    },
-    "ChainComplete",
-    {
-      "EffectActivated": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    "ChainStarted",
-    {
-      "ChainLink": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    {
-      "ChainResolving": {
-        "link_index": 0
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 17,
-        "player": "Player1"
-      }
-    },
-    "ChainComplete"
-  ],
-  "turn_number": 3,
-  "your_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 41
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 43
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 45
-      },
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 42
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 44
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 46
-      }
-    ],
-    "deck_count": 28,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-006",
-        "instance_id": 47
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-006",
-        "instance_id": 48
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-006",
-        "instance_id": 49
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-I-003",
-        "instance_id": 50
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-I-003",
-        "instance_id": 51
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-I-003",
-        "instance_id": 52
-      }
-    ],
-    "hp": 5,
-    "real_point": 0
-  }
-}</pre></td>
-        </tr>
         <tr class="p1">
-          <td class="idx">130</td>
-          <td class="ts">1.831s</td>
+          <td class="idx">129</td>
+          <td class="ts">1.833s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -13710,8 +13472,8 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">131</td>
-          <td class="ts">1.831s</td>
+          <td class="idx">130</td>
+          <td class="ts">1.833s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -14188,8 +13950,8 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">132</td>
-          <td class="ts">1.831s</td>
+          <td class="idx">131</td>
+          <td class="ts">1.833s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -14200,9 +13962,247 @@ tr.p2 td { background:var(--p2-bg); }
   "effect_key": "e1"
 }</pre></td>
         </tr>
+        <tr class="p2">
+          <td class="idx">132</td>
+          <td class="ts">1.833s</td>
+          <td class="player">Bob(P2)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">state_update</td>
+          <td class="note">状态更新 (阶段=Main1, 手牌=6张=['S000-S-006', 'S000-S-006', 'S000-S-006', 'S000-I-003', 'S000-I-003', 'S000-I-003'], 对手手牌=13张, RP=0)</td>
+          <td class="data"><pre>{
+  "current_phase": "Main1",
+  "current_player": "Player1",
+  "opponent_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 1
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 3
+      },
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 2
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 4
+      }
+    ],
+    "deck_count": 23,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand_count": 13,
+    "hp": 5,
+    "real_point": 0
+  },
+  "recent_events": [
+    {
+      "PhaseChanged": {
+        "new_phase": "TurnStart"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Draw"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 14,
+        "player": "Player1"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Recovery"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Main1"
+      }
+    },
+    {
+      "EffectActivated": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    "ChainStarted",
+    {
+      "ChainLink": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    {
+      "ChainResolving": {
+        "link_index": 0
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 15,
+        "player": "Player1"
+      }
+    },
+    "ChainComplete",
+    {
+      "EffectActivated": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    "ChainStarted",
+    {
+      "ChainLink": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    {
+      "ChainResolving": {
+        "link_index": 0
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 16,
+        "player": "Player1"
+      }
+    },
+    "ChainComplete",
+    {
+      "EffectActivated": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    "ChainStarted",
+    {
+      "ChainLink": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    {
+      "ChainResolving": {
+        "link_index": 0
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 17,
+        "player": "Player1"
+      }
+    },
+    "ChainComplete"
+  ],
+  "turn_number": 3,
+  "your_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 41
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 43
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 45
+      },
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 42
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 44
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 46
+      }
+    ],
+    "deck_count": 28,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-006",
+        "instance_id": 47
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-006",
+        "instance_id": 48
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-006",
+        "instance_id": 49
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-I-003",
+        "instance_id": 50
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-I-003",
+        "instance_id": 51
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-I-003",
+        "instance_id": 52
+      }
+    ],
+    "hp": 5,
+    "real_point": 0
+  }
+}</pre></td>
+        </tr>
         <tr class="p1">
           <td class="idx">133</td>
-          <td class="ts">1.831s</td>
+          <td class="ts">1.834s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -14281,7 +14281,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">134</td>
-          <td class="ts">1.832s</td>
+          <td class="ts">1.834s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -14338,9 +14338,272 @@ tr.p2 td { background:var(--p2-bg); }
   "timeout_secs": 30
 }</pre></td>
         </tr>
-        <tr class="p1">
+        <tr class="p2">
           <td class="idx">135</td>
-          <td class="ts">1.832s</td>
+          <td class="ts">1.835s</td>
+          <td class="player">Bob(P2)</td>
+          <td class="dir recv">RECV</td>
+          <td class="type">state_update</td>
+          <td class="note">状态更新 (阶段=Main1, 手牌=6张=['S000-S-006', 'S000-S-006', 'S000-S-006', 'S000-I-003', 'S000-I-003', 'S000-I-003'], 对手手牌=14张, RP=0)</td>
+          <td class="data"><pre>{
+  "current_phase": "Main1",
+  "current_player": "Player1",
+  "opponent_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 1
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 3
+      },
+      null,
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 2
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 4
+      }
+    ],
+    "deck_count": 22,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand_count": 14,
+    "hp": 5,
+    "real_point": 0
+  },
+  "recent_events": [
+    {
+      "PhaseChanged": {
+        "new_phase": "TurnStart"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Draw"
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 14,
+        "player": "Player1"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Recovery"
+      }
+    },
+    {
+      "PhaseChanged": {
+        "new_phase": "Main1"
+      }
+    },
+    {
+      "EffectActivated": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    "ChainStarted",
+    {
+      "ChainLink": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    {
+      "ChainResolving": {
+        "link_index": 0
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 15,
+        "player": "Player1"
+      }
+    },
+    "ChainComplete",
+    {
+      "EffectActivated": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    "ChainStarted",
+    {
+      "ChainLink": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    {
+      "ChainResolving": {
+        "link_index": 0
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 16,
+        "player": "Player1"
+      }
+    },
+    "ChainComplete",
+    {
+      "EffectActivated": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    "ChainStarted",
+    {
+      "ChainLink": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    {
+      "ChainResolving": {
+        "link_index": 0
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 17,
+        "player": "Player1"
+      }
+    },
+    "ChainComplete",
+    {
+      "EffectActivated": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    "ChainStarted",
+    {
+      "ChainLink": {
+        "effect_key": "e1",
+        "instance_id": 5
+      }
+    },
+    {
+      "ChainResolving": {
+        "link_index": 0
+      }
+    },
+    {
+      "DrawCard": {
+        "instance_id": 18,
+        "player": "Player1"
+      }
+    },
+    "ChainComplete"
+  ],
+  "turn_number": 3,
+  "your_state": {
+    "back": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 41
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 43
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 45
+      },
+      null,
+      null
+    ],
+    "cost_zone": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-004",
+        "instance_id": 42
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 44
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-005",
+        "instance_id": 46
+      }
+    ],
+    "deck_count": 28,
+    "front": [
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "grave": [],
+    "hand": [
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-006",
+        "instance_id": 47
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-006",
+        "instance_id": 48
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-S-006",
+        "instance_id": 49
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-I-003",
+        "instance_id": 50
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-I-003",
+        "instance_id": 51
+      },
+      {
+        "current_attack": null,
+        "definition_id": "S000-I-003",
+        "instance_id": 52
+      }
+    ],
+    "hp": 5,
+    "real_point": 0
+  }
+}</pre></td>
+        </tr>
+        <tr class="p1">
+          <td class="idx">136</td>
+          <td class="ts">1.835s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -14642,8 +14905,8 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">136</td>
-          <td class="ts">1.832s</td>
+          <td class="idx">137</td>
+          <td class="ts">1.835s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -15160,8 +15423,8 @@ tr.p2 td { background:var(--p2-bg); }
 }</pre></td>
         </tr>
         <tr class="p1">
-          <td class="idx">137</td>
-          <td class="ts">1.832s</td>
+          <td class="idx">138</td>
+          <td class="ts">1.835s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -15172,272 +15435,9 @@ tr.p2 td { background:var(--p2-bg); }
   "effect_key": "e1"
 }</pre></td>
         </tr>
-        <tr class="p2">
-          <td class="idx">138</td>
-          <td class="ts">1.832s</td>
-          <td class="player">Bob(P2)</td>
-          <td class="dir recv">RECV</td>
-          <td class="type">state_update</td>
-          <td class="note">状态更新 (阶段=Main1, 手牌=6张=['S000-S-006', 'S000-S-006', 'S000-S-006', 'S000-I-003', 'S000-I-003', 'S000-I-003'], 对手手牌=14张, RP=0)</td>
-          <td class="data"><pre>{
-  "current_phase": "Main1",
-  "current_player": "Player1",
-  "opponent_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 1
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 3
-      },
-      null,
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 2
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 4
-      }
-    ],
-    "deck_count": 22,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand_count": 14,
-    "hp": 5,
-    "real_point": 0
-  },
-  "recent_events": [
-    {
-      "PhaseChanged": {
-        "new_phase": "TurnStart"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Draw"
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 14,
-        "player": "Player1"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Recovery"
-      }
-    },
-    {
-      "PhaseChanged": {
-        "new_phase": "Main1"
-      }
-    },
-    {
-      "EffectActivated": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    "ChainStarted",
-    {
-      "ChainLink": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    {
-      "ChainResolving": {
-        "link_index": 0
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 15,
-        "player": "Player1"
-      }
-    },
-    "ChainComplete",
-    {
-      "EffectActivated": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    "ChainStarted",
-    {
-      "ChainLink": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    {
-      "ChainResolving": {
-        "link_index": 0
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 16,
-        "player": "Player1"
-      }
-    },
-    "ChainComplete",
-    {
-      "EffectActivated": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    "ChainStarted",
-    {
-      "ChainLink": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    {
-      "ChainResolving": {
-        "link_index": 0
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 17,
-        "player": "Player1"
-      }
-    },
-    "ChainComplete",
-    {
-      "EffectActivated": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    "ChainStarted",
-    {
-      "ChainLink": {
-        "effect_key": "e1",
-        "instance_id": 5
-      }
-    },
-    {
-      "ChainResolving": {
-        "link_index": 0
-      }
-    },
-    {
-      "DrawCard": {
-        "instance_id": 18,
-        "player": "Player1"
-      }
-    },
-    "ChainComplete"
-  ],
-  "turn_number": 3,
-  "your_state": {
-    "back": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 41
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 43
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 45
-      },
-      null,
-      null
-    ],
-    "cost_zone": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-004",
-        "instance_id": 42
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 44
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-005",
-        "instance_id": 46
-      }
-    ],
-    "deck_count": 28,
-    "front": [
-      null,
-      null,
-      null,
-      null,
-      null
-    ],
-    "grave": [],
-    "hand": [
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-006",
-        "instance_id": 47
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-006",
-        "instance_id": 48
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-S-006",
-        "instance_id": 49
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-I-003",
-        "instance_id": 50
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-I-003",
-        "instance_id": 51
-      },
-      {
-        "current_attack": null,
-        "definition_id": "S000-I-003",
-        "instance_id": 52
-      }
-    ],
-    "hp": 5,
-    "real_point": 0
-  }
-}</pre></td>
-        </tr>
         <tr class="p1">
           <td class="idx">139</td>
-          <td class="ts">1.833s</td>
+          <td class="ts">1.836s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -15516,7 +15516,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">140</td>
-          <td class="ts">1.833s</td>
+          <td class="ts">1.836s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -15575,7 +15575,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">141</td>
-          <td class="ts">1.833s</td>
+          <td class="ts">1.837s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -15908,7 +15908,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">142</td>
-          <td class="ts">1.834s</td>
+          <td class="ts">1.837s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -16466,7 +16466,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">143</td>
-          <td class="ts">1.834s</td>
+          <td class="ts">1.837s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -16479,7 +16479,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">144</td>
-          <td class="ts">1.834s</td>
+          <td class="ts">1.837s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -16767,7 +16767,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">145</td>
-          <td class="ts">1.834s</td>
+          <td class="ts">1.837s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -16846,7 +16846,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">146</td>
-          <td class="ts">1.834s</td>
+          <td class="ts">1.838s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -16905,7 +16905,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">147</td>
-          <td class="ts">1.835s</td>
+          <td class="ts">1.838s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -17268,7 +17268,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">148</td>
-          <td class="ts">1.835s</td>
+          <td class="ts">1.838s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -17866,7 +17866,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">149</td>
-          <td class="ts">1.835s</td>
+          <td class="ts">1.838s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -17879,7 +17879,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">150</td>
-          <td class="ts">1.835s</td>
+          <td class="ts">1.839s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -18192,7 +18192,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">151</td>
-          <td class="ts">1.835s</td>
+          <td class="ts">1.839s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -18271,7 +18271,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">152</td>
-          <td class="ts">1.835s</td>
+          <td class="ts">1.839s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -18330,7 +18330,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">153</td>
-          <td class="ts">1.836s</td>
+          <td class="ts">1.839s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -18723,7 +18723,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">154</td>
-          <td class="ts">1.836s</td>
+          <td class="ts">1.840s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -19361,7 +19361,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">155</td>
-          <td class="ts">1.836s</td>
+          <td class="ts">1.840s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -19374,7 +19374,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">156</td>
-          <td class="ts">1.836s</td>
+          <td class="ts">1.840s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -19712,7 +19712,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">157</td>
-          <td class="ts">1.837s</td>
+          <td class="ts">1.840s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -19791,7 +19791,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">158</td>
-          <td class="ts">1.837s</td>
+          <td class="ts">1.841s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -19850,7 +19850,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">159</td>
-          <td class="ts">1.837s</td>
+          <td class="ts">1.841s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -20273,7 +20273,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">160</td>
-          <td class="ts">1.838s</td>
+          <td class="ts">1.842s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -20951,7 +20951,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">161</td>
-          <td class="ts">1.838s</td>
+          <td class="ts">1.842s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -20964,7 +20964,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">162</td>
-          <td class="ts">1.838s</td>
+          <td class="ts">1.842s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -21327,7 +21327,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">163</td>
-          <td class="ts">1.838s</td>
+          <td class="ts">1.842s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -21406,7 +21406,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">164</td>
-          <td class="ts">1.838s</td>
+          <td class="ts">1.843s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -21465,7 +21465,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">165</td>
-          <td class="ts">1.839s</td>
+          <td class="ts">1.844s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -21918,7 +21918,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">166</td>
-          <td class="ts">1.839s</td>
+          <td class="ts">1.844s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -22636,7 +22636,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">167</td>
-          <td class="ts">1.839s</td>
+          <td class="ts">1.844s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -22649,7 +22649,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">168</td>
-          <td class="ts">1.839s</td>
+          <td class="ts">1.845s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -23037,7 +23037,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">169</td>
-          <td class="ts">1.839s</td>
+          <td class="ts">1.845s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -23116,7 +23116,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">170</td>
-          <td class="ts">1.840s</td>
+          <td class="ts">1.845s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -23175,7 +23175,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">171</td>
-          <td class="ts">1.840s</td>
+          <td class="ts">1.846s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -23658,7 +23658,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">172</td>
-          <td class="ts">1.841s</td>
+          <td class="ts">1.846s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -24416,7 +24416,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">173</td>
-          <td class="ts">1.841s</td>
+          <td class="ts">1.846s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -24429,7 +24429,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">174</td>
-          <td class="ts">1.841s</td>
+          <td class="ts">1.847s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -24842,7 +24842,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">175</td>
-          <td class="ts">1.841s</td>
+          <td class="ts">1.847s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -24921,7 +24921,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">176</td>
-          <td class="ts">1.841s</td>
+          <td class="ts">1.847s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -24980,7 +24980,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">177</td>
-          <td class="ts">1.842s</td>
+          <td class="ts">1.848s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -25494,7 +25494,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">178</td>
-          <td class="ts">1.842s</td>
+          <td class="ts">1.849s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -26252,7 +26252,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">179</td>
-          <td class="ts">1.842s</td>
+          <td class="ts">1.849s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -26265,7 +26265,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">180</td>
-          <td class="ts">1.843s</td>
+          <td class="ts">1.849s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -26709,7 +26709,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">181</td>
-          <td class="ts">1.843s</td>
+          <td class="ts">1.849s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -26788,7 +26788,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">182</td>
-          <td class="ts">1.843s</td>
+          <td class="ts">1.850s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -26847,7 +26847,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">183</td>
-          <td class="ts">1.844s</td>
+          <td class="ts">1.851s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -27391,7 +27391,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">184</td>
-          <td class="ts">1.844s</td>
+          <td class="ts">1.851s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -28149,7 +28149,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">185</td>
-          <td class="ts">1.844s</td>
+          <td class="ts">1.851s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -28162,7 +28162,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">186</td>
-          <td class="ts">1.844s</td>
+          <td class="ts">1.852s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -28636,7 +28636,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">187</td>
-          <td class="ts">1.844s</td>
+          <td class="ts">1.852s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -28715,7 +28715,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">188</td>
-          <td class="ts">1.844s</td>
+          <td class="ts">1.852s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -28774,7 +28774,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">189</td>
-          <td class="ts">1.845s</td>
+          <td class="ts">1.853s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -29348,7 +29348,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">190</td>
-          <td class="ts">1.845s</td>
+          <td class="ts">1.854s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -30106,7 +30106,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">191</td>
-          <td class="ts">1.845s</td>
+          <td class="ts">1.854s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -30119,7 +30119,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">192</td>
-          <td class="ts">1.846s</td>
+          <td class="ts">1.854s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -30623,7 +30623,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">193</td>
-          <td class="ts">1.846s</td>
+          <td class="ts">1.854s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -30702,7 +30702,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">194</td>
-          <td class="ts">1.846s</td>
+          <td class="ts">1.855s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -30761,7 +30761,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">195</td>
-          <td class="ts">1.847s</td>
+          <td class="ts">1.856s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -31365,7 +31365,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">196</td>
-          <td class="ts">1.847s</td>
+          <td class="ts">1.856s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -32123,7 +32123,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">197</td>
-          <td class="ts">1.847s</td>
+          <td class="ts">1.856s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -32136,7 +32136,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">198</td>
-          <td class="ts">1.847s</td>
+          <td class="ts">1.857s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -32670,7 +32670,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">199</td>
-          <td class="ts">1.847s</td>
+          <td class="ts">1.857s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -32749,7 +32749,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">200</td>
-          <td class="ts">1.848s</td>
+          <td class="ts">1.857s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -32808,7 +32808,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">201</td>
-          <td class="ts">1.848s</td>
+          <td class="ts">1.858s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -33442,7 +33442,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">202</td>
-          <td class="ts">1.849s</td>
+          <td class="ts">1.859s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -34200,7 +34200,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">203</td>
-          <td class="ts">1.849s</td>
+          <td class="ts">1.859s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -34213,7 +34213,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">204</td>
-          <td class="ts">1.849s</td>
+          <td class="ts">1.859s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -34777,7 +34777,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">205</td>
-          <td class="ts">1.849s</td>
+          <td class="ts">1.859s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -34856,7 +34856,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">206</td>
-          <td class="ts">1.849s</td>
+          <td class="ts">1.859s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -34915,7 +34915,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">207</td>
-          <td class="ts">1.850s</td>
+          <td class="ts">1.860s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -35579,7 +35579,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">208</td>
-          <td class="ts">1.850s</td>
+          <td class="ts">1.861s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -36337,7 +36337,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">209</td>
-          <td class="ts">1.850s</td>
+          <td class="ts">1.861s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -36350,7 +36350,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">210</td>
-          <td class="ts">1.851s</td>
+          <td class="ts">1.861s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -36944,7 +36944,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">211</td>
-          <td class="ts">1.851s</td>
+          <td class="ts">1.861s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -37023,7 +37023,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">212</td>
-          <td class="ts">1.851s</td>
+          <td class="ts">1.862s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -37082,7 +37082,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">213</td>
-          <td class="ts">1.852s</td>
+          <td class="ts">1.864s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -37776,7 +37776,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">214</td>
-          <td class="ts">1.852s</td>
+          <td class="ts">1.864s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -38534,7 +38534,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">215</td>
-          <td class="ts">1.852s</td>
+          <td class="ts">1.864s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -38547,7 +38547,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">216</td>
-          <td class="ts">1.853s</td>
+          <td class="ts">1.864s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -39171,7 +39171,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">217</td>
-          <td class="ts">1.853s</td>
+          <td class="ts">1.865s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -39250,7 +39250,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">218</td>
-          <td class="ts">1.853s</td>
+          <td class="ts">1.865s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -39309,7 +39309,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">219</td>
-          <td class="ts">1.854s</td>
+          <td class="ts">1.866s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -40033,7 +40033,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">220</td>
-          <td class="ts">1.854s</td>
+          <td class="ts">1.866s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -40791,7 +40791,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">221</td>
-          <td class="ts">1.854s</td>
+          <td class="ts">1.866s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -40804,7 +40804,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">222</td>
-          <td class="ts">1.855s</td>
+          <td class="ts">1.867s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -41458,7 +41458,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">223</td>
-          <td class="ts">1.855s</td>
+          <td class="ts">1.867s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -41537,7 +41537,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">224</td>
-          <td class="ts">1.855s</td>
+          <td class="ts">1.867s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -41596,7 +41596,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">225</td>
-          <td class="ts">1.856s</td>
+          <td class="ts">1.868s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -42350,7 +42350,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">226</td>
-          <td class="ts">1.856s</td>
+          <td class="ts">1.869s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -43108,7 +43108,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">227</td>
-          <td class="ts">1.856s</td>
+          <td class="ts">1.869s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -43121,7 +43121,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">228</td>
-          <td class="ts">1.856s</td>
+          <td class="ts">1.869s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -43805,7 +43805,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">229</td>
-          <td class="ts">1.857s</td>
+          <td class="ts">1.869s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -43884,7 +43884,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">230</td>
-          <td class="ts">1.857s</td>
+          <td class="ts">1.870s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -43943,7 +43943,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">231</td>
-          <td class="ts">1.858s</td>
+          <td class="ts">1.871s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -44727,7 +44727,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">232</td>
-          <td class="ts">1.858s</td>
+          <td class="ts">1.871s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -45485,7 +45485,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">233</td>
-          <td class="ts">1.858s</td>
+          <td class="ts">1.871s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -45498,7 +45498,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">234</td>
-          <td class="ts">1.858s</td>
+          <td class="ts">1.871s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -46212,7 +46212,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">235</td>
-          <td class="ts">1.858s</td>
+          <td class="ts">1.871s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -46291,7 +46291,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">236</td>
-          <td class="ts">1.859s</td>
+          <td class="ts">1.872s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -46350,7 +46350,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">237</td>
-          <td class="ts">1.859s</td>
+          <td class="ts">1.873s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -47164,7 +47164,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">238</td>
-          <td class="ts">1.860s</td>
+          <td class="ts">1.873s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -47922,7 +47922,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">239</td>
-          <td class="ts">1.860s</td>
+          <td class="ts">1.873s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -47935,7 +47935,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">240</td>
-          <td class="ts">1.860s</td>
+          <td class="ts">1.874s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -48679,7 +48679,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">241</td>
-          <td class="ts">1.860s</td>
+          <td class="ts">1.874s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -48758,7 +48758,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">242</td>
-          <td class="ts">1.860s</td>
+          <td class="ts">1.875s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -48817,7 +48817,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">243</td>
-          <td class="ts">1.861s</td>
+          <td class="ts">1.876s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -49661,7 +49661,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">244</td>
-          <td class="ts">1.862s</td>
+          <td class="ts">1.876s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -50419,7 +50419,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">245</td>
-          <td class="ts">1.862s</td>
+          <td class="ts">1.876s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -50432,7 +50432,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">246</td>
-          <td class="ts">1.862s</td>
+          <td class="ts">1.876s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -51206,7 +51206,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">247</td>
-          <td class="ts">1.862s</td>
+          <td class="ts">1.877s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -51285,7 +51285,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">248</td>
-          <td class="ts">1.862s</td>
+          <td class="ts">1.877s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -51344,7 +51344,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">249</td>
-          <td class="ts">1.863s</td>
+          <td class="ts">1.878s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -52218,7 +52218,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">250</td>
-          <td class="ts">1.863s</td>
+          <td class="ts">1.879s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -52976,7 +52976,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">251</td>
-          <td class="ts">1.863s</td>
+          <td class="ts">1.879s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -52989,7 +52989,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">252</td>
-          <td class="ts">1.864s</td>
+          <td class="ts">1.879s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -53793,7 +53793,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">253</td>
-          <td class="ts">1.864s</td>
+          <td class="ts">1.879s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -53872,7 +53872,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">254</td>
-          <td class="ts">1.864s</td>
+          <td class="ts">1.879s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -53931,7 +53931,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">255</td>
-          <td class="ts">1.865s</td>
+          <td class="ts">1.880s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -54835,7 +54835,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">256</td>
-          <td class="ts">1.865s</td>
+          <td class="ts">1.881s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -55593,7 +55593,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">257</td>
-          <td class="ts">1.865s</td>
+          <td class="ts">1.881s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -55606,7 +55606,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">258</td>
-          <td class="ts">1.866s</td>
+          <td class="ts">1.881s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -56440,7 +56440,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">259</td>
-          <td class="ts">1.866s</td>
+          <td class="ts">1.881s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -56519,7 +56519,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">260</td>
-          <td class="ts">1.866s</td>
+          <td class="ts">1.881s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -56578,7 +56578,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">261</td>
-          <td class="ts">1.867s</td>
+          <td class="ts">1.883s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -57512,7 +57512,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">262</td>
-          <td class="ts">1.867s</td>
+          <td class="ts">1.883s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -58270,7 +58270,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">263</td>
-          <td class="ts">1.867s</td>
+          <td class="ts">1.883s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -58283,7 +58283,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">264</td>
-          <td class="ts">1.867s</td>
+          <td class="ts">1.883s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -59147,7 +59147,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">265</td>
-          <td class="ts">1.868s</td>
+          <td class="ts">1.883s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -59226,7 +59226,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">266</td>
-          <td class="ts">1.868s</td>
+          <td class="ts">1.884s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -59285,7 +59285,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">267</td>
-          <td class="ts">1.869s</td>
+          <td class="ts">1.885s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -60249,7 +60249,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">268</td>
-          <td class="ts">1.869s</td>
+          <td class="ts">1.885s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">action_request</td>
@@ -61007,7 +61007,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">269</td>
-          <td class="ts">1.869s</td>
+          <td class="ts">1.885s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir send">SEND</td>
           <td class="type">action</td>
@@ -61020,7 +61020,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">270</td>
-          <td class="ts">1.869s</td>
+          <td class="ts">1.886s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -61914,7 +61914,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">271</td>
-          <td class="ts">1.869s</td>
+          <td class="ts">1.886s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -61993,7 +61993,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">272</td>
-          <td class="ts">1.870s</td>
+          <td class="ts">1.886s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">chain_action_request</td>
@@ -62052,7 +62052,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">273</td>
-          <td class="ts">1.871s</td>
+          <td class="ts">1.887s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -63041,7 +63041,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">274</td>
-          <td class="ts">1.871s</td>
+          <td class="ts">1.888s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -63960,7 +63960,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">275</td>
-          <td class="ts">1.872s</td>
+          <td class="ts">1.888s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -64879,7 +64879,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p2">
           <td class="idx">276</td>
-          <td class="ts">1.872s</td>
+          <td class="ts">1.888s</td>
           <td class="player">Bob(P2)</td>
           <td class="dir recv">RECV</td>
           <td class="type">game_over</td>
@@ -64892,7 +64892,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">277</td>
-          <td class="ts">1.872s</td>
+          <td class="ts">1.889s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">state_update</td>
@@ -65881,7 +65881,7 @@ tr.p2 td { background:var(--p2-bg); }
         </tr>
         <tr class="p1">
           <td class="idx">278</td>
-          <td class="ts">1.872s</td>
+          <td class="ts">1.889s</td>
           <td class="player">Alice(P1)</td>
           <td class="dir recv">RECV</td>
           <td class="type">game_over</td>

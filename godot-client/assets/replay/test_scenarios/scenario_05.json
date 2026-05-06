@@ -1,0 +1,105 @@
+{
+  "scenario": "5. 对手前场登场",
+  "description": "对手 P2 在前场[0] 登场 S000-C-011(iid=46, ATK=500)",
+  "messages": [
+    {
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "Battle",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "PhaseChanged": {
+              "new_phase": "Battle"
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001"
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": []
+        },
+        "opponent_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "delay_ms": 0
+    }
+  ],
+  "verification": {
+    "expected_checks": [
+      "FRONT opponent ADD[46] slot=0",
+      "PHASE: Battle"
+    ]
+  }
+}

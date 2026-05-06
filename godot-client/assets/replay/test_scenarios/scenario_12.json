@@ -1,0 +1,147 @@
+{
+  "scenario": "12. 费用区多卡",
+  "description": "多次费用支付后费用区有4张卡",
+  "messages": [
+    {
+      "type": "state_update",
+      "data": {
+        "turn_number": 2,
+        "current_phase": "Main1",
+        "current_player": "Player2",
+        "recent_events": [
+          {
+            "CardExposed": {
+              "instance_id": 5
+            }
+          },
+          {
+            "CardMoved": {
+              "instance_id": 5,
+              "from": {
+                "player": "Player1",
+                "zone": "Hand"
+              },
+              "to": {
+                "player": "Player1",
+                "zone": "CostZone"
+              }
+            }
+          },
+          {
+            "CardExposed": {
+              "instance_id": 6
+            }
+          },
+          {
+            "CardMoved": {
+              "instance_id": 6,
+              "from": {
+                "player": "Player1",
+                "zone": "Hand"
+              },
+              "to": {
+                "player": "Player1",
+                "zone": "CostZone"
+              }
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 3,
+          "real_point": 1,
+          "deck_count": 33,
+          "hand": [
+            {
+              "instance_id": 7,
+              "definition_id": "S000-S-002"
+            }
+          ],
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001"
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            },
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "grave": [
+            {
+              "instance_id": 46,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            },
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            }
+          ]
+        },
+        "opponent_state": {
+          "hp": 4,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 6,
+          "front": [
+            {
+              "instance_id": 48,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "delay_ms": 0
+    }
+  ],
+  "verification": {
+    "expected_checks": [
+      "COST self ADD[5,6]",
+      "HAND self REMOVE[5,6]"
+    ]
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "scenario": "3. 登场(前场) + 费用支付",
+  "description": "P1 将 S000-C-001(iid=1) 登场到前场[0]，用 S000-C-002(iid=2) 支付1费",
+  "messages": [
+    {
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "Main1",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "CardExposed": {
+              "instance_id": 2
+            }
+          },
+          {
+            "CardMoved": {
+              "instance_id": 2,
+              "from": {
+                "player": "Player1",
+                "zone": "Hand"
+              },
+              "to": {
+                "player": "Player1",
+                "zone": "CostZone"
+              }
+            }
+          },
+          {
+            "CardSummoned": {
+              "instance_id": 1,
+              "to": {
+                "player": "Player1",
+                "zone": {
+                  "Front": 0
+                }
+              }
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            },
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001"
+            },
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            }
+          ],
+          "grave": []
+        },
+        "opponent_state": {
+          "hp": 5,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "delay_ms": 0
+    }
+  ],
+  "verification": {
+    "expected_checks": [
+      "HAND self REMOVE[1,2] | KEEP[3,4,5,6]",
+      "FRONT self ADD[1] slot=0",
+      "COST self ADD[2]"
+    ]
+  }
+}

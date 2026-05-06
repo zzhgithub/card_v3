@@ -1,0 +1,113 @@
+{
+  "scenario": "9. RP 变化 — 回合结束 RP+1",
+  "description": "P1 回合结束进入 TurnEnd，RP 0→1",
+  "messages": [
+    {
+      "type": "state_update",
+      "data": {
+        "turn_number": 1,
+        "current_phase": "TurnEnd",
+        "current_player": "Player1",
+        "recent_events": [
+          {
+            "PhaseChanged": {
+              "new_phase": "Main2"
+            }
+          },
+          {
+            "PhaseChanged": {
+              "new_phase": "TurnEnd"
+            }
+          },
+          {
+            "RealPointChanged": {
+              "player": "Player1",
+              "old_rp": 0,
+              "new_rp": 1
+            }
+          }
+        ],
+        "your_state": {
+          "hp": 5,
+          "real_point": 1,
+          "deck_count": 34,
+          "hand": [
+            {
+              "instance_id": 5,
+              "definition_id": "S000-C-010",
+              "current_attack": 2000
+            },
+            {
+              "instance_id": 6,
+              "definition_id": "S000-C-011",
+              "current_attack": 500
+            }
+          ],
+          "front": [
+            {
+              "instance_id": 1,
+              "definition_id": "S000-C-001",
+              "current_attack": 1500
+            },
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            {
+              "instance_id": 4,
+              "definition_id": "S000-S-001"
+            },
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [
+            {
+              "instance_id": 2,
+              "definition_id": "S000-C-002",
+              "current_attack": 800
+            },
+            {
+              "instance_id": 3,
+              "definition_id": "S000-C-003",
+              "current_attack": 1200
+            }
+          ],
+          "grave": []
+        },
+        "opponent_state": {
+          "hp": 4,
+          "real_point": 0,
+          "deck_count": 35,
+          "hand_count": 5,
+          "front": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "back": [
+            null,
+            null,
+            null,
+            null,
+            null
+          ],
+          "cost_zone": [],
+          "grave": []
+        }
+      },
+      "delay_ms": 0
+    }
+  ],
+  "verification": {
+    "expected_checks": [
+      "RP self: 1",
+      "PHASE: TurnEnd"
+    ]
+  }
+}

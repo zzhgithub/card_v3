@@ -3,6 +3,11 @@
 
 extends Control
 
+const AnimMgr = preload("res://scenes/replay/animation_manager.gd")
+
+## 动画管理器（独立类，可复用）
+var _anim_mgr: RefCounted
+
 ## 玩家数据
 var player_hp: int = 20
 var player_real_points: int = 0
@@ -45,7 +50,14 @@ var card_cache: Dictionary = {}
 var back_card_texture: Texture2D
 var default_card_scene: PackedScene
 
+## 前次状态快照（用于增量 diff）
+var _prev_my_state: Dictionary = {}
+var _prev_opponent_state: Dictionary = {}
+
 func _ready():
+	# 动画管理器
+	_anim_mgr = AnimMgr.new(self)
+
 	# 获取管理器
 	network_manager = get_node_or_null("/root/NetworkManager")
 	scene_manager = get_node_or_null("/root/SceneManager")
@@ -162,15 +174,13 @@ func _update_from_state(state: Dictionary) -> void:
 	var my_state = state.get("your_state", {})
 	var opponent_state = state.get("opponent_state", {})
 
-	# 处理近期事件（用于动画驱动）
+	# 先更新状态（让卡片出现在目标位置），再驱动动画
 	var recent_events = _safe_array(state.get("recent_events", []))
-	_process_recent_events(recent_events)
 
-	# 更新自己状态
 	_update_player_state(my_state)
-
-	# 更新对手状态
 	_update_opponent_state(opponent_state)
+
+	_process_recent_events(recent_events)
 
 
 ## 安全获取数组字段（处理 null 值）
@@ -182,6 +192,96 @@ func _safe_array(value) -> Array:
 	return []
 
 
+## 判断两张卡信息是否不同（以 instance_id 为准）
+func _card_info_differs(a, b) -> bool:
+	if a == null and b == null:
+		return false
+	if a == null or b == null:
+		return true
+	if typeof(a) != TYPE_DICTIONARY or typeof(b) != TYPE_DICTIONARY:
+		return true
+	return a.get("instance_id", 0) != b.get("instance_id", 0)
+
+
+## 数组级卡牌信息相等检查
+func _array_info_equal(a: Array, b: Array) -> bool:
+	if a.size() != b.size():
+		return false
+	for i in range(a.size()):
+		if _card_info_differs(a[i], b[i]):
+			return false
+	return true
+
+
+## 手牌增量更新：只移除消失的卡、添加新的卡，已有卡保持原位
+func _diff_update_hand(hand: MyHand, prev_cards: Array, new_cards: Array, face_up: bool) -> void:
+	# 收集 prev 的 instance_id 集合
+	var prev_ids: Array[int] = []
+	for ci in prev_cards:
+		if typeof(ci) == TYPE_DICTIONARY:
+			prev_ids.append(ci.get("instance_id", 0))
+	# 收集 new 的 instance_id 集合
+	var new_ids: Array[int] = []
+	for ci in new_cards:
+		if typeof(ci) == TYPE_DICTIONARY:
+			new_ids.append(ci.get("instance_id", 0))
+
+	# 1. 移除不在 new 中的卡（使用容器方法确保布局刷新）
+	var cards_to_remove: Array = []
+	for card in hand._held_cards:
+		var iid = card.get_meta("instance_id", 0)
+		if iid not in new_ids:
+			cards_to_remove.append(card)
+	for card in cards_to_remove:
+		if hand.has_method("remove_card"):
+			hand.remove_card(card)
+		card.queue_free()
+
+	# 2. 添加 new 中有但 hand 中没有的卡
+	var existing_ids: Array[int] = []
+	for card in hand._held_cards:
+		existing_ids.append(card.get_meta("instance_id", 0))
+
+	for card_info in new_cards:
+		if typeof(card_info) != TYPE_DICTIONARY:
+			continue
+		var iid = card_info.get("instance_id", 0)
+		if iid not in existing_ids:
+			var def_id = card_info.get("definition_id", "")
+			if def_id != "":
+				var card = _create_card(def_id, hand, face_up, card_info)
+				if card:
+					card.set_meta("instance_id", iid)
+					card.set_meta("definition_id", def_id)
+					card.set_meta("current_attack", card_info.get("current_attack", 0))
+
+	# 3. 增减卡片后强制刷新手牌布局
+	if hand.has_method("update_card_ui"):
+		hand.update_card_ui()
+
+
+## 字段格子增量更新（仅重建变化的 slot）
+func _diff_update_field_slots(field: HBoxContainer, prev_cards: Array, new_cards: Array, face_up: bool) -> void:
+	var max_slots = mini(5, max(prev_cards.size(), new_cards.size()))
+	for i in range(max_slots):
+		var prev = prev_cards[i] if i < prev_cards.size() else null
+		var cur = new_cards[i] if i < new_cards.size() else null
+		if not _card_info_differs(prev, cur):
+			continue
+		var slot = field.get_child(i)
+		if not (slot is BattleFieldSlot):
+			continue
+		slot.clear_cards()
+		if cur != null and typeof(cur) == TYPE_DICTIONARY:
+			var def_id = cur.get("definition_id", "")
+			if def_id != "":
+				var card = _create_card(def_id, slot, face_up, cur)
+				if card:
+					card.set_meta("instance_id", cur.get("instance_id", 0))
+					card.set_meta("definition_id", def_id)
+					card.set_meta("current_attack", cur.get("current_attack", 0))
+
+
 ## 更新自己状态显示
 func _update_player_state(state: Dictionary) -> void:
 	if state.is_empty():
@@ -189,31 +289,39 @@ func _update_player_state(state: Dictionary) -> void:
 
 	player_hp = state.get("hp", 20)
 	player_real_points = state.get("real_point", 0)
-
 	_update_status_panel(player_status, player_hp, player_real_points, "自己")
 
-	# 更新手牌
+	# 增量更新手牌：只添加新的/移除消失的，已有卡不动
 	var hand_cards = _safe_array(state.get("hand", []))
-	_update_hand(player_hand, hand_cards, true)
+	_diff_update_hand(player_hand, _prev_my_state.get("hand", []), hand_cards, true)
 
-	# 更新卡组（优先用 deck 数组创建真实卡片背面，否则回退到 deck_count）
+	# 增量更新卡组：首次或数组变化时重建，仅 count 变化时只更新标签
 	var deck_cards = _safe_array(state.get("deck", []))
 	var deck_count = state.get("deck_count", deck_cards.size())
-	_update_deck_stack(player_deck, deck_cards, deck_count)
+	var prev_deck_cards = _prev_my_state.get("deck", [])
+	var prev_deck_count = _prev_my_state.get("deck_count", -1)
+	var is_first_load = _prev_my_state.is_empty()
+	if is_first_load or not _array_info_equal(deck_cards, prev_deck_cards):
+		_update_deck_stack(player_deck, deck_cards, deck_count)
+	elif deck_count != prev_deck_count:
+		if player_deck.count_label:
+			player_deck.count_label.text = str(deck_count)
 
-	# 更新墓地
+	# 增量更新墓地
 	var grave_cards = _safe_array(state.get("grave", []))
-	_update_grave_stack(player_grave, grave_cards)
+	if not _array_info_equal(grave_cards, _prev_my_state.get("grave", [])):
+		_update_grave_stack(player_grave, grave_cards)
 
-	# 更新前场/后场
+	# 增量更新前场/后场：仅重建变化的 slot
 	var front_cards = _safe_array(state.get("front", []))
+	_diff_update_field_slots(player_front_field, _prev_my_state.get("front", []), front_cards, true)
 	var back_cards = _safe_array(state.get("back", []))
-	_update_field_slots(player_front_field, front_cards, true)
-	_update_field_slots(player_back_field, back_cards, true)
+	_diff_update_field_slots(player_back_field, _prev_my_state.get("back", []), back_cards, true)
 
-	# 更新费用区
+	# 增量更新费用区
 	var cost_cards = _safe_array(state.get("cost_zone", []))
-	_update_cost_zone(player_cost, cost_cards, true)
+	if not _array_info_equal(cost_cards, _prev_my_state.get("cost_zone", [])):
+		_update_cost_zone(player_cost, cost_cards, true)
 
 	# 缓存卡牌信息
 	_cache_cards(hand_cards)
@@ -221,6 +329,9 @@ func _update_player_state(state: Dictionary) -> void:
 	_cache_cards(front_cards)
 	_cache_cards(back_cards)
 	_cache_cards(cost_cards)
+
+	# 保存快照用于下次 diff
+	_prev_my_state = state.duplicate(true)
 
 
 ## 更新对手状态显示
@@ -230,37 +341,50 @@ func _update_opponent_state(state: Dictionary) -> void:
 
 	opponent_hp = state.get("hp", 20)
 	opponent_real_points = state.get("real_point", 0)
-
 	_update_status_panel(opponent_status, opponent_hp, opponent_real_points, "对手")
 
-	# 更新对手手牌（只显示背面，数量通过 hand_count）
+	# 增量更新对手手牌（仅 hand_count 变化时重建）
+	var prev_hand_count = _prev_opponent_state.get("hand_count", -1)
 	var hand_count = state.get("hand_count", 0)
-	_update_opponent_hand(opponent_hand, hand_count)
+	if prev_hand_count != hand_count:
+		_update_opponent_hand(opponent_hand, hand_count)
 
-	# 更新对手卡组
+	# 增量更新对手卡组：首次或数组变化时重建，仅 count 变化时只更新标签
 	var deck_cards = _safe_array(state.get("deck", []))
 	var deck_count = state.get("deck_count", deck_cards.size())
-	_update_deck_stack(opponent_deck, deck_cards, deck_count)
+	var prev_deck_cards = _prev_opponent_state.get("deck", [])
+	var prev_deck_count = _prev_opponent_state.get("deck_count", -1)
+	var is_first_load = _prev_opponent_state.is_empty()
+	if is_first_load or not _array_info_equal(deck_cards, prev_deck_cards):
+		_update_deck_stack(opponent_deck, deck_cards, deck_count)
+	elif deck_count != prev_deck_count:
+		if opponent_deck.count_label:
+			opponent_deck.count_label.text = str(deck_count)
 
-	# 更新对手墓地
+	# 增量更新对手墓地
 	var grave_cards = _safe_array(state.get("grave", []))
-	_update_grave_stack(opponent_grave, grave_cards)
+	if not _array_info_equal(grave_cards, _prev_opponent_state.get("grave", [])):
+		_update_grave_stack(opponent_grave, grave_cards)
 
-	# 更新对手前场/后场
+	# 增量更新对手前场/后场
 	var front_cards = _safe_array(state.get("front", []))
+	_diff_update_field_slots(opponent_front_field, _prev_opponent_state.get("front", []), front_cards, true)
 	var back_cards = _safe_array(state.get("back", []))
-	_update_field_slots(opponent_front_field, front_cards, true)
-	_update_field_slots(opponent_back_field, back_cards, true)
+	_diff_update_field_slots(opponent_back_field, _prev_opponent_state.get("back", []), back_cards, true)
 
-	# 更新对手费用区
+	# 增量更新对手费用区
 	var cost_cards = _safe_array(state.get("cost_zone", []))
-	_update_cost_zone(opponent_cost, cost_cards, true)
+	if not _array_info_equal(cost_cards, _prev_opponent_state.get("cost_zone", [])):
+		_update_cost_zone(opponent_cost, cost_cards, true)
 
 	# 缓存卡牌信息
 	_cache_cards(grave_cards)
 	_cache_cards(front_cards)
 	_cache_cards(back_cards)
 	_cache_cards(cost_cards)
+
+	# 保存快照用于下次 diff
+	_prev_opponent_state = state.duplicate(true)
 
 
 ## 加载卡牌定义 JSON
@@ -598,6 +722,12 @@ func _return_to_lobby() -> void:
 
 ## 处理 StateUpdate 中携带的近期事件
 func _process_recent_events(events: Array) -> void:
+	# 委托给 AnimationManager（独立动画类，回放和真实对局共用）
+	if _anim_mgr:
+		_anim_mgr.play_events(events)
+		return
+
+	# === 以下为回退逻辑（无 AnimationManager 时使用）===
 	if events.is_empty():
 		return
 	for event in events:
@@ -611,28 +741,30 @@ func _process_recent_events(events: Array) -> void:
 					var player = event_data.get("player", "")
 					var iid = event_data.get("instance_id", 0)
 					_print("Event: %s draws card instance_id=%d" % [player, iid])
-					# 动画触发点：根据 player 判断是自己还是对手
-					# 自己抽卡 → 可以从 state.your_state.hand 找到该卡做动画
-					# 对手抽卡 → 通用"对手抽卡"动画
+					_animate_draw_card(iid, player)
 
 				"CardSummoned":
 					var iid = event_data.get("instance_id", 0)
 					var to = event_data.get("to", {})
 					_print("Event: CardSummoned instance_id=%d to=%s" % [iid, str(to)])
+					_animate_summon(iid)
 
 				"CardMoved":
 					var iid = event_data.get("instance_id", 0)
 					var from_zone = event_data.get("from", {})
 					var to_zone = event_data.get("to", {})
 					_print("Event: CardMoved instance_id=%d from=%s to=%s" % [iid, str(from_zone), str(to_zone)])
+					_animate_card_moved(iid, from_zone, to_zone)
 
 				"CardExposed":
 					var iid = event_data.get("instance_id", 0)
-					_print("Event: CardExposed instance_id=%d (card turned face-up, entering cost zone)" % iid)
+					_print("Event: CardExposed instance_id=%d" % iid)
+					_animate_cost_enter(iid)
 
 				"CardDestroyed":
 					var iid = event_data.get("instance_id", 0)
 					_print("Event: CardDestroyed instance_id=%d" % iid)
+					_animate_destroy(iid)
 
 				"PhaseChanged":
 					var new_phase = event_data.get("new_phase", "")
@@ -666,6 +798,98 @@ func _process_recent_events(events: Array) -> void:
 
 				_:
 					_print("Event: %s data=%s" % [event_type, str(event_data)])
+
+
+# ============================================================================
+# 动画函数
+# ============================================================================
+
+## 抽卡动画：卡从牌组位置飞到手中
+func _animate_draw_card(instance_id: int, _player: String) -> void:
+	var card := _find_card_in_hand(instance_id)
+	if not card:
+		return
+	# 新抽的卡在手牌中原地淡入，不做飞行动画
+	card.modulate = Color(1, 1, 1, 0.0)
+	var tween := create_tween()
+	tween.tween_property(card, "modulate", Color.WHITE, 0.3)
+
+
+## 召唤动画：卡牌在场上原地弹出（缩放 + 淡入）
+func _animate_summon(instance_id: int) -> void:
+	var card := _find_card_on_field(instance_id)
+	if not card:
+		return
+	card.scale = Vector2(0.6, 0.6)
+	card.modulate = Color(1, 1, 1, 0.2)
+	var tween := create_tween()
+	tween.set_parallel()
+	tween.tween_property(card, "scale", Vector2(1.0, 1.0), 0.3).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	tween.tween_property(card, "modulate", Color.WHITE, 0.2)
+
+
+## 在费用区中查找卡牌
+func _find_card_in_cost_zone(instance_id: int) -> Card:
+	for child in player_cost.get_children():
+		if child is Card and child.get_meta("instance_id", 0) == instance_id:
+			return child
+	for child in opponent_cost.get_children():
+		if child is Card and child.get_meta("instance_id", 0) == instance_id:
+			return child
+	return null
+
+
+## 在墓地中查找卡牌
+func _find_card_in_grave(instance_id: int) -> Card:
+	for child in player_grave.get_children():
+		if child is Card and child.get_meta("instance_id", 0) == instance_id:
+			return child
+	for child in opponent_grave.get_children():
+		if child is Card and child.get_meta("instance_id", 0) == instance_id:
+			return child
+	return null
+
+
+## 费用区收纳动画：卡从手牌区域翻转入费用区
+func _animate_cost_enter(instance_id: int) -> void:
+	var card := _find_card_in_cost_zone(instance_id)
+	if not card:
+		return
+	card.scale = Vector2(0.6, 0.6)
+	card.rotation = deg_to_rad(90)
+	card.modulate = Color(1, 1, 1, 0.3)
+	var tween := create_tween()
+	tween.set_parallel()
+	tween.tween_property(card, "scale", Vector2(1.0, 1.0), 0.25).set_ease(Tween.EASE_OUT)
+	tween.tween_property(card, "rotation", 0.0, 0.25).set_ease(Tween.EASE_OUT)
+	tween.tween_property(card, "modulate", Color.WHITE, 0.2)
+
+
+## 卡牌移动动画：CardMoved 事件触发
+func _animate_card_moved(instance_id: int, _from: Dictionary, _to: Dictionary) -> void:
+	# 移动到墓地的特殊动画
+	if typeof(_to) == TYPE_DICTIONARY and _to.get("zone", "") == "Grave":
+		var card := _find_card_in_grave(instance_id)
+		if card:
+			card.modulate = Color(0.6, 0.6, 0.6, 0.5)
+			var tween := create_tween()
+			tween.tween_property(card, "modulate", Color.WHITE, 0.3)
+
+
+## 破坏动画：卡牌缩小并淡出
+func _animate_destroy(instance_id: int) -> void:
+	var card := _find_card_on_field(instance_id)
+	if not card:
+		return
+	var tween := create_tween()
+	tween.set_parallel()
+	tween.tween_property(card, "scale", Vector2(0.3, 0.3), 0.3).set_ease(Tween.EASE_IN)
+	tween.tween_property(card, "modulate", Color(1, 0.3, 0.3, 0.0), 0.3)
+	# 动画结束后清除卡牌
+	tween.finished.connect(func():
+		if is_instance_valid(card):
+			card.queue_free()
+	)
 
 
 ## 打印日志
